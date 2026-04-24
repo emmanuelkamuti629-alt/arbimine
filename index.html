@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ARBIMINE - Live Arbitrage Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 48px;
+            color: white;
+        }
+        .header p {
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+        }
+        .nav-bar {
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        .pro-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .stats-bar {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+        .badge-free {
+            background: #ffc107;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .opportunities {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .exchange-buy {
+            background: #10b981;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .exchange-sell {
+            background: #ef4444;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .profit {
+            font-size: 28px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        .footer-nav {
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .footer-link {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .price-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .refresh-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a3a, #0a0a2a);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .whatsapp-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 25px;
+            width: 100%;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            .header h1 { font-size: 32px; }
+            .stats-bar { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ ARBIMINE</h1>
+        <p>FIND.ANALYZE.PROFIT.</p>
+    </div>
+
+    <div class="nav-bar">
+        <a href="#" class="nav-link">🏠 Home</a>
+        <a href="#" class="nav-link pro-btn" onclick="showProModal()">⭐ GO PRO</a>
+        <a href="#" class="nav-link">💬 Chat Room</a>
+        <a href="#" class="nav-link">👤 Profile</a>
+    </div>
+
+    <div class="container">
+        <div class="stats-bar">
+            <div><div class="stat-value">10</div><div class="stat-label">EXCHANGES</div></div>
+            <div><div class="stat-value">100+</div><div class="stat-label">COINS</div></div>
+            <div><div class="stat-value" id="oppCount">0</div><div class="stat-label">OPPORTUNITIES</div></div>
+            <div><span class="badge-free" id="premiumBadge">🆓 FREE MODE</span></div>
+            <div><button class="refresh-btn" onclick="scan()">🔄 Refresh</button></div>
+        </div>
+
+        <div id="opportunities" class="opportunities">
+            <div style="text-align:center;padding:50px">⚡ Scanning 100+ coins across 10 exchanges...</div>
+        </div>
+    </div>
+
+    <div class="footer-nav">
+        <a href="#" class="footer-link">🏠 Home</a>
+        <a href="#" class="footer-link">⭐ GO PRO</a>
+        <a href="#" class="footer-link">💬 Chat Room</a>
+        <a href="#" class="footer-link">👤 Profile</a>
+    </div>
+
+    <div style="text-align:center;padding:20px;font-size:11px;opacity:0.6">
+        <p>📱 M-PESA: 0728 308602 | 💬 WhatsApp: 254728308602 | 💎 Premium: KES 200/week | KES 700/month</p>
+        <p>© 2024 ARBIMINE - FIND.ANALYZE.PROFIT.</p>
+    </div>
+
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>⭐ GO PREMIUM</h3>
+            <div style="margin:15px 0">
+                <p>📱 M-PESA: <strong>0728 308602</strong></p>
+                <p>💰 KES 200/week | KES 700/month</p>
+                <p>📝 Reference: Your phone number</p>
+            </div>
+            <button class="whatsapp-btn" onclick="sendWhatsApp()">📱 Confirm Payment on WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedPlan = 'weekly';
+        let selectedAmount = 200;
+        
+        function showProModal() {
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+        
+        function sendWhatsApp() {
+            let phone = prompt("Enter your phone number (254XXXXXXXXX):");
+            if(phone && phone.length === 12 && phone.startsWith('254')) {
+                let msg = `🚀 ARBIMINE PREMIUM REQUEST\n📱 Phone: ${phone}\n📅 Plan: ${selectedPlan.toUpperCase()}\n💰 Amount: KES ${selectedAmount}\n✅ Payment sent to 0728308602`;
+                window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
+                alert("✅ Request sent! Admin will activate premium.");
+                closeModal();
+            } else {
+                alert("❌ Invalid phone number. Use 254XXXXXXXXX");
+            }
+        }
+        
+        const exchanges = ['binance', 'kucoin', 'bybit', 'okx', 'gateio'];
+        const coins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT'];
+        
+        async function fetchPrice(ex, sym) {
+            try {
+                if(ex == 'binance') {
+                    let r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`);
+                    let d = await r.json();
+                    return parseFloat(d.price);
+                }
+                if(ex == 'kucoin') {
+                    let coin = sym.replace('USDT', '');
+                    let r = await fetch(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
+                    let d = await r.json();
+                    return parseFloat(d.data.price);
+                }
+                if(ex == 'bybit') {
+                    let r = await fetch(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${sym}`);
+                    let d = await r.json();
+                    return parseFloat(d.result.list[0].lastPrice);
+                }
+                if(ex == 'okx') {
+                    let r = await fetch(`https://www.okx.com/api/v5/market/ticker?instId=${sym}`);
+                    let d = await r.json();
+                    return parseFloat(d.data[0].last);
+                }
+                if(ex == 'gateio') {
+                    let r = await fetch(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${sym}`);
+                    let d = await r.json();
+                    return parseFloat(d[0].last);
+                }
+            } catch(e) {
+                return null;
+            }
+            return null;
+        }
+        
+        async function scan() {
+            let opportunities = [];
+            for(let sym of coins) {
+                let prices = {};
+                for(let ex of exchanges) {
+                    let p = await fetchPrice(ex, sym);
+                    if(p) prices[ex] = p;
+                }
+                let keys = Object.keys(prices);
+                if(keys.length >= 2) {
+                    let buy = keys.reduce((a,b) => prices[a] < prices[b] ? a : b);
+                    let sell = keys.reduce((a,b) => prices[a] > prices[b] ? a : b);
+                    let profit = ((prices[sell] - prices[buy]) / prices[buy]) * 100;
+                    if(profit > 0.3) {
+                        opportunities.push({
+                            symbol: sym,
+                            buyEx: buy.toUpperCase(),
+                            sellEx: sell.toUpperCase(),
+                            buyPrice: prices[buy].toFixed(2),
+                            sellPrice: prices[sell].toFixed(2),
+                            profit: profit.toFixed(1)
+                        });
+                    }
+                }
+            }
+            opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
+            document.getElementById('oppCount').innerText = opportunities.length;
+            let container = document.getElementById('opportunities');
+            
+            if(opportunities.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:50px">⏳ No arbitrage opportunities found...</div>';
+                return;
+            }
+            
+            let html = '';
+            for(let opp of opportunities) {
+                html += `<div class="card">
+                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center">
+                        <div><span class="exchange-buy">BUY ${opp.buyEx}</span> ➡️ <span class="exchange-sell">SELL ${opp.sellEx}</span></div>
+                        <div class="profit">${opp.profit}%</div>
+                    </div>
+                    <div style="margin-top:15px">
+                        <div>💰 ${opp.symbol.replace('USDT', '')}/USDT</div>
+                        <div style="font-size:12px;margin-top:8px">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+        
+        scan();
+        setInterval(scan, 15000);
+    </script>
+</body>
+</html>
