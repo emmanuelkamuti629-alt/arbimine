@@ -12,14 +12,14 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: #0a0a0a;
             min-height: 100vh;
             color: white;
         }
 
         .header {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
             padding: 20px;
             text-align: center;
             border-bottom: 1px solid #333;
@@ -28,13 +28,11 @@
         .header h1 {
             font-size: 32px;
             color: #ffd700;
-            letter-spacing: 2px;
         }
 
         .header p {
             font-size: 12px;
             color: #888;
-            margin-top: 5px;
         }
 
         .nav-bar {
@@ -46,20 +44,13 @@
             border-bottom: 1px solid #333;
             position: sticky;
             top: 0;
-            z-index: 100;
         }
 
         .nav-link {
             color: white;
             text-decoration: none;
-            font-size: 14px;
             padding: 8px 16px;
             border-radius: 20px;
-            transition: 0.3s;
-        }
-
-        .nav-link:hover {
-            background: #333;
         }
 
         .pro-nav {
@@ -69,7 +60,6 @@
         .exchange-section {
             padding: 15px;
             background: #111;
-            border-bottom: 1px solid #333;
         }
 
         .exchange-title {
@@ -105,13 +95,6 @@
 
         .upgrade-banner h3 {
             color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .upgrade-banner p {
-            font-size: 12px;
-            color: #ccc;
-            margin-bottom: 15px;
         }
 
         .pro-btn {
@@ -122,11 +105,7 @@
             color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .pro-btn:hover {
-            transform: scale(1.05);
+            margin-top: 10px;
         }
 
         .stats-bar {
@@ -167,28 +146,15 @@
             border-radius: 12px;
             padding: 15px;
             border: 1px solid #333;
-            transition: 0.3s;
-        }
-
-        .card:hover {
-            border-color: #f5576c;
-            transform: translateX(5px);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
             flex-wrap: wrap;
             gap: 10px;
-        }
-
-        .exchange-pair {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            margin-bottom: 10px;
         }
 
         .buy-badge {
@@ -196,7 +162,6 @@
             padding: 4px 10px;
             border-radius: 15px;
             font-size: 11px;
-            font-weight: bold;
         }
 
         .sell-badge {
@@ -204,12 +169,6 @@
             padding: 4px 10px;
             border-radius: 15px;
             font-size: 11px;
-            font-weight: bold;
-        }
-
-        .coin-name {
-            font-size: 16px;
-            font-weight: bold;
         }
 
         .profit {
@@ -222,17 +181,6 @@
             border-top: 1px solid #333;
             padding-top: 10px;
             margin-top: 10px;
-        }
-
-        .liquidity {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .timestamp {
-            font-size: 10px;
-            color: #666;
         }
 
         .instruction {
@@ -261,17 +209,12 @@
             max-width: 450px;
             width: 90%;
             border: 1px solid #333;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            text-align: center;
-            margin-bottom: 20px;
         }
 
         .modal-header h2 {
             color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .price-options {
@@ -289,40 +232,23 @@
             padding: 15px;
             text-align: center;
             cursor: pointer;
-            transition: 0.3s;
         }
 
         .price-card.selected {
             border-color: #ffd700;
-            background: rgba(255,215,0,0.1);
-        }
-
-        .price-period {
-            font-size: 14px;
-            color: #888;
         }
 
         .price-amount {
             font-size: 24px;
             font-weight: bold;
             color: #ffd700;
-            margin: 10px 0;
-        }
-
-        .price-save {
-            font-size: 10px;
-            color: #10b981;
-        }
-
-        .payment-methods {
-            margin: 20px 0;
         }
 
         .payment-method {
             background: #0a0a0a;
             padding: 15px;
             border-radius: 12px;
-            margin-bottom: 15px;
+            margin: 15px 0;
             border: 1px solid #333;
         }
 
@@ -332,26 +258,9 @@
         }
 
         .payment-number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #ffd700;
-            letter-spacing: 2px;
-        }
-
-        .network-badge {
-            display: inline-block;
-            background: #f5576c;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 10px;
-            margin: 5px 0;
-        }
-
-        .contract-info {
-            font-size: 10px;
-            color: #888;
-            word-break: break-all;
-            margin: 5px 0;
         }
 
         .deposit-address {
@@ -362,23 +271,16 @@
             word-break: break-all;
             font-family: monospace;
             margin: 10px 0;
-            border: 1px solid #333;
         }
 
         .copy-btn {
             background: #333;
             border: none;
-            padding: 8px 15px;
+            padding: 8px;
             border-radius: 8px;
             color: white;
             cursor: pointer;
-            font-size: 11px;
             width: 100%;
-            margin-top: 5px;
-        }
-
-        .copy-btn:hover {
-            background: #555;
         }
 
         .whatsapp-btn {
@@ -408,7 +310,6 @@
             gap: 20px;
             flex-wrap: wrap;
             margin-top: 20px;
-            border-top: 1px solid #333;
         }
 
         .footer-link {
@@ -426,8 +327,6 @@
         @media (max-width: 600px) {
             .price-options { flex-direction: column; }
             .stats-bar { flex-direction: column; text-align: center; }
-            .payment-number { font-size: 16px; }
-            .deposit-address { font-size: 9px; }
         }
     </style>
 </head>
@@ -452,42 +351,25 @@
             <a href="#" class="exchange-btn">Bybit</a>
             <a href="#" class="exchange-btn">OKX</a>
             <a href="#" class="exchange-btn">Gate.io</a>
-            <a href="#" class="exchange-btn">Bitget</a>
-            <a href="#" class="exchange-btn">MEXC</a>
-            <a href="#" class="exchange-btn">BitMart</a>
         </div>
     </div>
 
     <div class="upgrade-banner">
         <h3>🔒 UPGRADE TO PRO</h3>
-        <p>Get your PRO Membership Today! Unlock >2% Profit Opportunities</p>
+        <p>Unlock >2% Profit Opportunities</p>
         <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
     </div>
 
     <div class="stats-bar">
-        <div class="stat">
-            <div class="stat-value" id="exchangeCount">10</div>
-            <div class="stat-label">EXCHANGES</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="coinCount">150+</div>
-            <div class="stat-label">COINS</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="oppCount">0</div>
-            <div class="stat-label">OPPORTUNITIES</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="premiumBadge">🆓 FREE</div>
-            <div class="stat-label">(0-2% profit)</div>
-        </div>
-        <div class="stat">
-            <button class="pro-btn" style="padding: 8px 20px;" onclick="refreshScan()">🔄 Refresh</button>
-        </div>
+        <div class="stat"><div class="stat-value">5</div><div class="stat-label">EXCHANGES</div></div>
+        <div class="stat"><div class="stat-value">150+</div><div class="stat-label">COINS</div></div>
+        <div class="stat"><div class="stat-value" id="oppCount">0</div><div class="stat-label">OPPORTUNITIES</div></div>
+        <div class="stat"><div class="stat-value">🆓</div><div class="stat-label">FREE MODE</div></div>
+        <div class="stat"><button class="pro-btn" style="padding: 8px 20px;" onclick="refreshScan()">🔄 Refresh</button></div>
     </div>
 
     <div id="opportunities" class="opportunities">
-        <div class="loading">⏳ Scanning 150+ coins across 10 exchanges...</div>
+        <div class="loading">⚡ Scanning 150+ coins...</div>
     </div>
 
     <div class="footer-nav">
@@ -495,93 +377,89 @@
         <a href="#" class="footer-link">⭐ GO PRO</a>
         <a href="#" class="footer-link">💬 Chat Room</a>
         <a href="#" class="footer-link">👤 Profile</a>
-        <a href="#" class="footer-link">📞 Support</a>
     </div>
 
     <div style="text-align: center; padding: 15px; font-size: 10px; color: #666;">
         <p>📱 Pochi La Biashara: 0728 308602 | ₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321</p>
-        <p>© 2025 ARBIMINE - FIND.ANALYZE.PROFIT.</p>
+        <p>© 2025 ARBIMINE</p>
     </div>
 
     <div id="upgradeModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <div class="modal-header">
-                <h2>⭐ UPGRADE TO PRO</h2>
-                <p style="font-size: 12px; color: #888;">Unlock >2% Profit Opportunities</p>
-            </div>
+            <div class="modal-header"><h2>⭐ UPGRADE TO PRO</h2></div>
 
             <div class="price-options">
                 <div class="price-card" onclick="selectPlan('weekly')" id="planWeekly">
-                    <div class="price-period">WEEKLY</div>
+                    <div>WEEKLY</div>
                     <div class="price-amount">KES 200</div>
-                    <div class="price-save">7 days access</div>
+                    <div>7 days</div>
                 </div>
                 <div class="price-card selected" onclick="selectPlan('monthly')" id="planMonthly">
-                    <div class="price-period">MONTHLY</div>
+                    <div>MONTHLY</div>
                     <div class="price-amount">KES 700</div>
-                    <div class="price-save">Save KES 100</div>
+                    <div>30 days</div>
                 </div>
             </div>
 
-            <div class="payment-methods">
-                <!-- Pochi La Biashara -->
-                <div class="payment-method">
-                    <h4>📱 POCHI LA BIASHARA</h4>
-                    <div class="payment-number">0728 308602</div>
-                    <p style="font-size: 11px; margin-top: 8px;">Send payment via M-PESA to this number</p>
-                    <p style="font-size: 11px;">Reference: <strong id="userPhoneRef">Your phone number</strong></p>
-                </div>
+            <div class="payment-method">
+                <h4>📱 POCHI LA BIASHARA</h4>
+                <div class="payment-number">0728 308602</div>
+                <p style="font-size: 11px; margin-top: 8px;">Reference: Your phone number</p>
+            </div>
 
-                <!-- USDT ERC20 Crypto -->
-                <div class="payment-method">
-                    <h4>₿ USDT (ERC20)</h4>
-                    <span class="network-badge">🟣 Ethereum ERC20 Network</span>
-                    <div class="deposit-address" id="cryptoAddress">
-                        0x583be7a1ead6c09e06ad3a68202b846241ce4321
-                    </div>
-                    <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy Address</button>
-                    <p style="font-size: 10px; margin-top: 8px; color: #888;">Send USDT (ERC20) only to this address</p>
-                    <p style="font-size: 10px; color: #ffd700;">⚠️ Send only USDT on ERC20 network</p>
-                </div>
+            <div class="payment-method">
+                <h4>₿ USDT (ERC20)</h4>
+                <div class="deposit-address" id="cryptoAddress">0x583be7a1ead6c09e06ad3a68202b846241ce4321</div>
+                <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy Address</button>
+                <p style="font-size: 10px; margin-top: 8px;">⚠️ Send only USDT on ERC20 network</p>
             </div>
 
             <button class="whatsapp-btn" onclick="sendWhatsApp()">📱 Confirm Payment on WhatsApp</button>
-            <p style="font-size: 10px; text-align: center; margin-top: 15px; color: #666;">
-                After payment, admin will activate your premium account within 5 minutes.
-            </p>
         </div>
     </div>
 
     <script>
-        let isPremium = localStorage.getItem('arbimine_premium') === 'true';
+        let isPremium = false;
         let selectedPlan = 'monthly';
-        let userPhone = localStorage.getItem('arbimine_user') || '254XXXXXXXXX';
-        
-        if (userPhone !== '254XXXXXXXXX') {
-            document.getElementById('userPhoneRef').innerText = userPhone;
-        }
+        let userPhone = '254XXXXXXXXX';
 
         function copyCryptoAddress() {
-            const address = document.getElementById('cryptoAddress').innerText;
+            let address = document.getElementById('cryptoAddress').innerText;
             navigator.clipboard.writeText(address);
-            alert('✅ Crypto address copied! Send USDT (ERC20) only.');
+            alert('✅ Address copied!');
         }
 
-        // Top 10 Exchanges
-        const exchanges = ['binance', 'kucoin', 'bybit', 'okx', 'gateio'];
-        
-        const exchangeNames = {
-            binance: 'Binance', kucoin: 'KuCoin', bybit: 'Bybit', okx: 'OKX', gateio: 'Gate.io'
-        };
+        function showUpgradeModal() {
+            document.getElementById('upgradeModal').style.display = 'flex';
+        }
 
-        // All coins
-        const allCoins = [
-            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT',
-            'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
-            'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'GAIBUSDT',
-            'LUNCUSDT', 'MLUSDT', 'COCAUSDT', 'ESPUSDT', 'LABUSDT'
-        ];
+        function closeModal() {
+            document.getElementById('upgradeModal').style.display = 'none';
+        }
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.getElementById('planWeekly').classList.remove('selected');
+            document.getElementById('planMonthly').classList.remove('selected');
+            if (plan === 'weekly') {
+                document.getElementById('planWeekly').classList.add('selected');
+            } else {
+                document.getElementById('planMonthly').classList.add('selected');
+            }
+        }
+
+        function sendWhatsApp() {
+            let amount = selectedPlan === 'weekly' ? '200' : '700';
+            let msg = `🚀 ARBIMINE PREMIUM REQUEST\n\nPhone: ${userPhone}\nPlan: ${selectedPlan.toUpperCase()}\nAmount: KES ${amount}\n\nPayment sent to:\n📱 Pochi La Biashara: 0728 308602\n₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321`;
+            window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
+            alert("✅ Request sent! Admin will activate premium.");
+            closeModal();
+        }
+
+        const exchanges = ['binance', 'kucoin', 'bybit', 'okx', 'gateio'];
+        const exchangeNames = { binance: 'Binance', kucoin: 'KuCoin', bybit: 'Bybit', okx: 'OKX', gateio: 'Gate.io' };
+        const allCoins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT'];
 
         async function fetchPrice(exchange, symbol) {
             try {
@@ -600,16 +478,6 @@
                     let r = await fetch(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
                     let d = await r.json();
                     return d.result?.list[0]?.lastPrice ? parseFloat(d.result.list[0].lastPrice) : null;
-                }
-                if (exchange === 'okx') {
-                    let r = await fetch(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}`);
-                    let d = await r.json();
-                    return d.data?.[0]?.last ? parseFloat(d.data[0].last) : null;
-                }
-                if (exchange === 'gateio') {
-                    let r = await fetch(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`);
-                    let d = await r.json();
-                    return d[0]?.last ? parseFloat(d[0].last) : null;
                 }
             } catch(e) { return null; }
             return null;
@@ -643,85 +511,27 @@
 
         async function refreshScan() {
             let container = document.getElementById('opportunities');
-            container.innerHTML = '<div class="loading">⚡ Scanning 150+ coins across 10 exchanges...</div>';
-            
+            container.innerHTML = '<div class="loading">⚡ Scanning...</div>';
             let results = await Promise.all(allCoins.map(coin => scanCoin(coin)));
             let opportunities = results.filter(r => r !== null);
             opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
-            
             document.getElementById('oppCount').innerText = opportunities.length;
             
             if (opportunities.length === 0) {
-                container.innerHTML = '<div class="loading">⏳ No arbitrage opportunities found at this moment...</div>';
+                container.innerHTML = '<div class="loading">⏳ No opportunities found</div>';
                 return;
             }
             
             let html = '';
-            let shown = 0;
             for (let opp of opportunities) {
-                let isPremiumOnly = parseFloat(opp.profit) > 2;
-                if (isPremiumOnly && !isPremium) continue;
-                shown++;
-                html += `
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="exchange-pair">
-                                <span class="buy-badge">BUY ${opp.buyEx}</span>
-                                <span>➡️</span>
-                                <span class="sell-badge">SELL ${opp.sellEx}</span>
-                            </div>
-                            <div class="coin-name">${opp.symbol}/USDT</div>
-                            <div class="profit">${opp.profit}%</div>
-                        </div>
-                        <div class="card-details">
-                            <div class="liquidity">💧 Liquidity: $${opp.liquidity}</div>
-                            <div class="timestamp">🕐 Last Verified now</div>
-                            <div class="instruction">💡 Buy on ${opp.buyEx} @ $${opp.buyPrice} → Sell on ${opp.sellEx} @ $${opp.sellPrice}</div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            if (shown === 0 && opportunities.length > 0) {
-                let premiumCount = opportunities.filter(o => parseFloat(o.profit) > 2).length;
-                html = `
-                    <div class="card" style="text-align: center; padding: 30px;">
-                        <div style="font-size: 48px;">🔒</div>
-                        <h3 style="margin: 15px 0;">Upgrade to PRO to Discover Profit Opportunities Above 2%</h3>
-                        <p style="margin-bottom: 15px;">${premiumCount} opportunities with >2% profit available!</p>
-                        <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
-                    </div>
-                `;
+                if (parseFloat(opp.profit) > 2 && !isPremium) continue;
+                html += `<div class="card"><div class="card-header"><div class="exchange-pair"><span class="buy-badge">BUY ${opp.buyEx}</span> ➡️ <span class="sell-badge">SELL ${opp.sellEx}</span></div><div class="profit">${opp.profit}%</div></div><div class="card-details"><div>💰 ${opp.symbol}/USDT</div><div class="instruction">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div></div></div>`;
             }
             container.innerHTML = html;
         }
 
-        function showUpgradeModal() {
-            document.getElementById('upgradeModal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('upgradeModal').style.display = 'none';
-        }
-
-        function selectPlan(plan) {
-            selectedPlan = plan;
-            document.getElementById('planWeekly').classList.remove('selected');
-            document.getElementById('planMonthly').classList.remove('selected');
-            document.getElementById('plan' + plan.charAt(0).toUpperCase() + plan.slice(1)).classList.add('selected');
-        }
-
-        function sendWhatsApp() {
-            let amount = selectedPlan === 'weekly' ? '200' : '700';
-            let msg = `🚀 ARBIMINE PREMIUM REQUEST\n\nPhone: ${userPhone}\nPlan: ${selectedPlan.toUpperCase()}\nAmount: KES ${amount}\n\nPayment sent to:\n📱 Pochi La Biashara: 0728 308602\n₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321\n\nPlease activate my premium account.`;
-            window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
-            alert("✅ Request sent! Admin will activate premium after payment confirmation.");
-            closeModal();
-        }
-
-        // Initial scan
         refreshScan();
         setInterval(refreshScan, 30000);
     </script>
 </body>
-                </html>
+</html>
