@@ -6,218 +6,398 @@
     <title>ARBIMINE – Verified Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/ccxt@4.2.0/dist/ccxt.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --gold: #FFD700;
-            --gold-gradient: linear-gradient(135deg, #FFD700, #B8860B);
+            --gold-gradient: linear-gradient(135deg, #FFD700, #B8860B, #BF9B30);
             --dark-bg: #05070a;
-            --card-bg: #111420;
+            --form-bg: #121521;
+            --card-glass: rgba(22, 26, 46, 0.7);
             --green: #00ff88;
-            --text-gray: #888ba0;
+            --text-muted: #888ba0;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: var(--dark-bg); color: white; min-height: 100vh; }
+        body { background-color: var(--dark-bg); color: white; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- LOGIN PAGE --- */
-        #loginPage { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .auth-card { display: flex; width: 100%; max-width: 950px; height: 580px; background: #0f111a; border-radius: 32px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
-        .visual-side { flex: 1.1; background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&q=80'); background-size: cover; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .form-side { flex: 0.9; padding: 50px; background: #121521; display: flex; flex-direction: column; justify-content: center; }
-        .logo-svg { width: 280px; margin-bottom: 10px; }
-        .input-group { position: relative; margin-bottom: 15px; }
-        .input-group i { position: absolute; left: 15px; top: 18px; color: var(--gold); width: 18px; }
-        .input-group input { width: 100%; padding: 18px 18px 18px 48px; background: #0a0c14; border: 1px solid #2a2d3e; border-radius: 12px; color: white; font-size: 15px; transition: 0.3s; }
-        .input-group input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 15px rgba(255,215,0,0.1); }
-        .btn-gold { background: var(--gold-gradient); border: none; padding: 18px; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        /* --- LOGIN PAGE (IMAGE RECONSTRUCTION) --- */
+        #loginPage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #111420 0%, #05070a 100%);
+            padding: 20px;
+        }
 
-        /* --- DASHBOARD --- */
-        #dashboard { display: none; }
-        .dash-header { padding: 20px 25px; background: #0f111a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232635; position: sticky; top: 0; z-index: 100; }
-        .status-strip { background: #0a0c14; padding: 12px 25px; font-size: 12px; color: var(--text-gray); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1a1d2e; }
-        .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse-anim 2s infinite; }
-        
-        .main-container { padding: 20px; max-width: 800px; margin: 0 auto; }
-        .opp-card { background: var(--card-bg); border-radius: 20px; padding: 25px; margin-bottom: 20px; border: 1px solid #232635; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
-        .opp-card.verified { border-color: var(--green); background: rgba(0, 255, 136, 0.03); }
-        .v-badge { position: absolute; top: 0; right: 0; font-size: 10px; padding: 5px 12px; border-bottom-left-radius: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: #1a1d2e; color: #555; }
-        .v-badge.active { background: var(--green); color: #000; }
+        .auth-container {
+            display: flex;
+            width: 100%;
+            max-width: 980px;
+            height: 620px;
+            background: #0f111a;
+            border-radius: 32px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+        }
 
-        .coin-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .net-profit { font-size: 30px; font-weight: 900; color: var(--green); }
-        .price-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .fee-note { font-size: 10px; color: #555; margin-top: 5px; }
+        /* Left Side: Visual Branding */
+        .auth-visual {
+            flex: 1.1;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+            border-right: 1px solid rgba(255,255,255,0.03);
+        }
 
-        @keyframes pulse-anim { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        .logo-main { width: 300px; filter: drop-shadow(0 0 20px rgba(255,215,0,0.3)); }
+        .tagline { margin-top: 15px; letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 800; opacity: 0.9; }
+
+        /* Right Side: Form Side */
+        .auth-form-side {
+            flex: 0.9;
+            padding: 60px 50px;
+            background: #121521;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-header { text-align: center; margin-bottom: 35px; }
+        .auth-header h2 { font-size: 32px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+        .auth-header p { color: var(--text-muted); font-size: 14px; }
+
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--gold); width: 18px; }
+        .input-group input {
+            width: 100%;
+            padding: 18px 16px 18px 48px;
+            background: #0a0c14;
+            border: 1px solid #2a2d3e;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        .input-group input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,215,0,0.1); outline: none; }
+
+        .btn-prime {
+            width: 100%;
+            padding: 20px;
+            background: var(--gold-gradient);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-weight: 900;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        .btn-prime:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(218, 165, 32, 0.4); }
+
+        .auth-footer { text-align: center; margin-top: 30px; }
+        .auth-footer .divider { color: var(--text-muted); font-size: 12px; margin-bottom: 25px; position: relative; display: block; }
+        .auth-footer .divider::before, .auth-footer .divider::after {
+            content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: rgba(255,255,255,0.05);
+        }
+        .auth-footer .divider::before { left: 0; } .auth-footer .divider::after { right: 0; }
+        .auth-footer a { display: block; color: var(--gold); text-decoration: none; font-size: 14px; margin-bottom: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .auth-footer a:hover { opacity: 0.8; }
+
+        /* --- DASHBOARD SECTION --- */
+        #dashboard { display: none; padding-bottom: 80px; }
+        .dash-header {
+            padding: 20px 25px;
+            background: #0f111a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #232635;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .tier-pill { background: var(--gold); color: #000; padding: 5px 15px; border-radius: 50px; font-size: 11px; font-weight: 900; }
+
+        .main-content { padding: 25px; max-width: 800px; margin: 0 auto; }
+        .status-line { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 12px; margin-bottom: 20px; }
+        .pulse { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 10px #00ff88; animation: pulse-anim 2s infinite; }
+
+        /* Opportunity Cards */
+        .opp-card {
+            background: var(--card-glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            will-change: transform, opacity;
+            position: relative;
+        }
+        .opp-card:hover { transform: scale(1.02) translateY(-5px); border-color: var(--gold); background: rgba(22, 26, 46, 0.9); }
+        .opp-card.removing { opacity: 0; transform: scale(0.9) translateY(20px); pointer-events: none; }
+
+        .card-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .coin-name { font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #fff; }
+        .profit-percent { font-size: 30px; font-weight: 900; color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.2); }
+        .price-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .ex-tag { color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
+        .ex-price { font-size: 16px; font-weight: 600; color: var(--gold); }
+
+        /* Navigation Menu */
+        .nav-menu {
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(15, 17, 26, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-top: 1px solid #232635; z-index: 1000;
+        }
+        .nav-link { color: var(--text-muted); text-decoration: none; font-size: 12px; text-align: center; cursor: pointer; }
+        .nav-link.active { color: var(--gold); font-weight: 600; }
+        .nav-link span { display: block; margin-top: 5px; }
+
+        /* Skeleton States */
+        .skeleton { height: 140px; background: #161a2e; border-radius: 20px; margin-bottom: 20px; animation: shine 1.5s infinite; }
+        @keyframes shine { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        @keyframes pulse-anim { 0% { opacity: 0.5; } 70% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        @media (max-width: 800px) {
+            .auth-container { flex-direction: column; height: auto; border-radius: 0; }
+            .auth-visual { padding: 40px 20px; min-height: 250px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
+            .auth-form-side { padding: 40px 25px; }
+            .logo-main { width: 220px; }
+        }
     </style>
 </head>
 <body>
 
     <div id="loginPage">
-        <div class="auth-card">
-            <div class="visual-side">
-                <svg class="logo-svg" viewBox="0 0 400 180">
-                    <path d="M120 140 L180 40 L240 140" fill="none" stroke="white" stroke-width="12" stroke-linecap="round"/>
-                    <path d="M140 120 Q190 70 260 60" fill="none" stroke="#FFD700" stroke-width="10" stroke-linecap="round"/>
-                    <text x="65" y="170" font-family="Arial" font-size="48" font-weight="900" fill="white">ARBIMINE</text>
+        <div class="auth-container">
+            <div class="auth-visual">
+                <svg class="logo-main" viewBox="0 0 400 200">
+                    <defs>
+                        <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FFD700" />
+                            <stop offset="100%" style="stop-color:#BF9B30" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M120 150 L180 40 L240 150" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M140 130 Q190 70 260 60" fill="none" stroke="url(#mainGrad)" stroke-width="10" stroke-linecap="round"/>
+                    <path d="M250 50 L270 60 L255 75" fill="url(#mainGrad)"/>
+                    <text x="60" y="190" font-family="Arial" font-size="52" font-weight="900" fill="#FFFFFF">ARBIMINE</text>
                 </svg>
-                <div style="color:var(--gold); letter-spacing:4px; font-size:11px; font-weight:bold">FIND · ANALYZE · PROFIT</div>
+                <div class="tagline">FIND. ANALYZE. PROFIT.</div>
             </div>
-            <div class="form-side">
-                <h2 style="margin-bottom:10px">Secure Terminal</h2>
-                <p style="color:var(--text-gray); font-size:14px; margin-bottom:30px">Connect to 10 Global Exchanges</p>
-                <div class="input-group"><i data-lucide="phone"></i><input type="tel" id="loginPhone" placeholder="Phone Number"></div>
-                <div class="input-group"><i data-lucide="lock"></i><input type="password" id="loginPass" placeholder="Password"></div>
-                <button class="btn-gold" id="startBtn">Unlock Scanner</button>
+
+            <div class="auth-form-side">
+                <div class="auth-header">
+                    <h2>Welcome Back!</h2>
+                    <p>Log in to continue to your account</p>
+                </div>
+
+                <div class="input-group">
+                    <i data-lucide="phone"></i>
+                    <input type="tel" id="pNumber" placeholder="Phone Number">
+                </div>
+
+                <div class="input-group">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="pLock" placeholder="Password">
+                </div>
+
+                <button class="btn-prime" id="loginSubmit">LOG IN</button>
+
+                <div class="auth-footer">
+                    <span class="divider">or</span>
+                    <a onclick="alert('LocalSignup Only')"><i data-lucide="user-plus" style="width:14px; vertical-align:middle; margin-right:5px"></i> Create Account</a>
+                    <a onclick="alert('Contact Support')"><i data-lucide="alert-triangle" style="width:14px; vertical-align:middle; margin-right:5px"></i> Forgot Password?</a>
+                </div>
+                
+                <p style="color:#333; font-size: 10px; text-align: center; margin-top: 25px;">© 2025 Arbimine. Multi-Exchange Core Engine.</p>
             </div>
         </div>
     </div>
 
     <div id="dashboard">
         <header class="dash-header">
-            <h2 style="color:var(--gold); letter-spacing:1px">⚡ ARBIMINE</h2>
-            <div style="background:var(--gold); color:black; padding:5px 15px; border-radius:50px; font-size:10px; font-weight:900">PRO MODE</div>
+            <h2 style="color:var(--gold); font-weight:900">⚡ ARBIMINE</h2>
+            <div class="tier-pill">PRO ACCESS</div>
         </header>
-        <div class="status-strip">
-            <div class="pulse"></div>
-            <span id="loadMsg">Connecting to UltraCore Proxy...</span>
-        </div>
-        <div class="main-container" id="oppDisplay">
+
+        <main class="main-content">
+            <div class="status-line">
+                <div class="pulse"></div>
+                <span id="marketMsg">Discovering Liquidity...</span>
             </div>
+
+            <div id="scannerContainer">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+            </div>
+        </main>
+
+        <nav class="nav-menu">
+            <div class="nav-link active" onclick="location.reload()"><i data-lucide="bar-chart-3"></i><span>Scanner</span></div>
+            <div class="nav-link"><i data-lucide="refresh-cw"></i><span>Verified</span></div>
+            <div class="nav-link"><i data-lucide="shield-check"></i><span>Security</span></div>
+            <div class="nav-link"><i data-lucide="settings"></i><span>Settings</span></div>
+        </nav>
     </div>
 
     <script>
         lucide.createIcons();
 
-        // 1. ADVANCED CONFIGURATION
-        const CONFIG = {
-            exchanges: ['binance', 'kucoin', 'bybit', 'okx', 'gateio', 'mexc', 'bitget', 'kraken', 'htx', 'huobi'],
-            // PRO TIP FIX: Replace this with your personal Railway/Render proxy URL
+        // 1. Scanner Configuration
+        const ENGINE_CONFIG = {
+            // PRO TIP Fix: Swap this with your personal Railway or Render proxy URL
             proxy: "https://cors-anywhere.herokuapp.com/", 
-            symbols: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'ADA/USDT', 'BNB/USDT'],
-            minProfit: 0.8, // 0.8% minimum after fees
-            feeRate: 0.002, // 0.2% total estimated fee (Buy + Sell + Gas)
-            verifyDelay: 120000 // 2 minutes
+            symbols: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'BNB/USDT'],
+            minProfit: 0.1 // Shows divergences over 0.1% for efficiency testing
         };
 
-        const exInstances = CONFIG.exchanges.map(id => new ccxt[id]({ proxyUrl: CONFIG.proxy, timeout: 15000 }));
-        let liveTracker = {};
+        const exchanges = {
+            binance: new ccxt.binance({ proxyUrl: ENGINE_CONFIG.proxy }),
+            kucoin: new ccxt.kucoin({ proxyUrl: ENGINE_CONFIG.proxy })
+        };
 
-        document.getElementById('startBtn').onclick = () => {
-            const p = document.getElementById('loginPhone').value;
+        let currentOpps = {}; // Store known opportunities
+
+        // 2. Auth Flow
+        document.getElementById('loginSubmit').onclick = function() {
+            const p = document.getElementById('pNumber').value;
             if(p.length >= 8) {
                 document.getElementById('loginPage').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                runEngine();
-                setInterval(runEngine, 45000); 
+                runScanner();
+            } else {
+                alert("Enter valid phone");
             }
         };
 
-        // 2. THE SEQUENTIAL SCANNER (Throttled for Efficiency)
-        async function runEngine() {
-            const msg = document.getElementById('loadMsg');
-            msg.innerText = "Scanning exchanges sequentially to prevent IP blocks...";
-            
-            const results = {};
+        // 3. Multi-Exchange Scanner Engine
+        async function runScanner() {
+            const container = document.getElementById('scannerContainer');
+            const msg = document.getElementById('marketMsg');
 
-            for (const ex of exInstances) {
+            async function scan() {
+                msg.innerText = "Syncing Binance & KuCoin Data...";
+                
                 try {
-                    // Small throttle delay between exchanges
-                    await new Promise(r => setTimeout(r, 300));
-                    results[ex.id] = await ex.fetchTickers(CONFIG.symbols);
-                } catch (e) { console.warn(`Skipping ${ex.id}`); }
+                    const [binTickers, kuTickers] = await Promise.all([
+                        exchanges.binance.fetchTickers(ENGINE_CONFIG.symbols),
+                        exchanges.kucoin.fetchTickers(ENGINE_CONFIG.symbols)
+                    ]);
+
+                    const foundPairs = new Set();
+
+                    ENGINE_CONFIG.symbols.forEach(symbol => {
+                        const b = binTickers[symbol].last;
+                        const k = kuTickers[symbol].last;
+                        const spread = Math.abs(b - k);
+                        const pct = ((spread / Math.min(b, k)) * 100).toFixed(2);
+
+                        if(pct > ENGINE_CONFIG.minProfit) {
+                            foundPairs.add(symbol); // Track that it's currently live
+                            
+                            // If it's new, add it
+                            if (!currentOpps[symbol]) {
+                                currentOpps[symbol] = true;
+                                createOppCard(symbol, pct, b, k);
+                            } else {
+                                // If already exists, update its values
+                                updateOppCard(symbol, pct, b, k);
+                            }
+                        }
+                    });
+
+                    // efficiency: Check if stored opportunities are still live
+                    Object.keys(currentOpps).forEach(symbol => {
+                        if (!foundPairs.has(symbol)) {
+                            removeOppCard(symbol);
+                        }
+                    });
+
+                    msg.innerText = `Markets Synchronized • ${new Date().toLocaleTimeString()}`;
+                    const skeletons = container.querySelectorAll('.skeleton');
+                    if (skeletons.length > 0) skeletons.forEach(s => s.remove());
+
+                } catch (e) {
+                    console.error(e);
+                    msg.innerText = "Error syncing markets. Retrying in 20s...";
+                    msg.style.color = "#ff4444";
+                }
             }
 
-            CONFIG.symbols.forEach(sym => {
-                let pData = [];
-                CONFIG.exchanges.forEach(id => {
-                    if (results[id] && results[id][sym]) {
-                        pData.push({ id, last: results[id][sym].last });
-                    }
-                });
-
-                if (pData.length > 1) {
-                    pData.sort((a, b) => a.last - b.last);
-                    const buy = pData[0];
-                    const sell = pData[pData.length - 1];
-                    
-                    // Fee-Adjusted Profit Calculation
-                    const rawSpread = ((sell.last - buy.last) / buy.last);
-                    const netProfit = ((rawSpread - CONFIG.feeRate) * 100).toFixed(2);
-
-                    if (netProfit > CONFIG.minProfit) {
-                        const key = `${sym}-${buy.id}-${sell.id}`;
-                        if (!liveTracker[key]) {
-                            liveTracker[key] = {
-                                sym, buy: buy.id, sell: sell.id,
-                                bP: buy.last, sP: sell.last,
-                                profit: netProfit,
-                                status: 'WAITING',
-                                born: Date.now()
-                            };
-                            queueVerification(key);
-                        }
-                    }
-                }
-            });
-            updateUI();
+            scan();
+            setInterval(scan, 20000); // 20s interval for API safety
         }
 
-        // 3. 2-MINUTE VERIFICATION LOGIC
-        function queueVerification(key) {
-            setTimeout(async () => {
-                const item = liveTracker[key];
-                if (!item) return;
-
-                try {
-                    const bTicker = await new ccxt[item.buy]({proxyUrl: CONFIG.proxy}).fetchTicker(item.sym);
-                    const sTicker = await new ccxt[item.sell]({proxyUrl: CONFIG.proxy}).fetchTicker(item.sym);
-                    
-                    const spread = ((sTicker.last - bTicker.last) / bTicker.last);
-                    const finalProfit = ((spread - CONFIG.feeRate) * 100).toFixed(2);
-
-                    if (finalProfit > CONFIG.minProfit) {
-                        item.status = 'VERIFIED';
-                        item.profit = finalProfit;
-                        item.bP = bTicker.last;
-                        item.sP = sTicker.last;
-                    } else {
-                        delete liveTracker[key]; // Spread faded, remove from view
-                    }
-                    updateUI();
-                } catch (e) { delete liveTracker[key]; }
-            }, CONFIG.verifyDelay);
-        }
-
-        function updateUI() {
-            const display = document.getElementById('oppDisplay');
-            const sorted = Object.values(liveTracker).sort((a,b) => b.profit - a.profit);
+        // 4. Dom Management (Efficiency Focus)
+        function createOppCard(sym, pct, bP, kP) {
+            const container = document.getElementById('scannerContainer');
+            const cardId = `opp-${sym.replace('/','-')}`;
             
-            display.innerHTML = sorted.map(o => `
-                <div class="opp-card ${o.status === 'VERIFIED' ? 'verified' : ''}">
-                    <div class="v-badge ${o.status === 'VERIFIED' ? 'active' : ''}">
-                        ${o.status === 'VERIFIED' ? 'Verified Opportunity' : 'Confirming Liquidity...'}
+            const cardHtml = `
+                <div class="opp-card" id="${cardId}">
+                    <div class="card-flex">
+                        <div class="coin-name">${sym.split('/')[0]} <span style="color:var(--text-muted); font-size:14px">/ USDT</span></div>
+                        <div class="profit-percent">${pct}%</div>
                     </div>
-                    <div class="coin-row">
-                        <div style="font-weight:800; font-size:20px; letter-spacing:1px">${o.sym.split('/')[0]}</div>
-                        <div class="net-profit">${o.profit}%</div>
-                    </div>
-                    <div class="price-info">
+                    <div class="price-details">
                         <div>
-                            <div style="font-size:10px; color:#555">BUY: ${o.buy.toUpperCase()}</div>
-                            <div style="color:var(--gold); font-weight:bold">$${o.bP.toLocaleString()}</div>
+                            <div class="ex-tag">BUY: BINANCE</div>
+                            <div class="ex-price">$${bP.toLocaleString()}</div>
                         </div>
                         <div style="text-align:right">
-                            <div style="font-size:10px; color:#555">SELL: ${o.sell.toUpperCase()}</div>
-                            <div style="color:var(--gold); font-weight:bold">$${o.sP.toLocaleString()}</div>
+                            <div class="ex-tag">SELL: KUCOIN</div>
+                            <div class="ex-price">$${kP.toLocaleString()}</div>
                         </div>
                     </div>
-                    <div class="fee-note">Adjusted for ~0.2% exchange fees & slippage</div>
                 </div>
-            `).join('');
+            `;
+            
+            // Insert at top
+            container.insertAdjacentHTML('afterbegin', cardHtml);
+        }
 
-            document.getElementById('loadMsg').innerText = `Active Scans: ${sorted.length} | Top Spread: ${sorted[0]?.profit || 0}%`;
+        function updateOppCard(sym, pct, bP, kP) {
+            const cardId = `opp-${sym.replace('/','-')}`;
+            const card = document.getElementById(cardId);
+            if (!card) return;
+
+            card.querySelector('.profit-percent').innerText = `${pct}%`;
+            card.querySelectorAll('.ex-price')[0].innerText = `$${bP.toLocaleString()}`;
+            card.querySelectorAll('.ex-price')[1].innerText = `$${kP.toLocaleString()}`;
+        }
+
+        function removeOppCard(sym) {
+            const cardId = `opp-${sym.replace('/','-')}`;
+            const card = document.getElementById(cardId);
+            if (!card) return;
+
+            // Add removing class for animation
+            card.classList.add('removing');
+            
+            // Remove from stored object immediately
+            delete currentOpps[sym];
+
+            // efficiency: Wait for animation, then remove from DOM
+            setTimeout(() => {
+                if (card) card.remove();
+            }, 400); 
         }
     </script>
 </body>
