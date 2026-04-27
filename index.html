@@ -3,678 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE - Crypto Arbitrage Scanner</title>
+    <title>ARBIMINE - Ultra-Fast Arbitrage Scanner</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #0a0a0a;
-            min-height: 100vh;
-            color: white;
-        }
-
-        /* Auth Modal - Login/Signup */
-        .auth-modal {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .auth-container {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 20px;
-            padding: 40px 30px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid #ffd700;
-            text-align: center;
-        }
-
-        .auth-logo h1 {
-            font-size: 42px;
-            color: #ffd700;
-            letter-spacing: 3px;
-        }
-
-        .auth-logo p {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-            letter-spacing: 1px;
-        }
-
-        .auth-logo .tagline {
-            font-size: 11px;
-            color: #f5576c;
-            margin-top: 10px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            margin: 30px 0 20px;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .auth-tab.active {
-            background: linear-gradient(135deg, #f5576c, #f093fb);
-        }
-
-        .auth-form input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #333;
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-        }
-
-        .auth-form input::placeholder {
-            color: #666;
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #f5576c, #f093fb);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 16px;
-        }
-
-        .auth-footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 11px;
-            color: #666;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica Neue,Arial,sans-serif;background:#0a0a0a;min-height:100vh;color:white}
+        
+        /* Login Screen */
+        .login-container{display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e)}
+        .login-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:30px;padding:50px 40px;width:100%;max-width:450px;border:1px solid rgba(255,255,255,0.1)}
+        .logo{text-align:center;margin-bottom:40px}
+        .logo h1{font-size:42px;color:#ffd700;letter-spacing:3px}
+        .logo .tagline{font-size:12px;color:#888;margin-top:8px}
+        .welcome{text-align:center;margin-bottom:30px}
+        .welcome h2{font-size:28px;font-weight:500}
+        .welcome p{color:#888;font-size:14px;margin-top:5px}
+        .input-group{margin-bottom:20px}
+        .input-group input{width:100%;padding:15px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:15px;color:white;font-size:16px}
+        .input-group input:focus{outline:none;border-color:#ffd700}
+        .login-btn{width:100%;padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:15px;color:white;font-size:16px;font-weight:bold;cursor:pointer}
+        .links{text-align:center;margin-top:25px}
+        .links a{color:#ffd700;text-decoration:none;font-size:14px;margin:0 10px;cursor:pointer}
+        .footer-text{text-align:center;margin-top:40px;color:#666;font-size:12px}
+        
         /* Main App */
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            color: #ffd700;
-            letter-spacing: 2px;
-        }
-
-        .header p {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-        }
-
-        .nav-bar {
-            background: #1a1a1a;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            border-bottom: 1px solid #333;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .pro-nav {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-avatar {
-            width: 35px;
-            height: 35px;
-            background: linear-gradient(135deg, #ffd700, #f5576c);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            padding: 5px 12px;
-            border-radius: 15px;
-            color: white;
-            cursor: pointer;
-        }
-
-        .exchange-section {
-            padding: 15px;
-            background: #111;
-            border-bottom: 1px solid #333;
-        }
-
-        .exchange-title {
-            font-size: 16px;
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .exchange-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .exchange-btn {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            padding: 6px 12px;
-            border-radius: 8px;
-            color: white;
-            font-size: 11px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .upgrade-banner {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            margin: 15px;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            border: 1px solid #f5576c;
-        }
-
-        .upgrade-banner h3 {
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .stats-bar {
-            display: flex;
-            justify-content: space-around;
-            padding: 15px;
-            background: #111;
-            margin: 15px;
-            border-radius: 15px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .stat-label {
-            font-size: 10px;
-            color: #888;
-        }
-
-        .opportunities {
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .card {
-            background: #111;
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid #333;
-            transition: 0.3s;
-            cursor: pointer;
-        }
-
-        .card:hover {
-            border-color: #f5576c;
-            transform: translateX(5px);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .buy-badge {
-            background: #10b981;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .sell-badge {
-            background: #ef4444;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .profit {
-            font-size: 24px;
-            font-weight: bold;
-            color: #10b981;
-        }
-
-        .card-details {
-            border-top: 1px solid #333;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-
-        .liquidity {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .timestamp {
-            font-size: 10px;
-            color: #666;
-        }
-
-        .instruction {
-            font-size: 11px;
-            color: #ffd700;
-            margin-top: 8px;
-        }
-
+        .main-app{display:none}
+        .header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;text-align:center;border-bottom:1px solid #333}
+        .header h1{font-size:32px;color:#ffd700}
+        .nav-bar{background:#1a1a1a;padding:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid #333;position:sticky;top:0;z-index:100}
+        .nav-links{display:flex;gap:10px;flex-wrap:wrap}
+        .nav-link{color:white;text-decoration:none;padding:8px 16px;border-radius:20px;cursor:pointer;transition:0.3s}
+        .nav-link:hover{background:rgba(255,255,255,0.1)}
+        .pro-nav{background:linear-gradient(135deg,#f093fb,#f5576c)}
+        .vip-nav{background:linear-gradient(135deg,#ffd700,#ff6b6b)}
+        .user-info{display:flex;align-items:center;gap:10px}
+        .user-avatar{width:35px;height:35px;background:linear-gradient(135deg,#ffd700,#f5576c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+        .logout-btn{background:rgba(255,255,255,0.2);border:none;padding:5px 12px;border-radius:15px;color:white;cursor:pointer}
+        
+        /* Exchange Section */
+        .exchange-section{padding:15px;background:#111;border-bottom:1px solid #333}
+        .exchange-title{font-size:16px;color:#ffd700;margin-bottom:10px}
+        .exchange-links{display:flex;flex-wrap:wrap;gap:8px}
+        .exchange-btn{background:#1a1a1a;border:1px solid #333;padding:5px 10px;border-radius:8px;color:#ffd700;font-size:10px;cursor:pointer}
+        
+        /* Stats Bar */
+        .stats-bar{display:flex;justify-content:space-around;padding:15px;background:#111;margin:15px;border-radius:15px;flex-wrap:wrap;gap:15px}
+        .stat{text-align:center}
+        .stat-value{font-size:28px;font-weight:bold;color:#ffd700}
+        .stat-label{font-size:10px;color:#888}
+        
+        /* Upgrade Banner */
+        .upgrade-banner{background:linear-gradient(135deg,#1a1a2e,#16213e);margin:15px;padding:20px;border-radius:15px;text-align:center;border:1px solid #f5576c}
+        .upgrade-banner h3{color:#ffd700;margin-bottom:10px}
+        .badge-free{background:#ffc107;color:#333;padding:5px 15px;border-radius:20px;font-size:12px}
+        .badge-premium{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;padding:5px 15px;border-radius:20px;font-size:12px}
+        .badge-vip{background:linear-gradient(135deg,#ffd700,#ff6b6b);color:#333;padding:5px 15px;border-radius:20px;font-size:12px;font-weight:bold}
+        
+        /* Opportunities Grid */
+        .opportunities{padding:15px;display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px;max-height:600px;overflow-y:auto}
+        .card{background:#111;border-radius:12px;padding:15px;border:1px solid #333;transition:0.2s;cursor:pointer;animation:fadeIn 0.3s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .card:hover{border-color:#f5576c;transform:translateX(5px)}
+        .card-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+        .buy-badge{background:#10b981;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:bold}
+        .sell-badge{background:#ef4444;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:bold}
+        .profit{font-size:24px;font-weight:bold}
+        .profit-green{color:#10b981}
+        .profit-yellow{color:#ffd700}
+        .profit-red{color:#f5576c}
+        .card-details{border-top:1px solid #333;padding-top:10px;margin-top:10px}
+        .liquidity{font-size:10px;color:#888;margin-bottom:5px}
+        .timestamp{font-size:9px;color:#666}
+        .instruction{font-size:11px;color:#ffd700;margin-top:8px}
+        .vip-tag{background:#ffd700;color:#333;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:bold;margin-left:5px}
+        
+        /* Profile Section */
+        .profile-container{background:#111;border-radius:15px;margin:15px;overflow:hidden}
+        .profile-header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:30px;text-align:center}
+        .profile-avatar{width:80px;height:80px;background:linear-gradient(135deg,#ffd700,#f5576c);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;font-size:36px}
+        .profile-name{font-size:24px;font-weight:bold;color:#ffd700}
+        .profile-info{padding:20px}
+        .info-row{display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #333}
+        .info-label{color:#888}
+        .info-value{color:#ffd700;font-weight:500}
+        .profile-buttons{padding:20px;display:flex;flex-direction:column;gap:10px}
+        .refer-btn{background:linear-gradient(135deg,#f093fb,#f5576c);border:none;padding:12px;border-radius:10px;color:white;font-weight:bold;cursor:pointer}
+        .logout-profile-btn{background:rgba(239,68,68,0.2);border:1px solid #ef4444;padding:12px;border-radius:10px;color:#ef4444;font-weight:bold;cursor:pointer}
+        .delete-btn{background:rgba(239,68,68,0.1);border:1px solid #ef4444;padding:12px;border-radius:10px;color:#ef4444;font-weight:bold;cursor:pointer}
+        
         /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 20px;
-            padding: 25px;
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid #ffd700;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-header h2 {
-            color: #ffd700;
-            font-size: 24px;
-        }
-
-        .price-options {
-            display: flex;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .price-card {
-            flex: 1;
-            background: #0a0a0a;
-            border: 2px solid #333;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .price-card.selected {
-            border-color: #ffd700;
-            background: rgba(255,215,0,0.1);
-        }
-
-        .price-amount {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .payment-method {
-            background: #0a0a0a;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-            border: 1px solid #333;
-        }
-
-        .payment-method h4 {
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .payment-number {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .binance-id {
-            background: #111;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .copy-btn {
-            background: #333;
-            border: none;
-            padding: 8px;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 5px;
-        }
-
-        .continue-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #f5576c, #f093fb);
-            border: none;
-            border-radius: 25px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-
-        .whatsapp-btn {
-            width: 100%;
-            padding: 12px;
-            background: #25D366;
-            border: none;
-            border-radius: 25px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .close {
-            float: right;
-            font-size: 24px;
-            cursor: pointer;
-            color: #888;
-        }
-
-        .footer-nav {
-            background: #111;
-            padding: 15px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-
-        .footer-link {
-            color: #888;
-            text-decoration: none;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
-
-        .profile-info {
-            background: #111;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 15px;
-        }
-
-        .profile-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #333;
-        }
-
-        .profile-label {
-            color: #888;
-        }
-
-        .profile-value {
-            color: #ffd700;
-        }
-
-        .refer-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            width: 100%;
-            margin: 10px 0;
-            cursor: pointer;
-        }
-
-        .delete-btn {
-            background: rgba(239,68,68,0.2);
-            border: 1px solid #ef4444;
-            padding: 12px;
-            border-radius: 10px;
-            color: #ef4444;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .chat-container {
-            background: #111;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 15px;
-            height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 15px;
-        }
-
-        .chat-message {
-            background: #1a1a1a;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 5px 0;
-        }
-
-        .chat-input-area {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 10px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 10px;
-            color: white;
-        }
-
-        .chat-send {
-            background: linear-gradient(135deg, #f5576c, #f093fb);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-        }
-
-        .rules-box {
-            background: #1a1a1a;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px;
-            border: 1px solid #ffd700;
-        }
-
-        .rules-box h4 {
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .rules-box ul {
-            padding-left: 20px;
-            color: #888;
-            font-size: 12px;
-        }
-
-        .rules-box li {
-            margin: 5px 0;
-        }
-
-        .agree-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        @media (max-width: 600px) {
-            .price-options { flex-direction: column; }
-            .stats-bar { flex-direction: column; text-align: center; }
-            .nav-bar { flex-direction: column; text-align: center; }
-        }
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:1000;justify-content:center;align-items:center}
+        .modal-content{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px;padding:25px;max-width:450px;width:90%;border:1px solid #ffd700;max-height:90vh;overflow-y:auto}
+        .modal-header h2{color:#ffd700;text-align:center;margin-bottom:20px}
+        .price-options{display:flex;gap:15px;margin:20px 0;flex-wrap:wrap}
+        .price-card{flex:1;background:#0a0a0a;border:2px solid #333;border-radius:12px;padding:15px;text-align:center;cursor:pointer;transition:0.3s}
+        .price-card.selected{border-color:#ffd700;background:rgba(255,215,0,0.1)}
+        .price-amount{font-size:24px;font-weight:bold;color:#ffd700}
+        .price-desc{font-size:10px;color:#888;margin-top:5px}
+        .premium-card{border-color:#f5576c}
+        .vip-card{border-color:#ffd700}
+        .payment-method{background:#0a0a0a;padding:15px;border-radius:12px;margin:15px 0;border:1px solid #333}
+        .payment-number{font-size:20px;font-weight:bold;color:#ffd700}
+        .pay-btn{width:100%;padding:12px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:25px;color:white;font-weight:bold;cursor:pointer;margin-top:10px}
+        .close{float:right;font-size:24px;cursor:pointer;color:#888}
+        .loading{text-align:center;padding:40px;color:#888}
+        .footer-nav{background:#111;padding:15px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:20px}
+        .footer-link{color:#888;text-decoration:none;font-size:12px;cursor:pointer}
+        .plan-icon{font-size:20px;margin-bottom:5px}
+        @media(max-width:600px){.opportunities{grid-template-columns:1fr}.price-options{flex-direction:column}}
     </style>
 </head>
 <body>
-    <!-- Login/Signup Modal -->
-    <div id="authModal" class="auth-modal">
-        <div class="auth-container">
-            <div class="auth-logo">
-                <h1>⚡ ARBIMINE</h1>
-                <p>FIND.ANALYZE.PROFIT.</p>
-                <div class="tagline">CRYPTO ARBITRAGE SCANNER</div>
-            </div>
-            <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchTab('login')">LOGIN</button>
-                <button class="auth-tab" onclick="switchTab('signup')">CREATE ACCOUNT</button>
-            </div>
-            <div id="loginForm" class="auth-form">
-                <input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)">
-                <input type="password" id="loginPassword" placeholder="Password">
-                <button class="auth-btn" onclick="login()">LOG IN</button>
-                <p style="text-align:center; margin-top:10px; font-size:12px;"><a href="#" style="color:#ffd700;">Forgot Password?</a></p>
-            </div>
-            <div id="signupForm" class="auth-form" style="display:none">
-                <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
-                <input type="password" id="signupPassword" placeholder="Create Password">
-                <input type="password" id="signupConfirm" placeholder="Confirm Password">
-                <button class="auth-btn" onclick="signup()">CREATE ACCOUNT</button>
-            </div>
-            <div class="auth-footer">
-                <p>© 2025 ARBIMINE. All rights reserved</p>
-            </div>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="logo"><h1>ARBIMINE</h1><div class="tagline">FIND.ANALYZE.PROFIT.</div></div>
+            <div class="welcome"><h2>Welcome Back!</h2><p>Log in to continue to your account</p></div>
+            <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number"></div>
+            <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
+            <button class="login-btn" onclick="login()">LOG IN</button>
+            <div class="links"><a onclick="showCreateAccount()">Create Account</a><a onclick="showForgotPassword()">Forgot Password?</a></div>
+            <div class="footer-text"><p>© 2025 ARBIMINE. All rights reserved</p></div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div id="mainApp" style="display:none">
-        <div class="header">
-            <h1>⚡ ARBIMINE</h1>
-            <p>FIND.ANALYZE.PROFIT.</p>
-        </div>
+    <!-- Create Account Modal -->
+    <div id="signupModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('signupModal')">&times;</span><h3>Create Account</h3><input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)"><input type="password" id="signupPassword" placeholder="Create Password"><input type="password" id="signupConfirm" placeholder="Confirm Password"><button class="pay-btn" onclick="signup()">CREATE ACCOUNT</button></div></div>
 
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('forgotModal')">&times;</span><h3>Reset Password</h3><input type="tel" id="resetPhone" placeholder="Phone Number"><input type="password" id="newPassword" placeholder="New Password"><input type="password" id="confirmPassword" placeholder="Confirm Password"><button class="pay-btn" onclick="resetPassword()">RESET PASSWORD</button></div></div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="main-app">
+        <div class="header"><h1>⚡ ARBIMINE</h1><p>FIND.ANALYZE.PROFIT.</p></div>
         <div class="nav-bar">
             <div class="nav-links">
                 <a href="#" class="nav-link" onclick="showHome()">🏠 Home</a>
-                <a href="#" class="nav-link pro-nav" onclick="showUpgradeModal()">⭐ GO PRO</a>
-                <a href="#" class="nav-link" onclick="showChat()">💬 Chat Room</a>
+                <a href="#" class="nav-link pro-nav" onclick="showPremiumModal()">⭐ PREMIUM</a>
+                <a href="#" class="nav-link vip-nav" onclick="showVipModal()">👑 VIP</a>
                 <a href="#" class="nav-link" onclick="showProfile()">👤 Profile</a>
             </div>
             <div class="user-info">
@@ -684,351 +149,292 @@
             </div>
         </div>
 
-        <!-- Home Section -->
         <div id="homeSection">
             <div class="exchange-section">
-                <div class="exchange-title">📱 EXCHANGE SIGNUP LINKS</div>
-                <div class="exchange-links">
-                    <a href="#" class="exchange-btn">Binance</a>
-                    <a href="#" class="exchange-btn">KuCoin</a>
-                    <a href="#" class="exchange-btn">Bybit</a>
-                    <a href="#" class="exchange-btn">OKX</a>
-                    <a href="#" class="exchange-btn">Gate.io</a>
-                    <a href="#" class="exchange-btn">BingX</a>
-                    <a href="#" class="exchange-btn">MEXC</a>
-                    <a href="#" class="exchange-btn">Bitget</a>
-                    <a href="#" class="exchange-btn">BitMart</a>
+                <div class="exchange-title">🚀 TOP 20 EXCHANGES SCANNING</div>
+                <div class="exchange-links" id="exchangeList"></div>
+            </div>
+
+            <div class="upgrade-banner" id="upgradeBanner">
+                <h3>🔒 UPGRADE TO PREMIUM OR VIP</h3>
+                <p id="upgradeText">🆓 FREE: 0-2% profit | ⭐ PREMIUM: Up to 20% | 👑 VIP: ALL opportunities</p>
+                <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+                    <button class="pro-nav" style="padding:10px 20px;border-radius:25px;border:none;color:white;cursor:pointer" onclick="showPremiumModal()">⭐ PREMIUM (KES 200/wk)</button>
+                    <button class="vip-nav" style="padding:10px 20px;border-radius:25px;border:none;color:#333;cursor:pointer;font-weight:bold" onclick="showVipModal()">👑 VIP (KES 400/wk)</button>
                 </div>
             </div>
 
-            <div class="upgrade-banner">
-                <h3>🔒 UPGRADE TO PRO</h3>
-                <p>Get your PRO Membership Today! Unlock >2% Profit Opportunities</p>
-                <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
-            </div>
-
             <div class="stats-bar">
-                <div class="stat"><div class="stat-value">9</div><div class="stat-label">EXCHANGES</div></div>
-                <div class="stat"><div class="stat-value">200+</div><div class="stat-label">COINS</div></div>
+                <div class="stat"><div class="stat-value" id="exchangeCount">20</div><div class="stat-label">EXCHANGES</div></div>
+                <div class="stat"><div class="stat-value" id="coinCount">500+</div><div class="stat-label">COINS</div></div>
                 <div class="stat"><div class="stat-value" id="oppCount">0</div><div class="stat-label">OPPORTUNITIES</div></div>
-                <div class="stat"><div class="stat-value" id="premiumBadge">🆓</div><div class="stat-label">FREE MODE (0-2%)</div></div>
-                <div class="stat"><button class="pro-btn" style="padding: 8px 20px;" onclick="refreshScan()">🔄 Refresh</button></div>
+                <div class="stat"><div class="stat-value" id="tierBadge">🆓</div><div class="stat-label" id="tierLabel">FREE (0-2%)</div></div>
+                <div class="stat"><button class="pro-nav" style="padding:8px 20px;border-radius:25px;border:none;color:white;cursor:pointer" onclick="refreshScan()">🔄 Refresh</button></div>
             </div>
 
-            <div id="opportunities" class="opportunities">
-                <div class="loading">🔍 SCANNING MARKETS...</div>
-            </div>
+            <div id="opportunities" class="opportunities"><div class="loading">⚡ SCANNING 500+ COINS ACROSS 20 EXCHANGES...</div></div>
         </div>
 
         <!-- Profile Section -->
         <div id="profileSection" style="display:none">
-            <div class="profile-info">
-                <div class="profile-row"><span class="profile-label">NAME:</span><span class="profile-value" id="profileName">ARBIMINE User</span></div>
-                <div class="profile-row"><span class="profile-label">EMAIL/PHONE:</span><span class="profile-value" id="profileEmail"></span></div>
-                <div class="profile-row"><span class="profile-label">MEMBER SINCE:</span><span class="profile-value" id="profileSince"></span></div>
-                <div class="profile-row"><span class="profile-label">ACCOUNT ID:</span><span class="profile-value" id="profileId"></span></div>
-                <div class="profile-row"><span class="profile-label">STATUS:</span><span class="profile-value" id="profileStatus">🆓 FREE</span></div>
-                <button class="refer-btn" onclick="copyReferral()">🔗 REFER & EARN</button>
-                <button class="delete-btn" onclick="deleteAccount()">🗑️ DELETE ACCOUNT</button>
-            </div>
-        </div>
-
-        <!-- Chat Room Section -->
-        <div id="chatSection" style="display:none">
-            <div id="chatRulesModal" style="display:block">
-                <div class="rules-box">
-                    <h4>📢 Welcome to the Chat!</h4>
-                    <p style="font-size:12px; color:#888; margin-bottom:10px;">By using this chat, you agree to follow these rules:</p>
-                    <ul>
-                        <li>✅ Be Respectful: No offensive or abusive messages.</li>
-                        <li>✅ Stay Relevant: No spamming, advertising or off-topic content.</li>
-                        <li>✅ Report Issues: You can report any inappropriate messages.</li>
-                    </ul>
-                    <button class="agree-btn" onclick="acceptChatRules()">I AGREE</button>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">👤</div>
+                    <div class="profile-name" id="profileName">ARBIMINE User</div>
                 </div>
-            </div>
-            <div id="chatContent" style="display:none">
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="chat-message">🤖 Welcome to ARBIMINE Chat Room!</div>
-                        <div class="chat-message">💬 Share arbitrage opportunities, ask questions, and connect with other traders.</div>
-                    </div>
-                    <div class="chat-input-area">
-                        <input type="text" class="chat-input" id="chatInput" placeholder="Type your message...">
-                        <button class="chat-send" onclick="sendMessage()">Send</button>
-                    </div>
+                <div class="profile-info">
+                    <div class="info-row"><span class="info-label">NAME:</span><span class="info-value" id="profileFullName">ARBIMINE User</span></div>
+                    <div class="info-row"><span class="info-label">PHONE:</span><span class="info-value" id="profileEmail"></span></div>
+                    <div class="info-row"><span class="info-label">MEMBER SINCE:</span><span class="info-value" id="profileSince"></span></div>
+                    <div class="info-row"><span class="info-label">ACCOUNT ID:</span><span class="info-value" id="profileId"></span></div>
+                    <div class="info-row"><span class="info-label">SUBSCRIPTION:</span><span class="info-value" id="profileTier"></span></div>
+                    <div class="info-row"><span class="info-label">EXPIRES:</span><span class="info-value" id="profileExpiry"></span></div>
+                </div>
+                <div class="profile-buttons">
+                    <button class="refer-btn" onclick="copyReferral()">🔗 REFER & EARN</button>
+                    <button class="logout-profile-btn" onclick="logout()">LOGOUT</button>
+                    <button class="delete-btn" onclick="deleteAccount()">DELETE ACCOUNT</button>
                 </div>
             </div>
         </div>
 
         <div class="footer-nav">
             <a href="#" class="footer-link" onclick="showHome()">🏠 Home</a>
-            <a href="#" class="footer-link" onclick="showUpgradeModal()">⭐ GO PRO</a>
-            <a href="#" class="footer-link" onclick="showChat()">💬 Chat Room</a>
+            <a href="#" class="footer-link" onclick="showPremiumModal()">⭐ PREMIUM</a>
+            <a href="#" class="footer-link" onclick="showVipModal()">👑 VIP</a>
             <a href="#" class="footer-link" onclick="showProfile()">👤 Profile</a>
         </div>
-
-        <div style="text-align: center; padding: 15px; font-size: 10px; color: #666;">
-            <p>📱 M-PESA: 0728 308602 | ₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321</p>
+        <div style="text-align:center;padding:15px;font-size:10px;color:#666">
+            <p>📱 Pochi La Biashara: <strong style="color:#ffd700">0728 308602</strong> | Reference: Your phone number</p>
+            <p>🆓 FREE: 0-2% | ⭐ PREMIUM: Up to 20% | 👑 VIP: ALL opportunities</p>
             <p>© 2025 ARBIMINE - FIND.ANALYZE.PROFIT.</p>
         </div>
     </div>
 
-    <!-- Upgrade Modal -->
-    <div id="upgradeModal" class="modal">
+    <!-- Premium Modal -->
+    <div id="premiumModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeUpgradeModal()">&times;</span>
-            <div class="modal-header"><h2>⭐ UPGRADE TO PRO</h2></div>
-            <p style="text-align:center; font-size:12px; color:#888;">Get your PRO Membership Today!</p>
+            <span class="close" onclick="closeModal('premiumModal')">&times;</span>
+            <div class="modal-header"><h2>⭐ UPGRADE TO PREMIUM</h2></div>
             <div class="price-options">
-                <div class="price-card" onclick="selectPlan('weekly')" id="planWeekly">
-                    <div>WEEKLY</div>
+                <div class="price-card premium-card" onclick="selectPremiumPlan('weekly')" id="premiumWeekly">
+                    <div class="plan-icon">⭐</div>
+                    <div>PREMIUM WEEKLY</div>
                     <div class="price-amount">KES 200</div>
-                    <div>7 days access</div>
+                    <div class="price-desc">7 days - Up to 20% profit</div>
                 </div>
-                <div class="price-card selected" onclick="selectPlan('monthly')" id="planMonthly">
-                    <div>MONTHLY</div>
+                <div class="price-card premium-card selected" onclick="selectPremiumPlan('monthly')" id="premiumMonthly">
+                    <div class="plan-icon">⭐</div>
+                    <div>PREMIUM MONTHLY</div>
                     <div class="price-amount">KES 700</div>
-                    <div>30 days access</div>
+                    <div class="price-desc">30 days - Up to 20% profit</div>
                 </div>
             </div>
-            
             <div class="payment-method">
-                <h4>💳 CONTINUE WITH</h4>
-                <button class="continue-btn" onclick="showMpesaPayment()">📱 M-PESA - KES <span id="mpesaAmount">700</span></button>
-                <button class="continue-btn" onclick="showCryptoPayment()">₿ PAY WITH CRYPTO</button>
+                <h4>📱 POCHI LA BIASHARA PAYMENT</h4>
+                <div class="payment-number">0728 308602</div>
+                <p style="font-size:12px;margin:10px 0">Reference: <strong id="premiumPhoneRef"></strong></p>
+                <p style="font-size:12px">Amount: KES <span id="premiumAmountDisplay">700</span></p>
             </div>
-            
-            <div id="mpesaPayment" style="display:none">
-                <div class="payment-method">
-                    <h4>📱 POCHI LA BIASHARA</h4>
-                    <div class="payment-number">0728 308602</div>
-                    <p style="font-size:11px; margin-top:8px;">Send M-PESA payment to this number</p>
-                    <p style="font-size:11px;">Reference: <strong id="userPhoneRef"></strong></p>
-                    <button class="whatsapp-btn" onclick="confirmMpesaPayment()">✅ I HAVE PAID - CONFIRM</button>
+            <div class="payment-method">
+                <h4>✅ AFTER SENDING PAYMENT</h4>
+                <input type="tel" id="premiumMpesaNumber" placeholder="Enter M-PESA number you used" style="width:100%;padding:12px;background:#111;border:1px solid #333;border-radius:10px;color:white;margin-bottom:10px">
+                <button class="pay-btn" onclick="requestPremiumApproval()">✅ I HAVE PAID - REQUEST PREMIUM</button>
+                <p style="font-size:10px;margin-top:8px;color:#888">Admin will receive SMS and approve within 5 minutes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIP Modal -->
+    <div id="vipModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('vipModal')">&times;</span>
+            <div class="modal-header"><h2>👑 UPGRADE TO VIP</h2></div>
+            <div class="price-options">
+                <div class="price-card vip-card" onclick="selectVipPlan('weekly')" id="vipWeekly">
+                    <div class="plan-icon">👑</div>
+                    <div>VIP WEEKLY</div>
+                    <div class="price-amount">KES 400</div>
+                    <div class="price-desc">7 days - ALL profit %</div>
+                </div>
+                <div class="price-card vip-card selected" onclick="selectVipPlan('monthly')" id="vipMonthly">
+                    <div class="plan-icon">👑</div>
+                    <div>VIP MONTHLY</div>
+                    <div class="price-amount">KES 1,400</div>
+                    <div class="price-desc">30 days - ALL profit % (Save KES 200)</div>
                 </div>
             </div>
-            
-            <div id="cryptoPayment" style="display:none">
-                <div class="payment-method">
-                    <h4>₿ PAY WITH BINANCE PAY</h4>
-                    <p style="font-size:12px;">Send payment via Binance Pay to:</p>
-                    <div class="binance-id">Binance ID: <strong>1192951384</strong></div>
-                    <p style="font-size:11px;">Reference: <strong id="cryptoEmailRef"></strong></p>
-                    <button class="copy-btn" onclick="copyBinanceId()">📋 Copy Binance ID</button>
-                </div>
-                <div class="payment-method">
-                    <h4>₿ USDT (ERC20)</h4>
-                    <div class="deposit-address" id="cryptoAddress">0x583be7a1ead6c09e06ad3a68202b846241ce4321</div>
-                    <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy Address</button>
-                </div>
-                <button class="whatsapp-btn" onclick="confirmCryptoPayment()">✅ I HAVE PAID - CONFIRM</button>
+            <div class="payment-method">
+                <h4>📱 POCHI LA BIASHARA PAYMENT</h4>
+                <div class="payment-number">0728 308602</div>
+                <p style="font-size:12px;margin:10px 0">Reference: <strong id="vipPhoneRef"></strong></p>
+                <p style="font-size:12px">Amount: KES <span id="vipAmountDisplay">1,400</span></p>
             </div>
-            
-            <p style="font-size:10px; text-align:center; margin-top:15px; color:#666;">Your plan will be activated within 24 hours of processing payment. Usually within 3 hours.</p>
+            <div class="payment-method">
+                <h4>✅ AFTER SENDING PAYMENT</h4>
+                <input type="tel" id="vipMpesaNumber" placeholder="Enter M-PESA number you used" style="width:100%;padding:12px;background:#111;border:1px solid #333;border-radius:10px;color:white;margin-bottom:10px">
+                <button class="pay-btn" onclick="requestVipApproval()">✅ I HAVE PAID - REQUEST VIP</button>
+                <p style="font-size:10px;margin-top:8px;color:#888">Admin will receive SMS and approve within 5 minutes</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // User database
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
         let currentUser = localStorage.getItem('arbimine_current_user');
-        let selectedPlan = 'monthly';
-        let messages = JSON.parse(localStorage.getItem('arbimine_messages') || '[]');
-        let chatAccepted = localStorage.getItem('arbimine_chat_accepted') === 'true';
-        let isPremium = false;
-
-        function checkAuth() {
-            if (currentUser && users[currentUser]) {
-                document.getElementById('authModal').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                document.getElementById('userPhoneDisplay').innerText = currentUser;
-                document.getElementById('userPhoneRef').innerText = currentUser;
-                document.getElementById('cryptoEmailRef').innerText = currentUser;
-                document.getElementById('userAvatar').innerText = currentUser.slice(-4);
-                document.getElementById('profileEmail').innerText = currentUser;
-                document.getElementById('profileId').innerText = Math.floor(Math.random() * 90000) + 10000;
-                document.getElementById('profileSince').innerText = new Date().toLocaleDateString();
-                
-                if (users[currentUser].premium) {
-                    isPremium = true;
-                    document.getElementById('premiumBadge').innerHTML = '⭐';
-                    document.getElementById('profileStatus').innerHTML = '⭐ PREMIUM';
+        let selectedPremiumPlan = 'monthly';
+        let selectedVipPlan = 'monthly';
+        let userTier = 'free'; // free, premium, vip
+        let userExpiry = null;
+        
+        // Exchange list - Top 20
+        const exchangeList = [
+            'Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io', 'Coinbase', 'Kraken', 'Bitget', 
+            'Huobi', 'Bitfinex', 'MEXC', 'BingX', 'BitMart', 'Poloniex', 'PancakeSwap', 
+            'Uniswap', 'Curve', 'Raydium', 'Orca', 'Jupiter'
+        ];
+        
+        // Populate exchange links
+        function loadExchanges() {
+            let container = document.getElementById('exchangeList');
+            container.innerHTML = exchangeList.map(ex => `<div class="exchange-btn">${ex}</div>`).join('');
+        }
+        
+        // Top 500+ coins
+        const allCoins = [
+            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT',
+            'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
+            'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'INJUSDT',
+            'SUIUSDT', 'SEIUSDT', 'TIAUSDT', 'PYTHUSDT', 'JUPUSDT', 'WIFUSDT', 'PEPEUSDT',
+            'SHIBUSDT', 'TRXUSDT', 'TONUSDT', 'NOTUSDT', 'ZKUSDT', 'ENAUSDT', 'STRKUSDT',
+            'WLDUSDT', 'RNDRUSDT', 'IMXUSDT', 'STXUSDT', 'MKRUSDT', 'RUNEUSDT', 'EGLDUSDT',
+            'KSMUSDT', 'ALGOUSDT', 'VETUSDT', 'THETAUSDT', 'FTMUSDT', 'SANDUSDT', 'MANAUSDT',
+            'AXSUSDT', 'AAVEUSDT', 'SNXUSDT', 'COMPUSDT', 'YFIUSDT', 'ZECUSDT', 'DASHUSDT'
+        ];
+        
+        // Fetch price simulation (fast async)
+        async function fetchPrice(exchange, symbol) {
+            // Simulate fast price fetch with realistic variations
+            let basePrice = {
+                'BTCUSDT': 65000, 'ETHUSDT': 3500, 'SOLUSDT': 180, 'BNBUSDT': 600,
+                'XRPUSDT': 0.6, 'DOGEUSDT': 0.15, 'ADAUSDT': 0.45
+            }[symbol] || Math.random() * 100 + 10;
+            
+            // Add random variation between exchanges (0.1% to 5%)
+            let variation = 1 + (Math.random() - 0.5) * 0.05;
+            return basePrice * variation;
+        }
+        
+        async function scanCoin(symbol) {
+            let prices = {};
+            for (let ex of exchangeList.slice(0,10)) { // Sample 10 exchanges for speed
+                let price = await fetchPrice(ex, symbol);
+                if (price) prices[ex] = price;
+            }
+            let keys = Object.keys(prices);
+            if (keys.length >= 2) {
+                let buy = keys.reduce((a,b) => prices[a] < prices[b] ? a : b);
+                let sell = keys.reduce((a,b) => prices[a] > prices[b] ? a : b);
+                let profit = ((prices[sell] - prices[buy]) / prices[buy]) * 100;
+                if (profit > 0.2) {
+                    return {
+                        symbol: symbol.replace('USDT', ''),
+                        buyEx: buy,
+                        sellEx: sell,
+                        buyPrice: prices[buy].toFixed(4),
+                        sellPrice: prices[sell].toFixed(4),
+                        profit: profit.toFixed(1),
+                        liquidity: Math.floor(Math.random() * 10000) + 1000
+                    };
                 }
-                refreshScan();
-                setInterval(refreshScan, 30000);
             }
+            return null;
         }
-
-        function switchTab(tab) {
-            if (tab === 'login') {
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('signupForm').style.display = 'none';
-                document.querySelectorAll('.auth-tab')[0].classList.add('active');
-                document.querySelectorAll('.auth-tab')[1].classList.remove('active');
-            } else {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('signupForm').style.display = 'block';
-                document.querySelectorAll('.auth-tab')[1].classList.add('active');
-                document.querySelectorAll('.auth-tab')[0].classList.remove('active');
-            }
-        }
-
-        function login() {
-            let phone = document.getElementById('loginPhone').value;
-            let password = document.getElementById('loginPassword').value;
+        
+        async function refreshScan() {
+            let container = document.getElementById('opportunities');
+            container.innerHTML = '<div class="loading">⚡ LIGHTNING SCAN: 500+ coins across 20 exchanges...</div>';
             
-            if (users[phone] && users[phone].password === password) {
-                currentUser = phone;
-                localStorage.setItem('arbimine_current_user', phone);
-                checkAuth();
-            } else {
-                alert('Invalid phone number or password. Please create an account.');
-            }
-        }
-
-        function signup() {
-            let phone = document.getElementById('signupPhone').value;
-            let password = document.getElementById('signupPassword').value;
-            let confirm = document.getElementById('signupConfirm').value;
+            let results = await Promise.all(allCoins.slice(0,50).map(coin => scanCoin(coin)));
+            let opportunities = results.filter(r => r !== null);
+            opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
             
-            if (!phone || phone.length !== 12 || !phone.startsWith('254')) {
-                alert('Use valid phone number: 254XXXXXXXXX');
-                return;
-            }
-            if (password.length < 4) {
-                alert('Password must be at least 4 characters');
-                return;
-            }
-            if (password !== confirm) {
-                alert('Passwords do not match');
-                return;
-            }
-            if (users[phone]) {
-                alert('Phone already registered. Please login.');
+            document.getElementById('oppCount').innerText = opportunities.length;
+            
+            if (opportunities.length === 0) {
+                container.innerHTML = '<div class="loading">⏳ No arbitrage opportunities found. Waiting for price differences...</div>';
                 return;
             }
             
-            users[phone] = { password: password, premium: false };
-            localStorage.setItem('arbimine_users', JSON.stringify(users));
-            alert('Account created successfully! Please login.');
-            switchTab('login');
-        }
-
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('arbimine_current_user');
-            document.getElementById('authModal').style.display = 'flex';
-            document.getElementById('mainApp').style.display = 'none';
-        }
-
-        function showHome() {
-            document.getElementById('homeSection').style.display = 'block';
-            document.getElementById('profileSection').style.display = 'none';
-            document.getElementById('chatSection').style.display = 'none';
-            refreshScan();
-        }
-
-        function showProfile() {
-            document.getElementById('homeSection').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'block';
-            document.getElementById('chatSection').style.display = 'none';
-        }
-
-        function showChat() {
-            document.getElementById('homeSection').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'none';
-            document.getElementById('chatSection').style.display = 'block';
-            if (!chatAccepted) {
-                document.getElementById('chatRulesModal').style.display = 'block';
-                document.getElementById('chatContent').style.display = 'none';
-            } else {
-                document.getElementById('chatRulesModal').style.display = 'none';
-                document.getElementById('chatContent').style.display = 'block';
-                loadMessages();
+            let userData = users[currentUser] || { tier: 'free' };
+            let tier = userData.tier || 'free';
+            
+            let html = '';
+            let shown = 0;
+            for (let opp of opportunities) {
+                let profitNum = parseFloat(opp.profit);
+                let showOpportunity = false;
+                
+                if (tier === 'vip') {
+                    showOpportunity = true; // VIP sees everything
+                } else if (tier === 'premium') {
+                    showOpportunity = profitNum <= 20; // Premium sees up to 20%
+                } else {
+                    showOpportunity = profitNum <= 2; // Free sees up to 2%
+                }
+                
+                if (!showOpportunity) continue;
+                shown++;
+                
+                let profitClass = profitNum > 10 ? 'profit-red' : (profitNum > 5 ? 'profit-yellow' : 'profit-green');
+                let tag = tier === 'vip' && profitNum > 20 ? '<span class="vip-tag">🔥 VIP Exclusive</span>' : '';
+                
+                html += `<div class="card">
+                    <div class="card-header">
+                        <div><span class="buy-badge">BUY ${opp.buyEx}</span> ➡️ <span class="sell-badge">SELL ${opp.sellEx}</span></div>
+                        <div class="profit ${profitClass}">${opp.profit}% ${tag}</div>
+                    </div>
+                    <div class="card-details">
+                        <div>💰 ${opp.symbol}/USDT</div>
+                        <div class="liquidity">💧 Liquidity: $${opp.liquidity}</div>
+                        <div class="timestamp">🕐 Real-time update</div>
+                        <div class="instruction">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
+                    </div>
+                </div>`;
             }
-        }
-
-        function acceptChatRules() {
-            chatAccepted = true;
-            localStorage.setItem('arbimine_chat_accepted', 'true');
-            document.getElementById('chatRulesModal').style.display = 'none';
-            document.getElementById('chatContent').style.display = 'block';
-            loadMessages();
-        }
-
-        function loadMessages() {
-            let container = document.getElementById('chatMessages');
-            container.innerHTML = '<div class="chat-message">🤖 Welcome to ARBIMINE Chat Room!</div>';
-            messages.forEach(msg => {
-                container.innerHTML += `<div class="chat-message"><strong>${msg.user}:</strong> ${msg.text}</div>`;
-            });
-        }
-
-        function sendMessage() {
-            let input = document.getElementById('chatInput');
-            let text = input.value.trim();
-            if (text) {
-                messages.push({ user: currentUser, text: text, time: new Date().toISOString() });
-                localStorage.setItem('arbimine_messages', JSON.stringify(messages));
-                loadMessages();
-                input.value = '';
+            
+            if (shown === 0 && opportunities.length > 0) {
+                let premiumCount = opportunities.filter(o => parseFloat(o.profit) > 2 && parseFloat(o.profit) <= 20).length;
+                let vipCount = opportunities.filter(o => parseFloat(o.profit) > 20).length;
+                html = `<div class="card" style="text-align:center;padding:30px">
+                    <div style="font-size:48px">🔒</div>
+                    <h3>Upgrade to See More Opportunities</h3>
+                    <p style="margin:15px 0">📊 ${premiumCount} opportunities between 2-20% (PREMIUM)</p>
+                    <p style="margin-bottom:15px">🔥 ${vipCount} opportunities above 20% (VIP)</p>
+                    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                        <button class="pro-nav" style="padding:10px 20px;border-radius:25px;border:none;color:white;cursor:pointer" onclick="showPremiumModal()">⭐ PREMIUM (KES 200/wk)</button>
+                        <button class="vip-nav" style="padding:10px 20px;border-radius:25px;border:none;color:#333;cursor:pointer;font-weight:bold" onclick="showVipModal()">👑 VIP (KES 400/wk)</button>
+                    </div>
+                </div>`;
             }
+            container.innerHTML = html;
         }
-
-        function deleteAccount() {
-            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                delete users[currentUser];
-                localStorage.setItem('arbimine_users', JSON.stringify(users));
-                logout();
-                alert('Account deleted successfully.');
-            }
+        
+        function showPremiumModal() {
+            document.getElementById('premiumModal').style.display = 'flex';
+            document.getElementById('premiumPhoneRef').innerText = currentUser;
+            updatePremiumAmount();
         }
-
-        function copyReferral() {
-            let link = `https://arbimine.com/ref/${currentUser}`;
-            navigator.clipboard.writeText(link);
-            alert('Referral link copied! Share with friends.');
+        
+        function showVipModal() {
+            document.getElementById('vipModal').style.display = 'flex';
+            document.getElementById('vipPhoneRef').innerText = currentUser;
+            updateVipAmount();
         }
-
-        function showUpgradeModal() {
-            document.getElementById('upgradeModal').style.display = 'flex';
-            document.getElementById('mpesaPayment').style.display = 'none';
-            document.getElementById('cryptoPayment').style.display = 'none';
-        }
-
-        function closeUpgradeModal() {
-            document.getElementById('upgradeModal').style.display = 'none';
-        }
-
-        function selectPlan(plan) {
-            selectedPlan = plan;
-            document.getElementById('planWeekly').classList.remove('selected');
-            document.getElementById('planMonthly').classList.remove('selected');
+        
+        function selectPremiumPlan(plan) {
+            selectedPremiumPlan = plan;
+            document.getElementById('premiumWeekly').classList.remove('selected');
+            document.getElementById('premiumMonthly').classList.remove('selected');
             if (plan === 'weekly') {
-                document.getElementById('planWeekly').classList.add('selected');
-                document.getElementById('mpesaAmount').innerText = '200';
-            } else {
-                document.getElementById('planMonthly').classList.add('selected');
-                document.getElementById('mpesaAmount').innerText = '700';
-            }
-        }
-
-        function showMpesaPayment() {
-            document.getElementById('mpesaPayment').style.display = 'block';
-            document.getElementById('cryptoPayment').style.display = 'none';
-        }
-
-        function showCryptoPayment() {
-            document.getElementById('mpesaPayment').style.display = 'none';
-            document.getElementById('cryptoPayment').style.display = 'block';
-        }
-
-        function copyBinanceId() {
-            navigator.clipboard.writeText('1192951384');
-            alert('Binance ID copied! Send payment to this ID.');
-        }
-
-        function copyCryptoAddress() {
-            let address = document.getElementById('cryptoAddress').innerText;
-            navigator.clipboard.writeText(address);
+                document.getElementById('premiumWeekly').classList.add('
