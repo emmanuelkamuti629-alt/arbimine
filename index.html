@@ -18,7 +18,7 @@
             color: white;
         }
 
-        /* ---------- LOGIN CARD (exactly as requested) ---------- */
+        /* ---------- LOGIN CARD – EXACT MATCH OF THE PROVIDED IMAGE ---------- */
         .login-wrapper {
             display: flex;
             justify-content: center;
@@ -47,13 +47,13 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
-        .logo-area .tagline {
+        .tagline {
             font-size: 12px;
             color: #aaa;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.2px;
             margin-bottom: 28px;
         }
 
@@ -82,11 +82,13 @@
             border-radius: 32px;
             color: white;
             font-size: 15px;
+            transition: 0.2s;
         }
 
         .input-field input:focus {
             outline: none;
             border-color: #FFD700;
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .login-btn {
@@ -115,6 +117,7 @@
             font-size: 13px;
             cursor: pointer;
             text-decoration: none;
+            font-weight: 500;
         }
 
         .copyright {
@@ -122,8 +125,7 @@
             font-size: 11px;
             color: #6c6c8a;
         }
-
-        /* ---------- MODALS ---------- */
+        /* ---------- MODALS (signup / verification / password reset) ---------- */
         .modal {
             display: none;
             position: fixed;
@@ -185,7 +187,7 @@
             color: #aaa;
         }
 
-        /* ---------- DASHBOARD (20 exchanges, full list) ---------- */
+        /* ---------- DASHBOARD (20 exchanges, full scanning) ---------- */
         .dashboard {
             display: none;
         }
@@ -238,6 +240,7 @@
             padding: 6px 20px;
             border-radius: 40px;
             font-size: 14px;
+            transition: 0.2s;
         }
 
         .premium-tab {
@@ -359,7 +362,7 @@
 </head>
 <body>
 
-<!-- ========== LOGIN PAGE (EXACT DESIGN) ========== -->
+<!-- ========== LOGIN PAGE – EXACT COPY OF YOUR IMAGE ========== -->
 <div id="loginContainer" class="login-wrapper">
     <div class="login-card">
         <div class="logo-area">
@@ -377,12 +380,12 @@
         <div class="input-field">
             <input type="password" id="loginPassword" placeholder="Password">
         </div>
-        <button class="login-btn" id="doLogin">LOG IN</button>
+        <button class="login-btn" id="doLogin">LOGIN</button>
         <div class="auth-links">
             <a id="showCreateLink">Create Account</a>
             <a id="showForgotLink">Forgot Password?</a>
         </div>
-        <div class="copyright">© 2025 ARBIMINE. All rights reserved.</div>
+        <div class="copyright">2025 Arbi mine, All rights reserved.</div>
     </div>
 </div>
 
@@ -492,7 +495,6 @@
 </div>
 
 <script>
-    // ---------- STORAGE ----------
     let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
     let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
     let currentUser = localStorage.getItem('arbimine_current_user');
@@ -501,7 +503,7 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-    // ---------- 20 EXCHANGES (FULL LIST) ----------
+    // 20 EXCHANGES (FULL LIST)
     const exchanges20 = [
         'Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io', 'MEXC', 'Bitget', 'BingX', 
         'Coinbase', 'Kraken', 'Huobi', 'Bitfinex', 'Crypto.com', 'Phemex', 'Delta', 
@@ -509,7 +511,7 @@
     ];
     document.getElementById('exchangeList').innerHTML = exchanges20.map(ex => `<div class="exchange-badge">${ex}</div>`).join('');
 
-    // ---------- 180+ COINS (realistic set) ----------
+    // 180+ COINS (realistic list)
     const allCoins = [
         'BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI', 'ATOM', 'LTC',
         'ETC', 'FIL', 'APT', 'ARB', 'OP', 'NEAR', 'INJ', 'SUI', 'SEI', 'TIA', 'PYTH', 'JUP', 'WIF', 'PEPE',
@@ -517,38 +519,33 @@
         'KSM', 'ALGO', 'VET', 'THETA', 'FTM', 'SAND', 'MANA', 'AXS', 'AAVE', 'SNX', 'COMP', 'YFI', 'ZEC', 'DASH'
     ];
 
-    // ----- REALISTIC PRICE SIMULATOR (fast, async style) -----
     function getRandomPrice(symbol) {
         const basePrices = {
             'BTC': 68000, 'ETH': 3600, 'SOL': 180, 'BNB': 600, 'XRP': 0.62, 'ADA': 0.45, 'DOGE': 0.15,
             'AVAX': 38, 'DOT': 8.5, 'LINK': 18, 'MATIC': 0.9, 'UNI': 7.2, 'ATOM': 10, 'LTC': 85
         };
         let base = basePrices[symbol] || 2;
-        let variation = 0.98 + Math.random() * 0.07;
+        let variation = 0.97 + Math.random() * 0.08;
         return base * variation;
     }
 
-    // Simulates price across 20 exchanges – creates arbitrage opportunities
     function generateCrossExchangePrices(symbol) {
         let prices = {};
         exchanges20.forEach(ex => {
-            let spread = 1 + (Math.random() - 0.5) * 0.045;  // ±2.25% difference across exchanges
+            let spread = 1 + (Math.random() - 0.5) * 0.048;
             prices[ex] = +(getRandomPrice(symbol) * spread).toFixed(4);
         });
         return prices;
     }
 
-    // Build opportunities for ALL coins
     function scanAllCoins(userTier) {
         let opportunities = [];
         for (let coin of allCoins) {
             let prices = generateCrossExchangePrices(coin);
             let buyEx = Object.keys(prices).reduce((a,b) => prices[a] < prices[b] ? a : b);
             let sellEx = Object.keys(prices).reduce((a,b) => prices[a] > prices[b] ? a : b);
-            let buyPrice = prices[buyEx];
-            let sellPrice = prices[sellEx];
-            let profitRaw = ((sellPrice - buyPrice) / buyPrice) * 100;
-            if (profitRaw <= 0.2) continue;   // ignore negligible
+            let profitRaw = ((prices[sellEx] - prices[buyEx]) / prices[buyEx]) * 100;
+            if (profitRaw <= 0.25) continue;
 
             let locked = false;
             if (userTier === 'free' && profitRaw > 2) locked = true;
@@ -560,8 +557,8 @@
                 buyExchange: buyEx,
                 sellExchange: sellEx,
                 profit: profitRaw.toFixed(1),
-                buyPrice: buyPrice,
-                sellPrice: sellPrice,
+                buyPrice: prices[buyEx],
+                sellPrice: prices[sellEx],
                 liquidity: Math.floor(Math.random() * 25000) + 2000,
                 locked: locked
             });
@@ -596,8 +593,8 @@
             let vipCount = allOpps.filter(o => o.profit > 20).length;
             html = `<div class="card" style="text-align:center; padding:32px;">
                         🔒 <strong>Upgrade to unlock more profits</strong><br>
-                        ${premiumCount} opportunities between 2% – 20% (PREMIUM)<br>
-                        ${vipCount} opportunities above 20% (VIP)<br>
+                        ${premiumCount} opportunities 2%–20% (PREMIUM)<br>
+                        ${vipCount} opportunities >20% (VIP)<br>
                         <div style="margin-top:14px;"><span onclick="openPremiumModal()" style="background:#f5576c; padding:6px 18px; border-radius:40px;">⭐ GET PREMIUM</span> &nbsp; 
                         <span onclick="openVIPModal()" style="background:#FFD700; color:#12122c; padding:6px 18px; border-radius:40px;">👑 GET VIP</span></div>
                     </div>`;
@@ -619,7 +616,7 @@
         }
     }
 
-    // ---------- AUTH FLOW (email verification demo) ----------
+    // ---------- AUTH FLOW ----------
     document.getElementById('doLogin').onclick = () => {
         let phone = document.getElementById('loginPhone').value.trim();
         let pwd = document.getElementById('loginPassword').value;
@@ -662,10 +659,7 @@
             if (pending[email].code === code && pending[email].expires > Date.now()) { found = pending[email]; break; }
         }
         if (!found) { alert('Invalid/expired code'); return; }
-        users[found.phone] = {
-            fullName: found.name, email: found.email, password: found.password,
-            tier: 'free', createdAt: new Date().toISOString()
-        };
+        users[found.phone] = { fullName: found.name, email: found.email, password: found.password, tier: 'free', createdAt: new Date().toISOString() };
         localStorage.setItem('arbimine_users', JSON.stringify(users));
         delete pending[found.email];
         localStorage.setItem('arbimine_pending', JSON.stringify(pending));
@@ -715,7 +709,6 @@
         document.getElementById('dashboard').style.display = 'none';
         document.getElementById('loginContainer').style.display = 'flex';
     };
-
     document.getElementById('homeTab').onclick = () => {
         document.getElementById('homeSection').style.display = 'block';
         document.getElementById('profileSection').style.display = 'none';
@@ -726,7 +719,6 @@
         document.getElementById('profileSection').style.display = 'block';
         renderDashboard();
     };
-
     ['footerHome', 'footerProfile'].forEach(id => {
         document.getElementById(id).onclick = () => document.getElementById(id === 'footerHome' ? 'homeTab' : 'profileNavTab').click();
     });
@@ -742,7 +734,6 @@
         window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
         alert('✅ Request sent. Admin will activate premium after payment confirmation.');
     };
-
     window.openVIPModal = function() {
         let plan = prompt("Choose VIP plan:\n1: WEEKLY (KES 400)\n2: MONTHLY (KES 1,400)");
         let selected = plan === '1' ? 'weekly' : (plan === '2' ? 'monthly' : null);
@@ -752,8 +743,8 @@
         window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
         alert('✅ VIP request sent. Admin will activate after payment.');
     };
-
     document.getElementById('premiumTab').onclick = openPremiumModal;
     document.getElementById('vipTab').onclick = openVIPModal;
     document.getElementById('premiumBannerBtn').onclick = openPremiumModal;
-    document.getElementById('vipBanner
+    document.getElementById('vipBannerBtn').onclick = openVIPModal;
+    document.getElementById('refresh
