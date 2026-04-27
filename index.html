@@ -3,65 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE Pro – Arbitrage Scanner</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>ARBIMINE - Crypto Arbitrage Scanner</title>
     <style>
-        :root { 
-            --gold: #FFD700; 
-            --dark: #05070a; 
-            --glass: #121521; 
-            --danger: #ef4444;
-            --success: #10b981;
-            --warning: #f59e0b;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: var(--dark); 
-            color: white; 
-            font-family: 'Inter', sans-serif; 
-            min-height: 100vh;
-        }
-        
-        /* Custom Modal */
-        #customModal {
-            display: none; position: fixed; z-index: 10000; left: 0; top: 0; 
-            width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
-            align-items: center; justify-content: center; backdrop-filter: blur(8px);
-        }
-        .modal-box {
-            background: var(--glass); border: 1px solid var(--gold); 
-            padding: 40px 20px; width: 85%; max-width: 350px; border-radius: 24px; 
-            text-align: center; box-shadow: 0 0 50px rgba(255,215,0,0.1);
-        }
-        .modal-btn {
-            background: var(--gold); border: none; padding: 15px 40px; 
-            border-radius: 12px; font-weight: 900; margin-top: 25px; cursor: pointer; width: 100%;
-            color: #000;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Login Page */
-        #loginPage { display: flex; min-height: 100vh; flex-direction: column; }
-        .hero-side { 
-            flex: 1; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3a 50%, #24243e 100%);
+            min-height: 100vh;
+            color: white;
         }
-        .form-side { flex: 1.2; background: var(--glass); padding: 40px 30px; border-radius: 32px 32px 0 0; margin-top: -30px; }
-        .input-box { 
-            width: 100%; padding: 18px; background: #0a0c14; border: 1px solid #2a2d3e; 
-            border-radius: 12px; color: white; margin-bottom: 15px; font-size: 16px;
+
+        /* Login Container */
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
-        .input-box:focus { outline: none; border-color: var(--gold); }
-        .login-btn { 
-            width: 100%; padding: 20px; background: linear-gradient(135deg, #FFD700, #B8860B);
-            border: none; border-radius: 12px; font-weight: 900; font-size: 16px; cursor: pointer;
-            color: #000; transition: 0.3s;
+
+        .login-card {
+            background: rgba(20, 20, 45, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
         }
-        .login-btn:hover { transform: scale(1.02); opacity: 0.95; }
-        .footer-link { color: var(--gold); text-decoration: none; display: block; text-align: center; margin-top: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .logo-section h1 {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo-section .tagline {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            margin-top: 6px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .welcome-text h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .welcome-text p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            color: white;
+            font-size: 15px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(95deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .auth-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
+        }
+
+        .auth-links a {
+            color: #FFD700;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 35px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Toast Message */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border-left: 4px solid #10b981;
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            z-index: 3000;
+            transform: translateX(120%);
+            transition: transform 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.warning { border-left-color: #f59e0b; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #1a1a2e, #12122c);
+            border-radius: 30px;
+            padding: 30px 25px;
+            max-width: 420px;
+            width: 90%;
+            border: 1px solid #FFD700;
+            position: relative;
+        }
+
+        .modal-card h3 {
+            color: #FFD700;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-card input, .modal-card select {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .modal-card input:focus, .modal-card select:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background: #10b981;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
 
         /* Dashboard */
-        .dashboard { display: none; min-height: 100vh; background: var(--dark); }
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            background: #0a0a1a;
+        }
+
         .dashboard-header {
             background: rgba(0,0,0,0.9);
             padding: 15px 20px;
@@ -70,15 +242,42 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            border-bottom: 1px solid #2a2d3e;
+            border-bottom: 1px solid #2a2a4a;
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        .logo-small { font-size: 22px; font-weight: 900; color: var(--gold); }
-        .user-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .expiry-badge { background: var(--warning); color: #000; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        #logoutBtn { background: var(--danger); border: none; padding: 6px 16px; border-radius: 30px; color: white; cursor: pointer; }
+
+        .logo-small {
+            font-size: 22px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .expiry-badge {
+            background: #f59e0b;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+        }
 
         /* Exchange Strip */
         .exchange-strip {
@@ -88,154 +287,271 @@
             flex-wrap: wrap;
             gap: 8px;
             border-bottom: 1px solid #2a2d3e;
-            overflow-x: auto;
         }
+
         .exchange-badge {
             background: #121521;
             border: 1px solid #2a2d3e;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 11px;
-            color: var(--gold);
-            white-space: nowrap;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            color: #FFD700;
             cursor: pointer;
-            transition: 0.3s;
         }
-        .exchange-badge:hover { background: var(--gold); color: #000; }
+
+        .exchange-badge:hover {
+            background: #FFD700;
+            color: #000;
+        }
 
         /* Upgrade Banner */
         .upgrade-banner {
             background: linear-gradient(135deg, #1a1a2e, #121521);
             margin: 15px;
-            padding: 20px;
+            padding: 18px;
             border-radius: 15px;
             text-align: center;
             border: 1px solid #f5576c;
         }
-        .upgrade-banner h3 { color: var(--gold); margin-bottom: 10px; font-size: 16px; }
-        .pro-btn { background: linear-gradient(135deg, #f093fb, #f5576c); border: none; padding: 12px 30px; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; }
+
+        .upgrade-banner h3 {
+            color: #FFD700;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .pro-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         /* Search & Refresh */
-        .search-bar { padding: 15px; background: #0a0c14; border-bottom: 1px solid #2a2d3e; }
-        .search-input { width: 100%; padding: 12px 20px; background: #121521; border: 1px solid #2a2d3e; border-radius: 40px; color: white; font-size: 14px; }
-        .search-input::placeholder { color: #888; }
-        .search-input:focus { outline: none; border-color: var(--gold); }
-        .refresh-container { text-align: center; padding: 10px 15px; }
+        .search-bar {
+            padding: 12px 15px;
+            background: #0a0c14;
+            border-bottom: 1px solid #2a2d3e;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 18px;
+            background: #121521;
+            border: 1px solid #2a2d3e;
+            border-radius: 30px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .refresh-container {
+            text-align: center;
+            padding: 10px;
+        }
+
         .refresh-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
-            padding: 10px 25px;
+            padding: 8px 25px;
             border-radius: 30px;
             color: white;
             font-weight: bold;
             cursor: pointer;
         }
 
-        /* Opportunities List */
-        .opportunities-list {
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
+        /* Opportunities Grid */
+        .opportunities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 12px;
-            margin-bottom: 80px;
-        }
-        .opportunity-card {
-            background: #121521;
-            border-radius: 16px;
             padding: 15px;
+            margin-bottom: 70px;
+        }
+
+        .card {
+            background: #121521;
+            border-radius: 14px;
+            padding: 14px;
             border: 1px solid #2a2d3e;
             transition: 0.3s;
             cursor: pointer;
         }
-        .opportunity-card:hover { border-color: var(--gold); transform: translateX(5px); }
+
+        .card:hover {
+            border-color: #FFD700;
+            transform: translateX(4px);
+        }
+
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
-        .exchange-pair { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .buy-badge { background: var(--success); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .sell-badge { background: var(--danger); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .coin-name { font-size: 18px; font-weight: bold; }
-        .profit { font-size: 22px; font-weight: bold; color: var(--success); }
+
+        .buy-badge {
+            background: #10b981;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .sell-badge {
+            background: #ef4444;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .profit-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
         .card-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding-top: 10px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px solid #2a2d3e;
             font-size: 11px;
             color: #888;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
         }
 
         /* Detail View */
-        .detail-view { padding: 20px; margin-bottom: 80px; }
-        .detail-header { margin-bottom: 20px; }
-        .detail-profit { font-size: 28px; font-weight: bold; color: var(--success); }
+        .detail-view {
+            padding: 20px;
+            margin-bottom: 70px;
+        }
+
+        .detail-header {
+            margin-bottom: 20px;
+        }
+
+        .detail-profit {
+            font-size: 28px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
         .detail-section {
             background: #121521;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
             border: 1px solid #2a2d3e;
         }
-        .detail-section h4 { color: var(--gold); margin-bottom: 15px; font-size: 18px; }
+
+        .detail-section h4 {
+            color: #FFD700;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
         .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #2a2d3e;
         }
-        .detail-label { color: #888; }
-        .detail-value { color: white; font-weight: 500; }
-        .network-fees { background: #0a0c14; padding: 10px; border-radius: 12px; margin-top: 10px; }
-        .warning-text { color: var(--warning); font-size: 12px; margin-top: 15px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 12px; }
-        .detail-buttons { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+
+        .detail-label {
+            color: #888;
+        }
+
+        .detail-value {
+            color: white;
+            font-weight: 500;
+        }
+
+        .warning-text {
+            color: #f59e0b;
+            font-size: 11px;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 12px;
+        }
+
+        .detail-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
         .detail-btn {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
-            border-radius: 30px;
+            border-radius: 25px;
             color: white;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
         }
-        .detail-btn-secondary { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
-        .freeze-link { 
-            background: transparent; border: 1px solid var(--danger); color: var(--danger); 
-            pointer-events: none; opacity: 0.5;
+
+        .detail-btn-secondary {
+            background: transparent;
+            border: 1px solid #FFD700;
+            color: #FFD700;
         }
-        .back-btn { background: rgba(255,255,255,0.1); border: none; padding: 10px 20px; border-radius: 30px; color: white; cursor: pointer; margin-bottom: 15px; }
+
+        .back-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 8px 18px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
 
         /* Profile */
         .profile-container {
-            max-width: 500px;
+            max-width: 480px;
             margin: 20px auto;
             background: #121521;
-            border-radius: 30px;
-            padding: 25px;
+            border-radius: 25px;
+            padding: 20px;
             border: 1px solid #2a2d3e;
             margin-bottom: 80px;
         }
+
         .profile-field {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #2a2d3e;
         }
-        .profile-label { color: #888; }
-        .profile-value { color: var(--gold); font-weight: 500; }
+
+        .profile-label {
+            color: #888;
+        }
+
+        .profile-value {
+            color: #FFD700;
+            font-weight: 500;
+        }
+
         .referral-box {
             background: #0a0c14;
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             margin-top: 15px;
             display: flex;
@@ -244,8 +560,15 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .referral-link { font-size: 12px; color: var(--gold); word-break: break-all; flex: 1; }
-        .copy-btn { background: #667eea; border: none; padding: 8px 15px; border-radius: 20px; color: white; cursor: pointer; }
+
+        .copy-btn {
+            background: #667eea;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
 
         /* Footer Nav */
         .footer-nav {
@@ -254,118 +577,102 @@
             left: 0;
             right: 0;
             background: #0a0c14;
-            padding: 12px 20px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-around;
             border-top: 1px solid #2a2d3e;
             z-index: 100;
         }
+
         .footer-nav a {
             color: white;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             padding: 8px 0;
             text-align: center;
             flex: 1;
             cursor: pointer;
-            transition: 0.3s;
         }
-        .footer-nav a.active { color: var(--gold); }
 
-        /* Modals */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.98);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
+        .footer-nav a.active {
+            color: #FFD700;
         }
-        .modal-card {
-            background: #121521;
-            border-radius: 40px;
-            padding: 35px 30px;
-            max-width: 460px;
-            width: 90%;
-            border: 1px solid var(--gold);
-            position: relative;
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
         }
-        .modal-card h3 { color: var(--gold); font-size: 26px; text-align: center; margin-bottom: 24px; }
-        .modal-card input, .modal-card select { width: 100%; padding: 14px 18px; margin: 10px 0; background: #0a0c14; border: 1px solid #2a2d3e; border-radius: 30px; color: white; font-size: 14px; }
-        .modal-card input:focus, .modal-card select:focus { outline: none; border-color: var(--gold); }
-        .modal-btn-green { width: 100%; padding: 14px; background: var(--success); border: none; border-radius: 40px; color: white; font-weight: bold; margin-top: 16px; cursor: pointer; transition: 0.3s; }
-        .modal-btn-green:hover { transform: scale(1.02); opacity: 0.95; }
-        .close-modal { position: absolute; top: 18px; right: 24px; font-size: 28px; cursor: pointer; color: #aaa; transition: 0.3s; }
-        .close-modal:hover { color: white; }
 
         @media (max-width: 550px) {
+            .login-card { padding: 35px 25px; }
+            .logo-section h1 { font-size: 34px; }
             .card-header { flex-direction: column; align-items: flex-start; }
-            .profit { align-self: flex-end; }
-            .detail-buttons { flex-direction: column; }
-            .hero-side h1 { font-size: 32px; }
-            .form-side { padding: 30px 20px; }
+            .profit-value { align-self: flex-end; }
+            .opportunities-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <div id="customModal">
-        <div class="modal-box">
-            <i data-lucide="shield-alert" style="color:var(--gold); width:48px; height:48px; margin-bottom:15px;"></i>
-            <h2 style="margin:0 0 10px 0; font-size:18px;">ARBIMINE</h2>
-            <p id="modalMsg" style="color:#888ba0; font-size:14px; margin:0;"></p>
-            <button class="modal-btn" onclick="closeMsg()">CONTINUE</button>
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
 
     <!-- Login Page -->
-    <div id="loginPage">
-        <div class="hero-side">
-            <h1 style="font-size:42px; font-weight:900; margin:0;">ARBIMINE</h1>
-            <p style="color:var(--gold); letter-spacing:4px; font-weight:800; font-size:12px;">FIND. ANALYZE. PROFIT.</p>
-        </div>
-        <div class="form-side">
-            <h2 style="text-align:center; margin-bottom:30px;">Welcome Back!</h2>
-            <input type="tel" class="input-box" id="loginPhone" placeholder="Phone Number">
-            <input type="password" class="input-box" id="loginPassword" placeholder="Password">
-            <button class="login-btn" onclick="handleLogin()">LOG IN</button>
-            
-            <div style="text-align:center; color:#444; margin: 25px 0;">— or —</div>
-            
-            <a class="footer-link" onclick="showSignupModal()">Create Account</a>
-            <a class="footer-link" onclick="showForgotModal()">Forgot Password?</a>
+    <div id="loginPage" class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-section">
+                <div class="logo-icon">⚡</div>
+                <h1>ARBIMINE</h1>
+                <div class="tagline">FIND · ANALYZE · PROFIT</div>
+            </div>
+            <div class="welcome-text">
+                <h2>Welcome Back!</h2>
+                <p>Log in to continue to your account</p>
+            </div>
+            <div id="loginError" style="color:#ff8888; text-align:center; margin-bottom:10px; font-size:12px;"></div>
+            <div class="input-group">
+                <input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)">
+            </div>
+            <div class="input-group">
+                <input type="password" id="loginPassword" placeholder="Password">
+            </div>
+            <button class="login-btn" id="doLoginBtn">LOG IN</button>
+            <div class="auth-links">
+                <a id="showSignupLink">Create Account</a>
+                <a id="showForgotLink">Forgot Password?</a>
+            </div>
+            <div class="footer-text">
+                © 2025 ARBIMINE. All rights reserved.
+            </div>
         </div>
     </div>
 
     <!-- Signup Modal -->
-    <div id="signupModal" class="modal-overlay">
+    <div id="signupModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
             <h3>Create Account</h3>
             <input type="text" id="fullName" placeholder="Full Name">
             <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
-            <input type="password" id="signupPass" placeholder="Password (min 6 characters)">
+            <input type="password" id="signupPass" placeholder="Password (min 6 chars)">
             <input type="password" id="signupConfirm" placeholder="Confirm Password">
-            <button class="modal-btn-green" onclick="createAccount()">CREATE ACCOUNT</button>
+            <button class="modal-btn" id="createAccountBtn">CREATE ACCOUNT</button>
         </div>
     </div>
 
     <!-- Forgot Password Modal -->
-    <div id="forgotModal" class="modal-overlay">
+    <div id="forgotModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('forgotModal')">&times;</span>
             <h3>Reset Password</h3>
             <input type="tel" id="resetPhone" placeholder="Phone Number">
-            <button class="modal-btn-green" onclick="resetPassword()">RESET PASSWORD</button>
+            <button class="modal-btn" id="resetPasswordBtn">RESET PASSWORD</button>
         </div>
     </div>
 
     <!-- Upgrade Modal -->
-    <div id="upgradeModal" class="modal-overlay">
+    <div id="upgradeModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span>
             <h3>⭐ UPGRADE YOUR PLAN</h3>
@@ -376,10 +683,10 @@
                 <option value="vip_monthly">👑 VIP MONTHLY - KES 1,400 (30 days)</option>
             </select>
             <div style="margin: 15px 0; text-align: center;">
-                <p>📱 Send payment to: <strong style="color:var(--gold)">0728 308602</strong></p>
+                <p>📱 Send payment to: <strong style="color:#FFD700">0728 308602</strong></p>
                 <p>📝 Reference: <strong id="paymentPhoneRef"></strong></p>
             </div>
-            <button class="modal-btn-green" onclick="processPayment()">💳 CONFIRM PAYMENT</button>
+            <button class="modal-btn" id="processPaymentBtn">💳 CONFIRM PAYMENT</button>
         </div>
     </div>
 
@@ -389,15 +696,15 @@
             <div class="logo-small">⚡ ARBIMINE PRO</div>
             <div class="user-info">
                 <span id="userPhoneLabel"></span>
-                <span id="expiryTimer" class="expiry-badge"></span>
-                <button id="logoutBtn">Logout</button>
+                <span id="expiryTimer" class="expiry-badge">🆓 FREE</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
         </div>
 
         <div class="exchange-strip" id="exchangeStrip"></div>
 
         <div class="search-bar">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search by coin name... (e.g., BTC, ETH, SOL)">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search coin... (BTC, ETH, SOL)">
         </div>
 
         <div class="refresh-container">
@@ -407,27 +714,29 @@
         <div id="homeSection">
             <div class="upgrade-banner">
                 <h3>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</h3>
-                <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
+                <button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
             </div>
-            <div id="opportunitiesList" class="opportunities-list">Loading opportunities...</div>
+            <div id="opportunitiesList" class="opportunities-grid">
+                <div class="loading">⚡ Loading arbitrage opportunities...</div>
+            </div>
         </div>
 
         <div id="detailView" style="display:none;">
             <div class="detail-view">
-                <button class="back-btn" onclick="backToList()">← Back to Opportunities</button>
+                <button class="back-btn" id="backToListBtn">← Back to Opportunities</button>
                 <div id="detailContent"></div>
             </div>
         </div>
 
         <div id="profileSection" style="display:none;">
             <div class="profile-container">
-                <div class="profile-field"><span class="profile-label">📱 Phone Number</span><span class="profile-value" id="profilePhone"></span></div>
-                <div class="profile-field"><span class="profile-label">⭐ Subscription Tier</span><span class="profile-value" id="profileTier"></span></div>
-                <div class="profile-field"><span class="profile-label">📅 Expiry Date</span><span class="profile-value" id="profileExpiry"></span></div>
+                <div class="profile-field"><span class="profile-label">📱 Phone</span><span class="profile-value" id="profilePhone"></span></div>
+                <div class="profile-field"><span class="profile-label">⭐ Tier</span><span class="profile-value" id="profileTier"></span></div>
+                <div class="profile-field"><span class="profile-label">📅 Expiry</span><span class="profile-value" id="profileExpiry"></span></div>
                 <div class="profile-field"><span class="profile-label">📆 Member Since</span><span class="profile-value" id="profileSince"></span></div>
                 <div class="referral-box">
                     <span class="referral-link" id="referralLink">Loading...</span>
-                    <button class="copy-btn" onclick="copyReferralLink()">📋 Copy</button>
+                    <button class="copy-btn" id="copyReferralBtn">📋 Copy</button>
                 </div>
             </div>
         </div>
@@ -441,126 +750,73 @@
     </div>
 
     <script>
-        lucide.createIcons();
-
-        // ========== CUSTOM ALERT SYSTEM ==========
-        function showMsg(text) {
-            document.getElementById('modalMsg').innerText = text;
-            document.getElementById('customModal').style.display = 'flex';
-        }
-
-        function closeMsg() {
-            document.getElementById('customModal').style.display = 'none';
-        }
-
-        window.alert = function(msg) { showMsg(msg); };
-
-        // ========== USER DATABASE (PERSISTENT) ==========
+        // ========== USER DATABASE ==========
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
         let currentUser = localStorage.getItem('arbimine_current_user');
         let pendingRequests = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
         let currentOpportunities = [];
         let currentSearchTerm = '';
-        let opportunitiesInterval = null;
+        let refreshInterval = null;
 
-        // ========== EXCHANGES (TOP 20) ==========
+        // ========== EXCHANGES (20) ==========
         const exchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io', 'MEXC', 'Bitget', 'BingX', 'Coinbase', 'Kraken', 'Huobi', 'Bitfinex', 'Crypto.com', 'Phemex', 'Delta', 'WhiteBIT', 'LBank', 'HTX', 'Poloniex', 'BitMart'];
         
+        // Populate exchange strip
         const exchangeStrip = document.getElementById('exchangeStrip');
         exchanges.forEach(ex => {
             const badge = document.createElement('span');
             badge.className = 'exchange-badge';
             badge.textContent = ex;
-            badge.onclick = () => { 
+            badge.onclick = () => {
                 const url = `https://www.${ex.toLowerCase().replace('.', '').replace(' ', '')}.com`;
                 window.open(url, '_blank');
             };
             exchangeStrip.appendChild(badge);
         });
 
+        // ========== TOAST FUNCTION ==========
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         // ========== MODAL FUNCTIONS ==========
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showSignupModal() { showModal('signupModal'); }
-        function showForgotModal() { showModal('forgotModal'); }
-        function showUpgradeModal() { 
-            if (currentUser) {
-                document.getElementById('paymentPhoneRef').innerText = currentUser;
-                showModal('upgradeModal');
-            } else {
-                showMsg('Please login first');
-            }
-        }
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-        // ========== PROFILE FUNCTIONS ==========
-        function updateExpiryTimer() {
-            if (!currentUser || !users[currentUser]) return;
-            const user = users[currentUser];
-            const expirySpan = document.getElementById('expiryTimer');
-            if (user.expiry && new Date(user.expiry) > new Date()) {
-                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
-                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
-                expirySpan.style.background = '#f59e0b';
-            } else if (user.tier !== 'free' && user.expiry && new Date(user.expiry) <= new Date()) {
-                user.tier = 'free';
-                user.expiry = null;
-                localStorage.setItem('arbimine_users', JSON.stringify(users));
-                expirySpan.innerHTML = '🆓 FREE';
-                expirySpan.style.background = '#f59e0b';
-                showMsg('Your premium subscription has expired. Upgrade to continue enjoying premium features!');
-            } else {
-                expirySpan.innerHTML = '🆓 FREE';
-                expirySpan.style.background = '#f59e0b';
-            }
-            
-            // Update tier display in profile
-            const tierDisplay = document.getElementById('profileTier');
-            if (tierDisplay) {
-                if (user.tier === 'premium') tierDisplay.innerText = '⭐ PREMIUM';
-                else if (user.tier === 'vip') tierDisplay.innerText = '👑 VIP';
-                else tierDisplay.innerText = '🆓 FREE';
-            }
-        }
-
-        function getReferralLink() { return `https://arbimine.com/ref/${currentUser}`; }
-        
-        function copyReferralLink() { 
-            navigator.clipboard.writeText(getReferralLink()); 
-            showMsg('Referral link copied to clipboard!'); 
-        }
-
-        function updateProfileDisplay() {
-            const user = users[currentUser];
-            if (!user) return;
-            document.getElementById('profilePhone').innerText = currentUser;
-            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
-            document.getElementById('referralLink').innerText = getReferralLink();
-            document.getElementById('profileExpiry').innerText = user.expiry ? new Date(user.expiry).toLocaleDateString() : 'No active subscription';
-            
-            if (user.tier === 'premium') document.getElementById('profileTier').innerHTML = '⭐ PREMIUM';
-            else if (user.tier === 'vip') document.getElementById('profileTier').innerHTML = '👑 VIP';
-            else document.getElementById('profileTier').innerHTML = '🆓 FREE';
-            
-            updateExpiryTimer();
-        }
-
-        // ========== GENERATE OPPORTUNITIES (REALISTIC) ==========
+        // ========== COIN LIST FOR OPPORTUNITIES ==========
         const coinList = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI', 'ATOM', 'LTC', 'WKC', 'BTW', 'ML', 'IKA', 'HEART', 'USTC', 'VOOI', 'CHO', 'PIN', 'PROPS', 'BLEND', 'GHX', 'WLD', 'IR'];
-        
+
+        // ========== GENERATE OPPORTUNITIES ==========
         function generateOpportunities() {
+            const user = users[currentUser] || { tier: 'free' };
+            const isPremium = user.tier === 'premium' || user.tier === 'vip';
+            const isVip = user.tier === 'vip';
             const opportunities = [];
+            
             for (let i = 0; i < coinList.length; i++) {
                 const coin = coinList[i];
                 const buyExchange = exchanges[Math.floor(Math.random() * exchanges.length)];
                 let sellExchange = exchanges[Math.floor(Math.random() * exchanges.length)];
-                while (sellExchange === buyExchange) sellExchange = exchanges[Math.floor(Math.random() * exchanges.length)];
+                while (sellExchange === buyExchange) {
+                    sellExchange = exchanges[Math.floor(Math.random() * exchanges.length)];
+                }
                 let profit = (Math.random() * 1.8 + 0.2).toFixed(1);
                 let isPremiumOnly = false;
                 if (Math.random() > 0.65) {
                     profit = (2 + Math.random() * 15).toFixed(1);
                     isPremiumOnly = true;
                 }
-                const liquidity = Math.floor(Math.random() * 5000) + 100;
+                
+                const liquidity = Math.floor(Math.random() * 8000) + 200;
                 opportunities.push({
                     coin: coin,
                     buyExchange: buyExchange,
@@ -572,9 +828,8 @@
                     volume: Math.floor(Math.random() * 500000) + 50000,
                     buyVolume: Math.floor(Math.random() * 300000) + 30000,
                     sellVolume: Math.floor(Math.random() * 400000) + 40000,
-                    buyPrice: (Math.random() * 0.01 + 0.000001).toFixed(6),
-                    sellPrice: (Math.random() * 0.012 + 0.0000012).toFixed(6),
-                    timestamp: 'now',
+                    buyPrice: (Math.random() * 0.01 + 0.00001).toFixed(5),
+                    sellPrice: (Math.random() * 0.012 + 0.000012).toFixed(5),
                     isPremiumOnly: isPremiumOnly,
                     buyFee: 'BSC ($0.47)',
                     sellFee: 'BSC, ERC20'
@@ -583,7 +838,8 @@
             return opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
         }
 
-        function renderOpportunitiesList() {
+        // ========== RENDER OPPORTUNITIES ==========
+        function renderOpportunities() {
             const container = document.getElementById('opportunitiesList');
             const user = users[currentUser] || { tier: 'free' };
             const isPremium = user.tier === 'premium' || user.tier === 'vip';
@@ -596,55 +852,47 @@
                 filtered = opportunities.filter(opp => opp.coin.toLowerCase().includes(currentSearchTerm.toLowerCase()));
             }
             
-            let visibleCount = 0;
             let html = '';
+            let count = 0;
             
             for (let opp of filtered) {
                 let show = true;
                 if (opp.isPremiumOnly && !isPremium && !isVip) show = false;
                 if (!show) continue;
-                visibleCount++;
+                count++;
                 html += `
-                    <div class="opportunity-card" onclick='showDetailView(${opportunities.indexOf(opp)})'>
+                    <div class="card" onclick='showDetailView(${opportunities.indexOf(opp)})'>
                         <div class="card-header">
-                            <div class="exchange-pair">
+                            <div>
                                 <span class="buy-badge">BUY ${opp.buyExchange}</span>
-                                <span>➡️</span>
+                                <span> ➡️ </span>
                                 <span class="sell-badge">SELL ${opp.sellExchange}</span>
                             </div>
-                            <div class="coin-name">${opp.coin}/USDT</div>
-                            <div class="profit">${opp.profit}%</div>
+                            <div class="profit-value">${opp.profit}%</div>
                         </div>
+                        <div>💰 ${opp.coin}/USDT</div>
+                        <div style="font-size:11px; margin-top:5px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
                         <div class="card-details">
-                            <span class="liquidity">💧 Liquidity: $${opp.liquidity.toLocaleString()}</span>
-                            <span class="timestamp">🕐 Last Verified now</span>
+                            <span>💧 Liquidity: $${opp.liquidity}</span>
+                            <span>🕐 Last Verified now</span>
                         </div>
                     </div>
                 `;
             }
             
-            if (visibleCount === 0 && filtered.length > 0) {
-                container.innerHTML = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</h3><button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button></div>`;
-            } else if (visibleCount === 0) {
-                container.innerHTML = '<div class="upgrade-banner" style="margin:0;"><h3>⏳ No opportunities found. Waiting for price differences...</h3></div>';
+            document.getElementById('oppCount')?.setAttribute('data-value', count);
+            
+            if (count === 0 && filtered.length > 0) {
+                container.innerHTML = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 Upgrade to PRO to see opportunities above 2% 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
+            } else if (count === 0) {
+                container.innerHTML = '<div class="loading">⏳ No arbitrage opportunities found. Waiting for price differences...</div>';
             } else {
                 container.innerHTML = html;
             }
         }
 
-        function handleSearch() {
-            currentSearchTerm = document.getElementById('searchInput').value;
-            renderOpportunitiesList();
-        }
-
-        function manualRefresh() {
-            showMsg('Refreshing opportunities...');
-            renderOpportunitiesList();
-            setTimeout(() => showMsg('Opportunities updated!'), 800);
-        }
-
         // ========== DETAIL VIEW ==========
-        function showDetailView(index) {
+        window.showDetailView = function(index) {
             const opp = currentOpportunities[index];
             if (!opp) return;
             
@@ -653,8 +901,8 @@
             const isVip = user.tier === 'vip';
             
             if (opp.isPremiumOnly && !isPremium && !isVip) {
-                showMsg('Upgrade to PRO to view detailed opportunities above 2%!');
-                showUpgradeModal();
+                showToast('Upgrade to PRO to view details of opportunities above 2%!', 'warning');
+                showModal('upgradeModal');
                 return;
             }
             
@@ -664,26 +912,32 @@
             const detailHtml = `
                 <div class="detail-header">
                     <div class="detail-profit">${opp.profit}% SPREAD</div>
-                    <div style="font-size: 24px; font-weight: bold;">${opp.coin}-USDT</div>
-                    <div style="color: #888; font-size: 12px;">Liquidity: $${opp.liquidity.toLocaleString()} | Profit: ${opp.profit}%</div>
+                    <div style="font-size: 22px; font-weight: bold;">${opp.coin}-USDT</div>
+                    <div style="color: #888; font-size: 11px;">Liquidity: $${opp.liquidity} | Profit: ${opp.profit}%</div>
                 </div>
                 <div class="detail-section">
                     <h4>1. Buy at ${opp.buyExchange}</h4>
                     <div class="detail-row"><span class="detail-label">Lowest Ask:</span><span class="detail-value">$${opp.buyPrice}</span></div>
                     <div class="detail-row"><span class="detail-label">Volume:</span><span class="detail-value">$${opp.buyVolume.toLocaleString()}</span></div>
-                    <div class="detail-row"><span class="detail-label">Buy Liquidity:</span><span class="detail-value">$${opp.buyLiquidity.toLocaleString()}</span></div>
-                    <div class="network-fees"><div class="detail-label">Active Withdrawal Network(s) and Fees:</div><div class="detail-value">${opp.buyFee}</div></div>
+                    <div class="detail-row"><span class="detail-label">Buy Liquidity:</span><span class="detail-value">$${opp.buyLiquidity}</span></div>
+                    <div class="network-fees" style="background:#0a0c14; padding:10px; border-radius:10px; margin-top:10px;">
+                        <div class="detail-label">Active Withdrawal Network(s) and Fees:</div>
+                        <div class="detail-value">${opp.buyFee}</div>
+                    </div>
                     <div class="detail-buttons">
                         <a href="https://www.${buyExchangeLower}.com" target="_blank" class="detail-btn">CHECK ON ${opp.buyExchange.toUpperCase()}</a>
-                        <button class="detail-btn detail-btn-secondary" onclick="fetchContracts('${opp.coin}', '${opp.buyExchange}')">FETCH CONTRACTS</button>
+                        <button class="detail-btn detail-btn-secondary" onclick="fetchContract('${opp.coin}', '${opp.buyExchange}')">FETCH CONTRACTS</button>
                     </div>
                 </div>
                 <div class="detail-section">
                     <h4>2. Sell on ${opp.sellExchange}</h4>
                     <div class="detail-row"><span class="detail-label">Highest Bid:</span><span class="detail-value">$${opp.sellPrice}</span></div>
                     <div class="detail-row"><span class="detail-label">Volume:</span><span class="detail-value">$${opp.sellVolume.toLocaleString()}</span></div>
-                    <div class="detail-row"><span class="detail-label">Sell Liquidity:</span><span class="detail-value">$${opp.sellLiquidity.toLocaleString()}</span></div>
-                    <div class="network-fees"><div class="detail-label">Currently Active Deposit Network(s):</div><div class="detail-value">${opp.sellFee}</div></div>
+                    <div class="detail-row"><span class="detail-label">Sell Liquidity:</span><span class="detail-value">$${opp.sellLiquidity}</span></div>
+                    <div class="network-fees" style="background:#0a0c14; padding:10px; border-radius:10px; margin-top:10px;">
+                        <div class="detail-label">Currently Active Deposit Network(s):</div>
+                        <div class="detail-value">${opp.sellFee}</div>
+                    </div>
                     <div class="detail-buttons">
                         <a href="https://www.${sellExchangeLower}.com" target="_blank" class="detail-btn">CHECK ON ${opp.sellExchange.toUpperCase()}</a>
                     </div>
@@ -698,27 +952,66 @@
             document.getElementById('homeSection').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
             document.getElementById('profileSection').style.display = 'none';
-        }
+        };
 
         function backToList() {
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('homeSection').style.display = 'block';
-            renderOpportunitiesList();
+            renderOpportunities();
         }
 
-        function fetchContracts(coin, exchange) {
-            showMsg(`Fetching contract address for ${coin} on ${exchange}...`);
+        window.fetchContract = function(coin, exchange) {
+            showToast(`Fetching contract address for ${coin} on ${exchange}...`, 'info');
             setTimeout(() => {
                 const contract = `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 8)}`;
-                showMsg(`Contract: ${contract}`);
+                showToast(`Contract: ${contract}`, 'success');
                 navigator.clipboard.writeText(contract);
             }, 1200);
+        };
+
+        // ========== SEARCH AND REFRESH ==========
+        function handleSearch() {
+            currentSearchTerm = document.getElementById('searchInput').value;
+            renderOpportunities();
+        }
+
+        function manualRefresh() {
+            showToast('Refreshing opportunities...', 'info');
+            renderOpportunities();
+            setTimeout(() => showToast('Opportunities updated!', 'success'), 500);
+        }
+
+        // ========== USER AUTHENTICATION ==========
+        function updateProfileDisplay() {
+            const user = users[currentUser];
+            if (!user) return;
+            document.getElementById('profilePhone').innerText = currentUser;
+            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
+            document.getElementById('referralLink').innerText = `https://arbimine.com/ref/${currentUser}`;
+            document.getElementById('profileExpiry').innerText = user.expiry ? new Date(user.expiry).toLocaleDateString() : 'No active subscription';
+            document.getElementById('profileTier').innerHTML = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
+            
+            const expirySpan = document.getElementById('expiryTimer');
+            if (user.expiry && new Date(user.expiry) > new Date()) {
+                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
+                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
+                expirySpan.style.background = '#f59e0b';
+            } else {
+                expirySpan.innerHTML = '🆓 FREE';
+                expirySpan.style.background = '#f59e0b';
+            }
+        }
+
+        function copyReferralLink() {
+            const link = document.getElementById('referralLink').innerText;
+            navigator.clipboard.writeText(link);
+            showToast('Referral link copied!', 'success');
         }
 
         // ========== ADMIN APPROVAL SYSTEM ==========
         function sendAdminSMS(userPhone, plan, amount, duration) {
-            showMsg(`Admin notification sent! Will approve within 5 minutes.`);
-            pendingRequests[userPhone] = { plan, amount, duration, status: 'pending', timestamp: new Date().toISOString() };
+            showToast('Admin notified! Will approve within 5 minutes.', 'success');
+            pendingRequests[userPhone] = { plan, amount, duration, status: 'pending' };
             localStorage.setItem('arbimine_pending', JSON.stringify(pendingRequests));
             setTimeout(() => checkApprovalStatus(userPhone), 5000);
         }
@@ -731,7 +1024,7 @@
                     activatePremium(phone);
                 } else if (pending[phone] && pending[phone].status === 'denied') {
                     clearInterval(interval);
-                    showMsg('Your premium request was denied. Contact support.');
+                    showToast('Your premium request was denied.', 'error');
                     delete pending[phone];
                     localStorage.setItem('arbimine_pending', JSON.stringify(pending));
                 }
@@ -749,32 +1042,10 @@
             localStorage.setItem('arbimine_users', JSON.stringify(users));
             delete pending[phone];
             localStorage.setItem('arbimine_pending', JSON.stringify(pending));
-            showMsg(`✅ ${tier.toUpperCase()} ACTIVATED! You now have ${tier.toUpperCase()} access for ${days} days.`);
-            updateExpiryTimer();
-            renderOpportunitiesList();
+            showToast(`✅ ${tier.toUpperCase()} activated for ${days} days!`, 'success');
+            updateProfileDisplay();
+            renderOpportunities();
         }
-
-        window.approveUser = function(phone) {
-            let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
-            if (pending[phone]) { 
-                pending[phone].status = 'approved'; 
-                localStorage.setItem('arbimine_pending', JSON.stringify(pending)); 
-                showMsg(`User ${phone} approved!`); 
-                return true; 
-            }
-            return false;
-        };
-        
-        window.denyUser = function(phone) {
-            let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
-            if (pending[phone]) { 
-                pending[phone].status = 'denied'; 
-                localStorage.setItem('arbimine_pending', JSON.stringify(pending)); 
-                showMsg(`User ${phone} denied.`); 
-                return true; 
-            }
-            return false;
-        };
 
         function processPayment() {
             const plan = document.getElementById('planSelect').value;
@@ -783,12 +1054,11 @@
             else if (plan === 'premium_monthly') { amount = 700; duration = '30 days'; tierName = 'Premium Monthly'; }
             else if (plan === 'vip_weekly') { amount = 400; duration = '7 days'; tierName = 'VIP Weekly'; }
             else { amount = 1400; duration = '30 days'; tierName = 'VIP Monthly'; }
-            
             sendAdminSMS(currentUser, tierName, amount, duration);
             closeModal('upgradeModal');
         }
 
-        // ========== AUTHENTICATION ==========
+        // ========== LOGIN & SIGNUP ==========
         function handleLogin() {
             const phone = document.getElementById('loginPhone').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -800,12 +1070,12 @@
                 document.getElementById('dashboard').style.display = 'block';
                 document.getElementById('userPhoneLabel').innerText = phone;
                 updateProfileDisplay();
-                renderOpportunitiesList();
-                if (opportunitiesInterval) clearInterval(opportunitiesInterval);
-                opportunitiesInterval = setInterval(renderOpportunitiesList, 25000);
-                showMsg(`Welcome back, ${users[phone].fullName || phone}!`);
+                renderOpportunities();
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(renderOpportunities, 25000);
+                showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
             } else {
-                showMsg('Invalid phone number or password. Please create an account.');
+                document.getElementById('loginError').innerText = 'Invalid phone number or password. Create an account.';
             }
         }
 
@@ -815,90 +1085,91 @@
             const password = document.getElementById('signupPass').value;
             const confirm = document.getElementById('signupConfirm').value;
             
-            if (!fullName) { showMsg('Please enter your full name'); return; }
-            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showMsg('Please enter a valid phone number (254XXXXXXXXX)'); return; }
-            if (password.length < 6) { showMsg('Password must be at least 6 characters'); return; }
-            if (password !== confirm) { showMsg('Passwords do not match'); return; }
-            if (users[phone]) { showMsg('Phone number already registered. Please login.'); return; }
+            if (!fullName) { showToast('Enter full name', 'warning'); return; }
+            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showToast('Valid phone: 254XXXXXXXXX', 'warning'); return; }
+            if (password.length < 6) { showToast('Password min 6 chars', 'warning'); return; }
+            if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
+            if (users[phone]) { showToast('Phone already registered', 'error'); return; }
             
-            users[phone] = { 
-                fullName: fullName, 
-                password: password, 
-                tier: 'free', 
-                createdAt: new Date().toISOString() 
-            };
+            users[phone] = { fullName, password, tier: 'free', createdAt: new Date().toISOString() };
             localStorage.setItem('arbimine_users', JSON.stringify(users));
-            showMsg('Account created successfully! Please login.');
+            showToast('Account created! Please login.', 'success');
             closeModal('signupModal');
         }
 
         function resetPassword() {
             const phone = document.getElementById('resetPhone').value.trim();
-            if (!users[phone]) { showMsg('Phone number not registered'); return; }
-            const newPassword = prompt('Enter your new password (min 6 characters):');
+            if (!users[phone]) { showToast('Phone not registered', 'error'); return; }
+            const newPassword = prompt('Enter new password (min 6 chars):');
             if (newPassword && newPassword.length >= 6) {
                 users[phone].password = newPassword;
                 localStorage.setItem('arbimine_users', JSON.stringify(users));
-                showMsg('Password reset successfully! Please login.');
+                showToast('Password reset! Please login.', 'success');
                 closeModal('forgotModal');
             } else {
-                showMsg('Password must be at least 6 characters');
+                showToast('Password must be 6+ chars', 'warning');
             }
         }
 
-        // ========== LOGOUT ==========
-        document.getElementById('logoutBtn').onclick = function() { 
-            if (opportunitiesInterval) clearInterval(opportunitiesInterval);
-            currentUser = null; 
+        function logout() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            currentUser = null;
             localStorage.removeItem('arbimine_current_user');
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('loginPage').style.display = 'flex';
-            showMsg('Logged out successfully');
-        };
+            document.getElementById('loginPhone').value = '';
+            document.getElementById('loginPassword').value = '';
+            showToast('Logged out successfully', 'info');
+        }
 
         // ========== NAVIGATION ==========
-        document.getElementById('navHome').onclick = function() {
+        function showHome() {
             document.getElementById('homeSection').style.display = 'block';
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('profileSection').style.display = 'none';
             document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            this.classList.add('active');
-            renderOpportunitiesList();
-        };
-        
-        document.getElementById('navGoPro').onclick = function() { showUpgradeModal(); };
-        
-        document.getElementById('navChat').onclick = function() { 
-            showMsg('💬 Chat Room coming soon! Connect with other traders.'); 
-        };
-        
-        document.getElementById('navProfile').onclick = function() {
+            document.getElementById('navHome').classList.add('active');
+            renderOpportunities();
+        }
+
+        function showProfile() {
             document.getElementById('homeSection').style.display = 'none';
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('profileSection').style.display = 'block';
             document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            this.classList.add('active');
+            document.getElementById('navProfile').classList.add('active');
             updateProfileDisplay();
-        };
-        
+        }
+
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('doLoginBtn').onclick = handleLogin;
+        document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
+        document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
+        document.getElementById('createAccountBtn').onclick = createAccount;
+        document.getElementById('resetPasswordBtn').onclick = resetPassword;
+        document.getElementById('processPaymentBtn').onclick = processPayment;
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('upgradeBannerBtn').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
+        document.getElementById('navHome').onclick = showHome;
+        document.getElementById('navGoPro').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
+        document.getElementById('navChat').onclick = () => showToast('💬 Chat Room coming soon!', 'info');
+        document.getElementById('navProfile').onclick = showProfile;
         document.getElementById('refreshBtn').onclick = manualRefresh;
         document.getElementById('searchInput').addEventListener('input', handleSearch);
+        document.getElementById('backToListBtn').onclick = backToList;
+        document.getElementById('copyReferralBtn').onclick = copyReferralLink;
 
-        // ========== AUTO-LOGIN CHECK ==========
-        function checkAutoLogin() {
-            if (currentUser && users[currentUser]) {
-                document.getElementById('loginPage').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('userPhoneLabel').innerText = currentUser;
-                updateProfileDisplay();
-                renderOpportunitiesList();
-                if (opportunitiesInterval) clearInterval(opportunitiesInterval);
-                opportunitiesInterval = setInterval(renderOpportunitiesList, 25000);
-            }
+        // ========== AUTO LOGIN CHECK ==========
+        if (currentUser && users[currentUser]) {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userPhoneLabel').innerText = currentUser;
+            updateProfileDisplay();
+            renderOpportunities();
+            refreshInterval = setInterval(renderOpportunities, 25000);
         }
         
-        checkAutoLogin();
-        setInterval(updateExpiryTimer, 60000);
+        setInterval(updateProfileDisplay, 60000);
     </script>
 </body>
     </html>
