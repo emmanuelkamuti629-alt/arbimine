@@ -1,102 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARBIMINE Pro</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root { --gold: #FFD700; --dark: #05070a; --glass: #121521; }
-        body { background: var(--dark); color: white; font-family: 'Inter', sans-serif; margin: 0; }
-        
-        /* 1. CUSTOM MODAL (Replaces Browser Alert) */
-        #customModal {
-            display: none; position: fixed; z-index: 10000; left: 0; top: 0; 
-            width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
-            align-items: center; justify-content: center; backdrop-filter: blur(8px);
-        }
-        .modal-box {
-            background: var(--glass); border: 1px solid var(--gold); 
-            padding: 40px 20px; width: 85%; max-width: 350px; border-radius: 24px; 
-            text-align: center; box-shadow: 0 0 50px rgba(255,215,0,0.1);
-        }
-        .modal-btn {
-            background: var(--gold); border: none; padding: 15px 40px; 
-            border-radius: 12px; font-weight: 900; margin-top: 25px; cursor: pointer; width: 100%;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARBIMINE PRO</title>
 
-        /* 2. LOGIN PAGE RECONSTRUCTION */
-        #loginPage { display: flex; min-height: 100vh; flex-direction: column; }
-        .hero-side { 
-            flex: 1; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;
-        }
-        .form-side { flex: 1.2; background: var(--glass); padding: 40px 30px; border-radius: 32px 32px 0 0; margin-top: -30px; }
-        .input-box { 
-            width: 100%; padding: 18px; background: #0a0c14; border: 1px solid #2a2d3e; 
-            border-radius: 12px; color: white; margin-bottom: 15px; font-size: 16px;
-        }
-        .login-btn { 
-            width: 100%; padding: 20px; background: linear-gradient(135deg, #FFD700, #B8860B);
-            border: none; border-radius: 12px; font-weight: 900; font-size: 16px; cursor: pointer;
-        }
-        .footer-link { color: var(--gold); text-decoration: none; display: block; text-align: center; margin-top: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    </style>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root { --gold:#FFD700; --dark:#05070a; --glass:#121521; }
+
+body { margin:0; font-family:Arial; background:var(--dark); color:white; }
+
+/* LOGIN */
+#loginPage { display:flex; height:100vh; flex-direction:column; justify-content:center; padding:20px;}
+.input-box { padding:15px; margin:10px 0; border-radius:10px; border:none; background:#111; color:white;}
+.login-btn { padding:15px; background:var(--gold); border:none; border-radius:10px; font-weight:bold; }
+
+/* DASHBOARD */
+#dashboard { display:none; padding:20px; }
+.card {
+    background:var(--glass);
+    border:1px solid #222;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:12px;
+}
+.green { color:#00ff99; }
+.red { color:#ff4d4d; }
+
+/* MODAL */
+#modal {
+    display:none;
+    position:fixed;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.8);
+    justify-content:center;
+    align-items:center;
+}
+.modal-box {
+    background:#111;
+    padding:20px;
+    border-radius:10px;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="customModal">
-        <div class="modal-box">
-            <i data-lucide="shield-alert" style="color:var(--gold); width:48px; height:48px; margin-bottom:15px;"></i>
-            <h2 style="margin:0 0 10px 0; font-size:18px;">System Message</h2>
-            <p id="modalMsg" style="color:#888ba0; font-size:14px; margin:0;"></p>
-            <button class="modal-btn" onclick="closeMsg()">CONTINUE</button>
-        </div>
+<!-- LOGIN -->
+<div id="loginPage">
+    <h1>ARBIMINE</h1>
+    <input id="phone" class="input-box" placeholder="Phone">
+    <input id="pass" type="password" class="input-box" placeholder="Password">
+    <button class="login-btn" onclick="login()">LOGIN</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+    <h2>Live Arbitrage Scanner</h2>
+    <div id="data"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal">
+    <div class="modal-box">
+        <p id="msg"></p>
+        <button onclick="closeModal()">OK</button>
     </div>
+</div>
 
-    <div id="loginPage">
-        <div class="hero-side">
-            <h1 style="font-size:42px; font-weight:900; margin:0;">ARBIMINE</h1>
-            <p style="color:var(--gold); letter-spacing:4px; font-weight:800; font-size:12px;">FIND. ANALYZE. PROFIT.</p>
-        </div>
-        <div class="form-side">
-            <h2 style="text-align:center; margin-bottom:30px;">Welcome Back!</h2>
-            <input type="tel" class="input-box" id="phone" placeholder="Phone Number">
-            <input type="password" class="input-box" id="pass" placeholder="Password">
-            <button class="login-btn" onclick="handleLogin()">LOG IN</button>
-            
-            <div style="text-align:center; color:#444; margin: 25px 0;">— or —</div>
-            
-            <a class="footer-link" onclick="showMsg('Registration is currently closed for your region.')">Create Account</a>
-            <a class="footer-link" onclick="showMsg('Please contact support to reset your credentials.')">Forgot Password?</a>
-        </div>
-    </div>
+<script>
+lucide.createIcons();
 
-    <script>
-        lucide.createIcons();
+/* MODAL */
+function showMsg(m){
+    document.getElementById('msg').innerText=m;
+    document.getElementById('modal').style.display='flex';
+}
+function closeModal(){
+    document.getElementById('modal').style.display='none';
+}
 
-        // The Magic Fix: Replace all alert() calls with this
-        function showMsg(text) {
-            document.getElementById('modalMsg').innerText = text;
-            document.getElementById('customModal').style.display = 'flex';
+/* LOGIN (DEMO) */
+function login(){
+    const p=document.getElementById('phone').value;
+    const pass=document.getElementById('pass').value;
+
+    if(p.length<8 || pass.length<4){
+        showMsg("Invalid login");
+        return;
+    }
+
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+
+    loadData();
+}
+
+/* FETCH MULTI-EXCHANGE */
+async function fetchAll(){
+
+    const [binance, kucoin, bybit, okx] = await Promise.all([
+        fetch('https://api.binance.com/api/v3/ticker/price').then(r=>r.json()),
+        fetch('https://api.kucoin.com/api/v1/market/allTickers').then(r=>r.json()),
+        fetch('https://api.bybit.com/v2/public/tickers').then(r=>r.json()),
+        fetch('https://www.okx.com/api/v5/market/tickers?instType=SPOT').then(r=>r.json())
+    ]);
+
+    let list=[];
+
+    binance.forEach(c=>{
+        list.push({symbol:c.symbol, price:+c.price, ex:"Binance"});
+    });
+
+    kucoin.data.ticker.forEach(c=>{
+        list.push({symbol:c.symbol.replace('-',''), price:+c.last, ex:"KuCoin"});
+    });
+
+    bybit.result.forEach(c=>{
+        list.push({symbol:c.symbol, price:+c.last_price, ex:"Bybit"});
+    });
+
+    okx.data.forEach(c=>{
+        list.push({symbol:c.instId.replace('-',''), price:+c.last, ex:"OKX"});
+    });
+
+    return list;
+}
+
+/* ARBITRAGE */
+function findArb(data){
+    const map={};
+
+    data.forEach(c=>{
+        if(!map[c.symbol]) map[c.symbol]=[];
+        map[c.symbol].push(c);
+    });
+
+    let ops=[];
+
+    for(let s in map){
+        let arr=map[s];
+        if(arr.length<2) continue;
+
+        arr.sort((a,b)=>a.price-b.price);
+
+        let low=arr[0];
+        let high=arr[arr.length-1];
+
+        let diff=((high.price-low.price)/low.price)*100;
+
+        if(diff>0.5){
+            ops.push({
+                symbol:s,
+                buy:low,
+                sell:high,
+                profit:diff.toFixed(2)
+            });
         }
+    }
 
-        function closeMsg() {
-            document.getElementById('customModal').style.display = 'none';
-        }
+    return ops.slice(0,20);
+}
 
-        function handleLogin() {
-            const p = document.getElementById('phone').value;
-            if(p.length < 5) {
-                showMsg("Verification Failed: Invalid credentials.");
-            } else {
-                showMsg("System Error: Server sync in progress. Please try again in 5 minutes.");
-            }
-        }
+/* LOAD DASHBOARD */
+async function loadData(){
+    try{
+        const raw=await fetchAll();
+        const ops=findArb(raw);
 
-        // Global override: Even if you accidentally use alert(), this stops it
-        window.alert = function(msg) { showMsg(msg); };
-    </script>
+        let html="";
+
+        ops.forEach(o=>{
+            html+=`
+            <div class="card">
+                <b>${o.symbol}</b><br>
+                Buy: ${o.buy.ex} @ ${o.buy.price}<br>
+                Sell: ${o.sell.ex} @ ${o.sell.price}<br>
+                Profit: <span class="green">${o.profit}%</span>
+            </div>
+            `;
+        });
+
+        if(!html) html="<p>No opportunities found</p>";
+
+        document.getElementById('data').innerHTML=html;
+
+    }catch(e){
+        showMsg("Error loading market data");
+    }
+}
+
+/* AUTO REFRESH */
+setInterval(loadData, 5000);
+
+</script>
 </body>
 </html>
