@@ -2,27 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARBIMINE – Verified Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ARBIMINE – Find. Analyze. Profit.</title>
     <script src="https://cdn.jsdelivr.net/npm/ccxt@4.2.0/dist/ccxt.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --gold: #FFD700;
             --gold-gradient: linear-gradient(135deg, #FFD700, #B8860B, #BF9B30);
-            --dark-bg: #05070a;
+            --dark-deep: #05070a;
             --form-bg: #121521;
             --card-glass: rgba(22, 26, 46, 0.7);
             --green: #00ff88;
             --text-muted: #888ba0;
+            --input-border: #2a2d3e;
+            --input-bg: #0a0c14;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--dark-bg); color: white; min-height: 100vh; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: var(--dark-deep); color: white; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- LOGIN PAGE (IMAGE RECONSTRUCTION) --- */
+        /* --- 1. LOGIN PAGE (EXACT IMAGE RECONSTRUCTION) --- */
         #loginPage {
             display: flex;
             justify-content: center;
@@ -36,7 +38,7 @@
             display: flex;
             width: 100%;
             max-width: 980px;
-            height: 620px;
+            height: 620px; /* Matching image aspect */
             background: #0f111a;
             border-radius: 32px;
             overflow: hidden;
@@ -59,8 +61,9 @@
             border-right: 1px solid rgba(255,255,255,0.03);
         }
 
+        /* SVG Branding assets matching image precisely */
         .logo-main { width: 300px; filter: drop-shadow(0 0 20px rgba(255,215,0,0.3)); }
-        .tagline { margin-top: 15px; letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 800; opacity: 0.9; }
+        .tagline { margin-top: 15px; letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 800; opacity: 0.9; text-transform: uppercase;}
 
         /* Right Side: Form Side */
         .auth-form-side {
@@ -81,8 +84,8 @@
         .input-group input {
             width: 100%;
             padding: 18px 16px 18px 48px;
-            background: #0a0c14;
-            border: 1px solid #2a2d3e;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: 12px;
             color: white;
             font-size: 15px;
@@ -116,7 +119,7 @@
         .auth-footer a { display: block; color: var(--gold); text-decoration: none; font-size: 14px; margin-bottom: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .auth-footer a:hover { opacity: 0.8; }
 
-        /* --- DASHBOARD SECTION --- */
+        /* --- 2. DASHBOARD SECTION --- */
         #dashboard { display: none; padding-bottom: 80px; }
         .dash-header {
             padding: 20px 25px;
@@ -147,6 +150,7 @@
             position: relative;
         }
         .opp-card:hover { transform: scale(1.02) translateY(-5px); border-color: var(--gold); background: rgba(22, 26, 46, 0.9); }
+        /* Automatic removal animation */
         .opp-card.removing { opacity: 0; transform: scale(0.9) translateY(20px); pointer-events: none; }
 
         .card-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -168,11 +172,12 @@
         .nav-link.active { color: var(--gold); font-weight: 600; }
         .nav-link span { display: block; margin-top: 5px; }
 
-        /* Skeleton States */
+        /* Skeleton States while loading */
         .skeleton { height: 140px; background: #161a2e; border-radius: 20px; margin-bottom: 20px; animation: shine 1.5s infinite; }
         @keyframes shine { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
         @keyframes pulse-anim { 0% { opacity: 0.5; } 70% { opacity: 1; } 100% { opacity: 0.5; } }
 
+        /* Responsive Mobile Layout similar to image */
         @media (max-width: 800px) {
             .auth-container { flex-direction: column; height: auto; border-radius: 0; }
             .auth-visual { padding: 40px 20px; min-height: 250px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
@@ -221,8 +226,8 @@
 
                 <div class="auth-footer">
                     <span class="divider">or</span>
-                    <a onclick="alert('LocalSignup Only')"><i data-lucide="user-plus" style="width:14px; vertical-align:middle; margin-right:5px"></i> Create Account</a>
-                    <a onclick="alert('Contact Support')"><i data-lucide="alert-triangle" style="width:14px; vertical-align:middle; margin-right:5px"></i> Forgot Password?</a>
+                    <a onclick="alert(' Signup Disabled Locally')"><i data-lucide="user-plus" style="width:14px; vertical-align:middle; margin-right:5px"></i> Create Account</a>
+                    <a onclick="alert('Contact Admin')"><i data-lucide="alert-triangle" style="width:14px; vertical-align:middle; margin-right:5px"></i> Forgot Password?</a>
                 </div>
                 
                 <p style="color:#333; font-size: 10px; text-align: center; margin-top: 25px;">© 2025 Arbimine. Multi-Exchange Core Engine.</p>
@@ -239,69 +244,71 @@
         <main class="main-content">
             <div class="status-line">
                 <div class="pulse"></div>
-                <span id="marketMsg">Discovering Liquidity...</span>
+                <span id="marketMsg">Syncing Multi-Exchange Data...</span>
             </div>
 
             <div id="scannerContainer">
-                <div class="skeleton"></div>
                 <div class="skeleton"></div>
                 <div class="skeleton"></div>
             </div>
         </main>
 
         <nav class="nav-menu">
-            <div class="nav-link active" onclick="location.reload()"><i data-lucide="bar-chart-3"></i><span>Scanner</span></div>
-            <div class="nav-link"><i data-lucide="refresh-cw"></i><span>Verified</span></div>
+            <div class="nav-link active" onclick="location.reload()"><i data-lucide="layout-grid"></i><span>Scanner</span></div>
+            <div class="nav-link"><i data-lucide="zap"></i><span>Verified</span></div>
             <div class="nav-link"><i data-lucide="shield-check"></i><span>Security</span></div>
-            <div class="nav-link"><i data-lucide="settings"></i><span>Settings</span></div>
+            <div class="nav-link"><i data-lucide="user-circle"></i><span>Profile</span></div>
         </nav>
     </div>
 
     <script>
+        // 1. Initialize Modern Icons
         lucide.createIcons();
 
-        // 1. Scanner Configuration
+        // 2. Scanner Configuration
         const ENGINE_CONFIG = {
-            // PRO TIP Fix: Swap this with your personal Railway or Render proxy URL
-            proxy: "https://cors-anywhere.herokuapp.com/", 
-            symbols: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'BNB/USDT'],
-            minProfit: 0.1 // Shows divergences over 0.1% for efficiency testing
+            proxy: "https://cors-anywhere.herokuapp.com/", // Required for direct browser access to exchanges
+            symbols: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'BNB/USDT', 'ADA/USDT'],
+            minProfit: 0.05, // Threshold to show a difference for demo efficiency
+            refresh: 15000 // Scan every 15 seconds
         };
 
-        const exchanges = {
-            binance: new ccxt.binance({ proxyUrl: ENGINE_CONFIG.proxy }),
-            kucoin: new ccxt.kucoin({ proxyUrl: ENGINE_CONFIG.proxy })
-        };
+        const binance = new ccxt.binance({ proxyUrl: ENGINE_CONFIG.proxy });
+        const kucoin = new ccxt.kucoin({ proxyUrl: ENGINE_CONFIG.proxy });
 
-        let currentOpps = {}; // Store known opportunities
+        let currentKnownOpps = {}; // Store known opportunities for auto-deletion comparison
 
-        // 2. Auth Flow
+        // 3. Auth Flow
         document.getElementById('loginSubmit').onclick = function() {
             const p = document.getElementById('pNumber').value;
+            // Simple validation for demo
             if(p.length >= 8) {
                 document.getElementById('loginPage').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                runScanner();
+                // Initialize modern icons again for new context
+                lucide.createIcons();
+                startScannerEngine();
             } else {
-                alert("Enter valid phone");
+                alert("Enter a valid phone number");
             }
         };
 
-        // 3. Multi-Exchange Scanner Engine
-        async function runScanner() {
+        // 4. Multi-Exchange Scanner Engine with Auto-Deletion
+        async function startScannerEngine() {
             const container = document.getElementById('scannerContainer');
             const msg = document.getElementById('marketMsg');
 
             async function scan() {
-                msg.innerText = "Syncing Binance & KuCoin Data...";
+                msg.innerText = "Synchronizing Binance & KuCoin Liquidity Pools...";
                 
                 try {
+                    // Fetch all tickers in parallel for speed
                     const [binTickers, kuTickers] = await Promise.all([
-                        exchanges.binance.fetchTickers(ENGINE_CONFIG.symbols),
-                        exchanges.kucoin.fetchTickers(ENGINE_CONFIG.symbols)
+                        binance.fetchTickers(ENGINE_CONFIG.symbols),
+                        kucoin.fetchTickers(ENGINE_CONFIG.symbols)
                     ]);
 
-                    const foundPairs = new Set();
+                    const foundThisScan = new Set(); // Track pairs live right now
 
                     ENGINE_CONFIG.symbols.forEach(symbol => {
                         const b = binTickers[symbol].last;
@@ -310,27 +317,31 @@
                         const pct = ((spread / Math.min(b, k)) * 100).toFixed(2);
 
                         if(pct > ENGINE_CONFIG.minProfit) {
-                            foundPairs.add(symbol); // Track that it's currently live
+                            foundThisScan.add(symbol); // Track it as live
                             
-                            // If it's new, add it
-                            if (!currentOpps[symbol]) {
-                                currentOpps[symbol] = true;
-                                createOppCard(symbol, pct, b, k);
+                            if (!currentKnownOpps[symbol]) {
+                                // If it's a new opportunity, add to DOM and store
+                                currentKnownOpps[symbol] = true;
+                                renderNewCard(symbol, pct, b, k);
                             } else {
-                                // If already exists, update its values
-                                updateOppCard(symbol, pct, b, k);
+                                // If existing, update values
+                                updateLiveCard(symbol, pct, b, k);
                             }
                         }
                     });
 
                     // efficiency: Check if stored opportunities are still live
-                    Object.keys(currentOpps).forEach(symbol => {
-                        if (!foundPairs.has(symbol)) {
-                            removeOppCard(symbol);
+                    Object.keys(currentKnownOpps).forEach(symbol => {
+                        if (!foundThisScan.has(symbol)) {
+                            // If it doesn't exist in the current scan results, remove it from view
+                            delete currentKnownOpps[symbol];
+                            triggerAutoDeletion(symbol);
                         }
                     });
 
                     msg.innerText = `Markets Synchronized • ${new Date().toLocaleTimeString()}`;
+                    
+                    // Clear skeletons after first successful fetch
                     const skeletons = container.querySelectorAll('.skeleton');
                     if (skeletons.length > 0) skeletons.forEach(s => s.remove());
 
@@ -341,12 +352,13 @@
                 }
             }
 
+            // Initial call and set interval
             scan();
-            setInterval(scan, 20000); // 20s interval for API safety
+            setInterval(scan, ENGINE_CONFIG.refresh);
         }
 
-        // 4. Dom Management (Efficiency Focus)
-        function createOppCard(sym, pct, bP, kP) {
+        // 5. DOM Manipulation with Efficiency and Auto-Deletion
+        function renderNewCard(sym, pct, bP, kP) {
             const container = document.getElementById('scannerContainer');
             const cardId = `opp-${sym.replace('/','-')}`;
             
@@ -369,11 +381,11 @@
                 </div>
             `;
             
-            // Insert at top
+            // Insert at top for visibility
             container.insertAdjacentHTML('afterbegin', cardHtml);
         }
 
-        function updateOppCard(sym, pct, bP, kP) {
+        function updateLiveCard(sym, pct, bP, kP) {
             const cardId = `opp-${sym.replace('/','-')}`;
             const card = document.getElementById(cardId);
             if (!card) return;
@@ -383,21 +395,18 @@
             card.querySelectorAll('.ex-price')[1].innerText = `$${kP.toLocaleString()}`;
         }
 
-        function removeOppCard(sym) {
+        function triggerAutoDeletion(sym) {
             const cardId = `opp-${sym.replace('/','-')}`;
             const card = document.getElementById(cardId);
             if (!card) return;
 
-            // Add removing class for animation
+            // Add removing class to trigger CSS animation
             card.classList.add('removing');
             
-            // Remove from stored object immediately
-            delete currentOpps[sym];
-
-            // efficiency: Wait for animation, then remove from DOM
+            // efficiency: Wait for animation, then remove from DOM completely
             setTimeout(() => {
                 if (card) card.remove();
-            }, 400); 
+            }, 500); 
         }
     </script>
 </body>
