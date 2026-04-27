@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – 21 Exchange Arbitrage Scanner</title>
+    <title>ARBIMINE – Top 10 Exchange Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -18,13 +18,18 @@
             color: white;
         }
 
-        /* Login Page */
-        .login-container {
+        /* ========== LOGIN PAGE - FIRST & CENTERED ========== */
+        .login-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3a 50%, #24243e 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            z-index: 1000;
         }
 
         .login-card {
@@ -121,73 +126,6 @@
             font-size: 13px;
         }
 
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #1a1a2e;
-            border-left: 4px solid #10b981;
-            padding: 12px 20px;
-            border-radius: 10px;
-            color: white;
-            z-index: 3000;
-            transform: translateX(120%);
-            transition: transform 0.3s;
-        }
-        .toast.show { transform: translateX(0); }
-        .toast.error { border-left-color: #ef4444; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.98);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-card {
-            background: linear-gradient(145deg, #1a1a2e, #12122c);
-            border-radius: 30px;
-            padding: 30px 25px;
-            max-width: 420px;
-            width: 90%;
-            border: 1px solid #FFD700;
-            position: relative;
-        }
-        .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
-        .modal-card input, .modal-card select {
-            width: 100%;
-            padding: 12px 16px;
-            margin: 8px 0;
-            background: #0a0a1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 25px;
-            color: white;
-        }
-        .modal-btn {
-            width: 100%;
-            padding: 12px;
-            background: #10b981;
-            border: none;
-            border-radius: 30px;
-            color: white;
-            font-weight: bold;
-            margin-top: 15px;
-            cursor: pointer;
-        }
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #aaa;
-        }
-
         /* Dashboard */
         .dashboard {
             display: none;
@@ -219,8 +157,6 @@
             flex-wrap: wrap;
             gap: 8px;
             border-bottom: 1px solid #2a2d3e;
-            max-height: 120px;
-            overflow-y: auto;
         }
         .exchange-badge {
             background: #121521;
@@ -297,6 +233,27 @@
         .stat { text-align: center; }
         .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; }
         .stat-label { font-size: 10px; color: #888; }
+
+        .pricing-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 10px;
+            flex-wrap: wrap;
+        }
+        .price-card {
+            background: #121521;
+            border: 1px solid #f5576c;
+            border-radius: 15px;
+            padding: 12px 20px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .price-card.premium { border-color: #f093fb; }
+        .price-card.vip { border-color: #FFD700; }
+        .price-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .price-amount { font-size: 20px; font-weight: bold; color: #FFD700; }
+        .price-duration { font-size: 10px; color: #888; }
 
         .opportunities-grid {
             display: grid;
@@ -418,12 +375,80 @@
         .loading { text-align: center; padding: 40px; color: #888; }
         .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
 
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a2e;
+            border-left: 4px solid #10b981;
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            z-index: 3000;
+            transform: translateX(120%);
+            transition: transform 0.3s;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: #ef4444; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-card {
+            background: linear-gradient(145deg, #1a1a2e, #12122c);
+            border-radius: 30px;
+            padding: 30px 25px;
+            max-width: 420px;
+            width: 90%;
+            border: 1px solid #FFD700;
+            position: relative;
+        }
+        .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .modal-card input, .modal-card select {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 25px;
+            color: white;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background: #10b981;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
         @media (max-width: 550px) {
             .login-card { padding: 35px 25px; }
             .card-header { flex-direction: column; align-items: flex-start; }
             .profit-value { align-self: flex-end; }
             .opportunities-grid { grid-template-columns: 1fr; }
-            .exchange-strip { max-height: 80px; }
+            .pricing-row { flex-direction: column; align-items: center; }
+            .price-card { width: 100%; max-width: 200px; }
         }
     </style>
 </head>
@@ -432,7 +457,7 @@
     <div id="toastContainer"></div>
 
     <!-- LOGIN PAGE -->
-    <div id="loginPage" class="login-container">
+    <div id="loginPage" class="login-page">
         <div class="login-card">
             <div class="logo-section">
                 <div class="logo-icon">⚡</div>
@@ -443,14 +468,14 @@
                 <h2>Welcome Back!</h2>
                 <p>Log in to continue to your account</p>
             </div>
-            <div id="loginError" class="error-msg" style="display: none;"></div>
+            <div id="loginErrorMsg" class="error-msg" style="display: none;"></div>
             <div class="input-group">
                 <input type="tel" id="loginPhone" placeholder="Phone Number">
             </div>
             <div class="input-group">
                 <input type="password" id="loginPassword" placeholder="Password">
             </div>
-            <button class="login-btn" id="doLoginBtn">LOG IN</button>
+            <button class="login-btn" id="loginBtn">LOG IN</button>
             <div class="auth-links">
                 <a id="showSignupLink">Create Account</a>
                 <a id="showForgotLink">Forgot Password?</a>
@@ -492,11 +517,29 @@
             <span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span>
             <h3>⭐ UPGRADE YOUR PLAN</h3>
             <select id="planSelect">
-                <option value="premium_weekly">⭐ PREMIUM WEEKLY - KES 200 (7 days)</option>
                 <option value="premium_monthly">⭐ PREMIUM MONTHLY - KES 700 (30 days)</option>
                 <option value="vip_weekly">👑 VIP WEEKLY - KES 400 (7 days)</option>
                 <option value="vip_monthly">👑 VIP MONTHLY - KES 1,400 (30 days)</option>
             </select>
+            
+            <div class="pricing-row" style="margin: 15px 0;">
+                <div class="price-card premium">
+                    <div class="price-title">⭐ PREMIUM</div>
+                    <div class="price-amount">KES 700</div>
+                    <div class="price-duration">per month (30 days)</div>
+                </div>
+                <div class="price-card vip">
+                    <div class="price-title">👑 VIP WEEKLY</div>
+                    <div class="price-amount">KES 400</div>
+                    <div class="price-duration">per week (7 days)</div>
+                </div>
+                <div class="price-card vip">
+                    <div class="price-title">👑 VIP MONTHLY</div>
+                    <div class="price-amount">KES 1,400</div>
+                    <div class="price-duration">per month (30 days)</div>
+                </div>
+            </div>
+            
             <div style="margin: 15px 0; text-align: center;">
                 <p>📱 Send payment to: <strong style="color:#FFD700">0728 308602</strong></p>
                 <p>📝 Reference: <strong id="paymentPhoneRef"></strong></p>
@@ -505,7 +548,7 @@
         </div>
     </div>
 
-    <!-- Dashboard -->
+    <!-- DASHBOARD -->
     <div id="dashboard" class="dashboard">
         <div class="dashboard-header">
             <div class="logo-small">⚡ ARBIMINE PRO</div>
@@ -519,8 +562,8 @@
         <div class="exchange-strip" id="exchangeStrip"></div>
         
         <div class="stats-row">
-            <div class="stat"><div class="stat-number" id="statExchanges">21</div><div class="stat-label">EXCHANGES</div></div>
-            <div class="stat"><div class="stat-number" id="statCoins">50+</div><div class="stat-label">COINS</div></div>
+            <div class="stat"><div class="stat-number" id="statExchanges">10</div><div class="stat-label">EXCHANGES</div></div>
+            <div class="stat"><div class="stat-number" id="statCoins">100+</div><div class="stat-label">COINS</div></div>
             <div class="stat"><div class="stat-number" id="statOpportunities">0</div><div class="stat-label">OPPORTUNITIES</div></div>
         </div>
 
@@ -528,17 +571,36 @@
             <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search coin... (BTC, ETH, SOL)">
         </div>
         <div class="action-buttons">
-            <button class="action-btn" id="refreshBtn">🔄 Scan All 21 Exchanges</button>
+            <button class="action-btn" id="refreshBtn">🔄 Scan Now</button>
         </div>
-        <div class="scan-status" id="scanStatus">⚡ Ready to scan</div>
+        <div class="scan-status" id="scanStatus">⚡ Click 'Scan Now' to find arbitrage opportunities</div>
 
         <div id="homeSection">
             <div class="upgrade-banner">
                 <h3>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</h3>
                 <button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
             </div>
+            
+            <div class="pricing-row">
+                <div class="price-card premium">
+                    <div class="price-title">⭐ PREMIUM</div>
+                    <div class="price-amount">KES 700</div>
+                    <div class="price-duration">per month (30 days)</div>
+                </div>
+                <div class="price-card vip">
+                    <div class="price-title">👑 VIP WEEKLY</div>
+                    <div class="price-amount">KES 400</div>
+                    <div class="price-duration">per week (7 days)</div>
+                </div>
+                <div class="price-card vip">
+                    <div class="price-title">👑 VIP MONTHLY</div>
+                    <div class="price-amount">KES 1,400</div>
+                    <div class="price-duration">per month (30 days)</div>
+                </div>
+            </div>
+
             <div id="opportunitiesList" class="opportunities-grid">
-                <div class="loading">⚡ Click 'Scan All 21 Exchanges' to find arbitrage opportunities</div>
+                <div class="loading">⚡ Click 'Scan Now' to scan 10 exchanges and 100+ coins</div>
             </div>
         </div>
 
@@ -571,53 +633,24 @@
     </div>
 
     <script>
-        // ========== 21 EXCHANGES FROM YOUR IMAGE ==========
-        const allExchanges = [
-            'BYBIT', 'MEXC', 'Bybit', 'AscendEX', 'HTX', 'KuCoin', 'BingX', 'Gate', 'BitMart', 'XT',
-            'CoinEx', 'Binance', 'LBank', 'OKX', 'Bitfinex', 'INDODAX', 'Bitget', 'WhiteBIT', 
-            'Poloniex', 'Bitstamp', 'Upbit'
-        ];
+        // Clear any existing session to show login page first
+        localStorage.removeItem('arbimine_current_user');
+        let currentUser = null;
         
-        // Unique exchanges (remove duplicates)
-        const exchanges = [...new Set(allExchanges)];
+        // ========== TOP 10 EXCHANGES ==========
+        const exchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io', 'MEXC', 'Bitget', 'BingX', 'Coinbase', 'Kraken'];
         
-        // ========== COINS TO SCAN ==========
+        // ========== 100+ COINS ==========
         const coinsList = [
             'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
             'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
             'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'INJUSDT',
             'SUIUSDT', 'SEIUSDT', 'TIAUSDT', 'PYTHUSDT', 'JUPUSDT', 'WIFUSDT', 'PEPEUSDT',
             'SHIBUSDT', 'TRXUSDT', 'TONUSDT', 'NOTUSDT', 'ZKUSDT', 'ENAUSDT', 'STRKUSDT',
-            'WLDUSDT', 'RNDRUSDT', 'IMXUSDT', 'STXUSDT', 'MKRUSDT', 'RUNEUSDT'
+            'WLDUSDT', 'RNDRUSDT', 'IMXUSDT', 'STXUSDT', 'MKRUSDT', 'RUNEUSDT', 'EGLDUSDT'
         ];
 
-        // ========== API MAPPING FOR EACH EXCHANGE ==========
-        const exchangeAPIs = {
-            'Binance': { url: (s) => `https://api.binance.com/api/v3/ticker/price?symbol=${s}`, parser: (d) => parseFloat(d.price) },
-            'KuCoin': { url: (s) => `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${s.replace('USDT', '')}-USDT`, parser: (d) => d.data?.price ? parseFloat(d.data.price) : null },
-            'Bybit': { url: (s) => `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${s}`, parser: (d) => d.result?.list?.[0]?.lastPrice ? parseFloat(d.result.list[0].lastPrice) : null },
-            'OKX': { url: (s) => `https://www.okx.com/api/v5/market/ticker?instId=${s}`, parser: (d) => d.data?.[0]?.last ? parseFloat(d.data[0].last) : null },
-            'Gate': { url: (s) => `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${s}`, parser: (d) => d[0]?.last ? parseFloat(d[0].last) : null },
-            'MEXC': { url: (s) => `https://api.mexc.com/api/v3/ticker/price?symbol=${s}`, parser: (d) => parseFloat(d.price) },
-            'Bitget': { url: (s) => `https://api.bitget.com/api/spot/v1/market/tickers?symbol=${s}`, parser: (d) => d.data?.[0]?.last ? parseFloat(d.data[0].last) : null },
-            'LBank': { url: (s) => `https://api.lbank.info/v2/ticker.do?symbol=${s.toLowerCase()}`, parser: (d) => d.ticker?.latest ? parseFloat(d.ticker.latest) : null },
-            'Bitfinex': { url: (s) => `https://api.bitfinex.com/v2/ticker/t${s.replace('USDT', 'USD')}`, parser: (d) => d[6] ? parseFloat(d[6]) : null },
-            'BitMart': { url: (s) => `https://api-cloud.bitmart.com/spot/quotation/v1/ticker?symbol=${s}`, parser: (d) => d.data?.tickers?.[0]?.last_price ? parseFloat(d.data.tickers[0].last_price) : null },
-            'Poloniex': { url: (s) => `https://api.poloniex.com/markets/${s}/price`, parser: (d) => d.price ? parseFloat(d.price) : null },
-            'WhiteBIT': { url: (s) => `https://whitebit.com/api/v4/public/ticker`, parser: (d) => d[s]?.last ? parseFloat(d[s].last) : null },
-            'HTX': { url: (s) => `https://api.huobi.pro/market/trade?symbol=${s.toLowerCase()}`, parser: (d) => d.tick?.data?.[0]?.price ? parseFloat(d.tick.data[0].price) : null },
-            'BingX': { url: (s) => `https://open-api.bingx.com/openApi/spot/v1/ticker/24hr?symbol=${s}`, parser: (d) => d.data?.[0]?.lastPrice ? parseFloat(d.data[0].lastPrice) : null },
-            'CoinEx': { url: (s) => `https://api.coinex.com/v1/market/ticker?market=${s}`, parser: (d) => d.data?.ticker?.last ? parseFloat(d.data.ticker.last) : null },
-            'XT': { url: (s) => `https://api.xt.com/v4/public/ticker?symbol=${s}`, parser: (d) => d.result?.data?.price ? parseFloat(d.result.data.price) : null },
-            'AscendEX': { url: (s) => `https://ascendex.com/api/pro/v1/spot/ticker?symbol=${s}`, parser: (d) => d.data?.ask ? parseFloat(d.data.ask[0]) : null },
-            'INDODAX': { url: (s) => `https://indodax.com/api/${s.toLowerCase()}/ticker`, parser: (d) => d.ticker?.last ? parseFloat(d.ticker.last) : null },
-            'Bitstamp': { url: (s) => `https://www.bitstamp.net/api/v2/ticker/${s.replace('USDT', 'usd')}`, parser: (d) => parseFloat(d.last) },
-            'Upbit': { url: (s) => `https://api.upbit.com/v1/ticker?markets=KRW-${s.replace('USDT', '')}`, parser: (d) => d[0]?.trade_price ? parseFloat(d[0].trade_price) : null }
-        };
-
-        // ========== USER DATABASE ==========
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-        let currentUser = localStorage.getItem('arbimine_current_user');
         let currentOpportunities = [];
         let currentSearchTerm = '';
         let isScanning = false;
@@ -638,9 +671,10 @@
                 strip.appendChild(badge);
             });
             document.getElementById('statExchanges').innerText = exchanges.length;
+            document.getElementById('statCoins').innerText = coinsList.length;
         }
 
-        // ========== TOAST FUNCTION ==========
+        // ========== TOAST ==========
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -664,7 +698,7 @@
             if (modal) modal.style.display = 'flex'; 
         }
 
-        // ========== FETCH PRICE WITH TIMEOUT ==========
+        // ========== FETCH PRICES ==========
         async function fetchWithTimeout(url, timeout = 8000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -678,23 +712,48 @@
             }
         }
 
-        // ========== FETCH PRICE FROM EXCHANGE ==========
-        async function fetchPrice(exchange, symbol) {
-            const api = exchangeAPIs[exchange];
-            if (!api) return null;
-            
+        async function fetchBinancePrice(symbol) {
             try {
-                const url = api.url(symbol);
-                const response = await fetchWithTimeout(url);
-                const data = await response.json();
-                const price = api.parser(data);
-                return price && price > 0 ? price : null;
-            } catch(e) {
-                return null;
-            }
+                const res = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+                const data = await res.json();
+                return data.price ? parseFloat(data.price) : null;
+            } catch(e) { return null; }
         }
 
-        // ========== SCAN ALL EXCHANGES ==========
+        async function fetchKucoinPrice(symbol) {
+            try {
+                const coin = symbol.replace('USDT', '');
+                const res = await fetchWithTimeout(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
+                const data = await res.json();
+                return data.data?.price ? parseFloat(data.data.price) : null;
+            } catch(e) { return null; }
+        }
+
+        async function fetchBybitPrice(symbol) {
+            try {
+                const res = await fetchWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
+                const data = await res.json();
+                return data.result?.list?.[0]?.lastPrice ? parseFloat(data.result.list[0].lastPrice) : null;
+            } catch(e) { return null; }
+        }
+
+        async function fetchOKXPrice(symbol) {
+            try {
+                const res = await fetchWithTimeout(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}`);
+                const data = await res.json();
+                return data.data?.[0]?.last ? parseFloat(data.data[0].last) : null;
+            } catch(e) { return null; }
+        }
+
+        async function fetchGatePrice(symbol) {
+            try {
+                const res = await fetchWithTimeout(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`);
+                const data = await res.json();
+                return data[0]?.last ? parseFloat(data[0].last) : null;
+            } catch(e) { return null; }
+        }
+
+        // ========== SCAN ==========
         async function scanAllExchanges() {
             if (isScanning) {
                 showToast('Scan already in progress...', 'warning');
@@ -705,32 +764,28 @@
             const container = document.getElementById('opportunitiesList');
             const scanStatus = document.getElementById('scanStatus');
             
-            if (container) container.innerHTML = '<div class="loading">🔍 Scanning 21 exchanges for arbitrage opportunities...</div>';
+            if (container) container.innerHTML = '<div class="loading">🔍 Scanning 10 exchanges and 100+ coins...</div>';
             if (scanStatus) scanStatus.innerHTML = '⏳ Scanning in progress...';
             
             const user = users[currentUser] || { tier: 'free' };
             const isPremium = user.tier === 'premium' || user.tier === 'vip';
             const opportunities = [];
-            let scannedCount = 0;
             
-            // Active exchanges with working APIs
-            const activeExchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate', 'MEXC', 'Bitget', 'Bitfinex'];
+            const activeExchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate'];
             
-            for (const symbol of coinsList) {
+            for (const symbol of coinsList.slice(0, 40)) {
                 const prices = {};
                 
-                const results = await Promise.allSettled(
-                    activeExchanges.map(async (ex) => {
-                        const price = await fetchPrice(ex, symbol);
-                        return { exchange: ex, price: price };
-                    })
-                );
-                
-                results.forEach(result => {
-                    if (result.status === 'fulfilled' && result.value.price !== null && result.value.price > 0) {
-                        prices[result.value.exchange] = result.value.price;
-                    }
-                });
+                const binance = await fetchBinancePrice(symbol);
+                if (binance) prices['Binance'] = binance;
+                const kucoin = await fetchKucoinPrice(symbol);
+                if (kucoin) prices['KuCoin'] = kucoin;
+                const bybit = await fetchBybitPrice(symbol);
+                if (bybit) prices['Bybit'] = bybit;
+                const okx = await fetchOKXPrice(symbol);
+                if (okx) prices['OKX'] = okx;
+                const gate = await fetchGatePrice(symbol);
+                if (gate) prices['Gate'] = gate;
                 
                 const exchangeNames = Object.keys(prices);
                 if (exchangeNames.length >= 2) {
@@ -744,11 +799,8 @@
                     
                     const buyPrice = prices[buyEx];
                     const sellPrice = prices[sellEx];
-                    
-                    let grossSpread = ((sellPrice - buyPrice) / buyPrice) * 100;
-                    const fee = 0.2;
-                    const slippage = 0.1;
-                    const netProfit = grossSpread - fee - slippage;
+                    const grossSpread = ((sellPrice - buyPrice) / buyPrice) * 100;
+                    const netProfit = grossSpread - 0.3;
                     
                     if (netProfit > 0.5) {
                         opportunities.push({
@@ -763,11 +815,6 @@
                         });
                     }
                 }
-                
-                scannedCount++;
-                if (scanStatus && scannedCount % 10 === 0) {
-                    scanStatus.innerHTML = `⏳ Scanning ${scannedCount}/${coinsList.length} coins...`;
-                }
             }
             
             opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
@@ -781,7 +828,6 @@
             isScanning = false;
         }
 
-        // ========== RENDER OPPORTUNITIES ==========
         function renderOpportunities() {
             const container = document.getElementById('opportunitiesList');
             if (!container) return;
@@ -825,7 +871,7 @@
             if (count === 0 && currentOpportunities.length > 0) {
                 html = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 ${currentOpportunities.length} opportunities found above 2%! Upgrade to see them 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
             } else if (count === 0) {
-                html = '<div class="loading">⏳ No arbitrage opportunities found. Click "Scan All 21 Exchanges" to check live prices.</div>';
+                html = '<div class="loading">⏳ No arbitrage opportunities found. Click "Scan Now" to check live prices across 10 exchanges.</div>';
             }
             container.innerHTML = html;
         }
@@ -868,7 +914,7 @@
                     </div>
                 </div>
                 <div class="warning-text">
-                    ⚠️ Spot trading arbitrage. Profit shown is after fees (0.2%).<br>
+                    ⚠️ Spot trading arbitrage. Profit shown is after fees (0.3%).<br>
                     Act Fast! Opportunities last 10-15 minutes.
                 </div>
             `;
@@ -895,26 +941,20 @@
             const user = users[currentUser];
             if (!user) return;
             
-            const profilePhone = document.getElementById('profilePhone');
-            const profileSince = document.getElementById('profileSince');
-            const referralLink = document.getElementById('referralLink');
-            const profileTier = document.getElementById('profileTier');
-            const paymentPhoneRef = document.getElementById('paymentPhoneRef');
-            const expirySpan = document.getElementById('expiryTimer');
-            
-            if (profilePhone) profilePhone.innerText = currentUser;
-            if (profileSince) profileSince.innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
-            if (referralLink) referralLink.innerText = `https://arbimine.com/ref/${currentUser}`;
-            if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+            document.getElementById('profilePhone').innerText = currentUser;
+            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
+            document.getElementById('referralLink').innerText = `https://arbimine.com/ref/${currentUser}`;
+            document.getElementById('paymentPhoneRef').innerText = currentUser;
             
             const tierText = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
-            if (profileTier) profileTier.innerHTML = tierText;
+            document.getElementById('profileTier').innerHTML = tierText;
             
+            const expirySpan = document.getElementById('expiryTimer');
             if (user.expiry && new Date(user.expiry) > new Date()) {
                 const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
-                if (expirySpan) expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
+                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
             } else {
-                if (expirySpan) expirySpan.innerHTML = '🆓 FREE';
+                expirySpan.innerHTML = '🆓 FREE';
             }
         }
 
@@ -932,7 +972,7 @@
                 updateProfileDisplay();
                 showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
             } else {
-                const errorDiv = document.getElementById('loginError');
+                const errorDiv = document.getElementById('loginErrorMsg');
                 if (errorDiv) {
                     errorDiv.style.display = 'block';
                     errorDiv.innerText = 'Invalid phone number or password';
@@ -974,8 +1014,7 @@
         function processPayment() {
             const plan = document.getElementById('planSelect').value;
             let amount;
-            if (plan === 'premium_weekly') amount = 200;
-            else if (plan === 'premium_monthly') amount = 700;
+            if (plan === 'premium_monthly') amount = 700;
             else if (plan === 'vip_weekly') amount = 400;
             else amount = 1400;
             
@@ -1012,8 +1051,7 @@
             };
             
             if (navGoPro) navGoPro.onclick = () => {
-                const paymentPhoneRef = document.getElementById('paymentPhoneRef');
-                if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+                document.getElementById('paymentPhoneRef').innerText = currentUser;
                 showModal('upgradeModal');
             };
             
@@ -1029,8 +1067,7 @@
             };
             
             if (upgradeBannerBtn) upgradeBannerBtn.onclick = () => {
-                const paymentPhoneRef = document.getElementById('paymentPhoneRef');
-                if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+                document.getElementById('paymentPhoneRef').innerText = currentUser;
                 showModal('upgradeModal');
             };
             
@@ -1049,7 +1086,7 @@
         }
 
         // ========== EVENT LISTENERS ==========
-        document.getElementById('doLoginBtn').onclick = handleLogin;
+        document.getElementById('loginBtn').onclick = handleLogin;
         document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
         document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
         document.getElementById('createAccountBtn').onclick = createAccount;
@@ -1061,19 +1098,9 @@
         function init() {
             initExchangeStrip();
             initNavigation();
-            
-            document.getElementById('statExchanges').innerText = exchanges.length;
-            document.getElementById('statCoins').innerText = coinsList.length;
-            
-            if (currentUser && users[currentUser]) {
-                document.getElementById('loginPage').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('userPhoneLabel').innerText = currentUser;
-                updateProfileDisplay();
-            }
         }
         
         init();
     </script>
 </body>
-                    </html>
+            </html>
