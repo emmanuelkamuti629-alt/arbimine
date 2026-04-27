@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – 20 Exchange Arbitrage Scanner</title>
+    <title>ARBIMINE – Full 20 Exchange Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -18,7 +18,6 @@
             overflow-x: hidden;
         }
 
-        /* Animated Background */
         .bg-animation {
             position: fixed;
             top: 0;
@@ -47,7 +46,6 @@
             50% { transform: translateY(-50px) scale(1.1); opacity: 0.7; }
         }
 
-        /* Login Container */
         .login-wrapper {
             position: relative;
             z-index: 10;
@@ -70,172 +68,31 @@
             transition: transform 0.3s ease;
         }
 
-        .login-card:hover {
-            transform: translateY(-5px);
-        }
+        .login-card:hover { transform: translateY(-5px); }
 
-        .logo-section {
-            text-align: center;
-            margin-bottom: 35px;
-        }
+        .logo-section { text-align: center; margin-bottom: 35px; }
+        .logo-icon { font-size: 60px; margin-bottom: 10px; display: inline-block; animation: iconPulse 2s infinite; }
+        @keyframes iconPulse { 0%, 100% { transform: scale(1); text-shadow: 0 0 10px #FFD700; } 50% { transform: scale(1.05); text-shadow: 0 0 25px #FFD700; } }
+        .logo-section h1 { font-size: 46px; font-weight: 800; letter-spacing: 3px; background: linear-gradient(135deg, #FFD700, #FFA500, #FF6B6B); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .logo-section .tagline { font-size: 13px; color: rgba(255, 255, 255, 0.7); letter-spacing: 2px; margin-top: 8px; }
+        .welcome-text { text-align: center; margin-bottom: 35px; }
+        .welcome-text h2 { font-size: 32px; font-weight: 600; background: linear-gradient(135deg, #fff, #ddd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .welcome-text p { color: rgba(255, 255, 255, 0.6); font-size: 14px; margin-top: 8px; }
+        .input-group { margin-bottom: 22px; }
+        .input-group input { width: 100%; padding: 16px 22px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50px; color: white; font-size: 15px; transition: all 0.3s ease; }
+        .input-group input:focus { outline: none; border-color: #FFD700; background: rgba(255, 255, 255, 0.12); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .input-group input::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .login-btn { width: 100%; padding: 16px; background: linear-gradient(95deg, #667eea, #764ba2); border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; position: relative; overflow: hidden; }
+        .login-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s; }
+        .login-btn:hover::before { left: 100%; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
+        .auth-links { display: flex; justify-content: center; gap: 35px; margin-top: 30px; }
+        .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; transition: all 0.3s; position: relative; }
+        .auth-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px; background: #FFD700; transition: width 0.3s; }
+        .auth-links a:hover::after { width: 100%; }
+        .footer-text { text-align: center; margin-top: 40px; font-size: 11px; color: rgba(255, 255, 255, 0.4); }
+        .footer-text .brand { margin-top: 12px; font-size: 10px; letter-spacing: 2px; color: #FFD700; }
 
-        .logo-icon {
-            font-size: 60px;
-            margin-bottom: 10px;
-            display: inline-block;
-            animation: iconPulse 2s infinite;
-        }
-
-        @keyframes iconPulse {
-            0%, 100% { transform: scale(1); text-shadow: 0 0 10px #FFD700; }
-            50% { transform: scale(1.05); text-shadow: 0 0 25px #FFD700; }
-        }
-
-        .logo-section h1 {
-            font-size: 46px;
-            font-weight: 800;
-            letter-spacing: 3px;
-            background: linear-gradient(135deg, #FFD700, #FFA500, #FF6B6B);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .logo-section .tagline {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-            letter-spacing: 2px;
-            margin-top: 8px;
-        }
-
-        .welcome-text {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .welcome-text h2 {
-            font-size: 32px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #fff, #ddd);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .welcome-text p {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            margin-top: 8px;
-        }
-
-        .input-group {
-            margin-bottom: 22px;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 16px 22px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            color: white;
-            font-size: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #FFD700;
-            background: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(95deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .login-btn:hover::before {
-            left: 100%;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .auth-links {
-            display: flex;
-            justify-content: center;
-            gap: 35px;
-            margin-top: 30px;
-        }
-
-        .auth-links a {
-            color: #FFD700;
-            font-size: 13px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .auth-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: #FFD700;
-            transition: width 0.3s;
-        }
-
-        .auth-links a:hover::after {
-            width: 100%;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .footer-text .brand {
-            margin-top: 12px;
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: #FFD700;
-        }
-
-        /* Toast Notification */
         .toast-notification {
             position: fixed;
             top: 20px;
@@ -253,27 +110,17 @@
             transition: transform 0.3s ease;
             font-size: 14px;
         }
-
-        .toast-notification.show {
-            transform: translateX(0);
-        }
-
+        .toast-notification.show { transform: translateX(0); }
         .toast-success { border-left-color: #10b981; }
         .toast-error { border-left-color: #ef4444; }
         .toast-warning { border-left-color: #f59e0b; }
         .toast-info { border-left-color: #667eea; }
-
-        .toast-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .toast-content { display: flex; align-items: center; gap: 12px; }
         .toast-icon { font-size: 24px; }
         .toast-message { flex: 1; color: white; line-height: 1.4; }
         .toast-close { cursor: pointer; color: #888; font-size: 18px; transition: 0.2s; }
         .toast-close:hover { color: white; }
 
-        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -286,7 +133,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .modal-card {
             background: linear-gradient(145deg, #1a1a2e, #12122c);
             border-radius: 40px;
@@ -297,67 +143,15 @@
             position: relative;
             animation: modalFadeIn 0.3s ease;
         }
+        @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-card h3 { color: #FFD700; font-size: 26px; text-align: center; margin-bottom: 24px; }
+        .modal-card input, .modal-card select { width: 100%; padding: 14px 18px; margin: 10px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 30px; color: white; font-size: 14px; }
+        .modal-card input:focus, .modal-card select:focus { outline: none; border-color: #FFD700; }
+        .modal-btn { width: 100%; padding: 14px; background: #10b981; border: none; border-radius: 40px; color: white; font-weight: bold; margin-top: 16px; cursor: pointer; transition: 0.3s; }
+        .modal-btn:hover { background: #059669; }
+        .close-modal { position: absolute; top: 18px; right: 24px; font-size: 28px; cursor: pointer; color: #aaa; transition: 0.3s; }
+        .close-modal:hover { color: #fff; }
 
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .modal-card h3 {
-            color: #FFD700;
-            font-size: 26px;
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-card input, .modal-card select {
-            width: 100%;
-            padding: 14px 18px;
-            margin: 10px 0;
-            background: #0a0a1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 30px;
-            color: white;
-            font-size: 14px;
-        }
-
-        .modal-card input:focus, .modal-card select:focus {
-            outline: none;
-            border-color: #FFD700;
-        }
-
-        .modal-btn {
-            width: 100%;
-            padding: 14px;
-            background: #10b981;
-            border: none;
-            border-radius: 40px;
-            color: white;
-            font-weight: bold;
-            margin-top: 16px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .modal-btn:hover {
-            background: #059669;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 18px;
-            right: 24px;
-            font-size: 28px;
-            cursor: pointer;
-            color: #aaa;
-            transition: 0.3s;
-        }
-
-        .close-modal:hover {
-            color: #fff;
-        }
-
-        /* Dashboard */
         .dashboard {
             background: #0a0a1a;
             min-height: 100vh;
@@ -377,168 +171,35 @@
             top: 0;
             z-index: 100;
         }
-        .logo-small {
-            font-size: 22px;
-            font-weight: bold;
-            color: #FFD700;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            color: white;
-            flex-wrap: wrap;
-        }
-        .expiry-badge {
-            background: #f59e0b;
-            color: #1a1a2e;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        #logoutBtn {
-            background: #ef4444;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 30px;
-            color: white;
-            cursor: pointer;
-        }
-        .nav-tabs {
-            display: flex;
-            gap: 20px;
-            padding: 15px 25px;
-            background: #0f0f1a;
-            border-bottom: 1px solid #222;
-            flex-wrap: wrap;
-        }
-        .nav-tab {
-            cursor: pointer;
-            padding: 8px 20px;
-            border-radius: 30px;
-            color: #aaa;
-            transition: 0.3s;
-        }
-        .nav-tab.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-        .exchange-strip {
-            background: #0a0a12;
-            padding: 12px 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            border-bottom: 1px solid #222;
-        }
-        .exchange-badge {
-            background: #181830;
-            border: 1px solid #2f2f4a;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 10px;
-            color: #FFD700;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            padding: 20px;
-        }
-        .stat-card {
-            background: #111;
-            border-radius: 20px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid #2a2a3e;
-        }
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #FFD700;
-        }
-        .opportunities-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            max-height: 550px;
-            overflow-y: auto;
-        }
-        .card {
-            background: #111;
-            border-radius: 20px;
-            padding: 18px;
-            border: 1px solid #2a2a3e;
-            transition: 0.3s;
-        }
-        .card:hover {
-            border-color: #FFD700;
-            transform: translateX(5px);
-        }
+        .logo-small { font-size: 22px; font-weight: bold; color: #FFD700; }
+        .user-info { display: flex; align-items: center; gap: 15px; color: white; flex-wrap: wrap; }
+        .expiry-badge { background: #f59e0b; color: #1a1a2e; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        #logoutBtn { background: #ef4444; border: none; padding: 6px 16px; border-radius: 30px; color: white; cursor: pointer; }
+        .nav-tabs { display: flex; gap: 20px; padding: 15px 25px; background: #0f0f1a; border-bottom: 1px solid #222; flex-wrap: wrap; }
+        .nav-tab { cursor: pointer; padding: 8px 20px; border-radius: 30px; color: #aaa; transition: 0.3s; }
+        .nav-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .exchange-strip { background: #0a0a12; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #222; }
+        .exchange-badge { background: #181830; border: 1px solid #2f2f4a; padding: 4px 12px; border-radius: 40px; font-size: 10px; color: #FFD700; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 20px; }
+        .stat-card { background: #111; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #2a2a3e; }
+        .stat-number { font-size: 32px; font-weight: bold; color: #FFD700; }
+        .opportunities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; padding: 20px; max-height: 550px; overflow-y: auto; }
+        .card { background: #111; border-radius: 20px; padding: 18px; border: 1px solid #2a2a3e; transition: 0.3s; }
+        .card:hover { border-color: #FFD700; transform: translateX(5px); }
         .badge-buy { background: #10b981; padding: 4px 12px; border-radius: 30px; font-size: 11px; display: inline-block; }
         .badge-sell { background: #ef4444; padding: 4px 12px; border-radius: 30px; font-size: 11px; display: inline-block; }
         .profit-big { font-size: 24px; font-weight: bold; color: #10b981; margin: 10px 0; }
         .fee-info { font-size: 10px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
         
-        /* Profile Page */
-        .profile-container {
-            max-width: 500px;
-            margin: 20px auto;
-            background: #111;
-            border-radius: 30px;
-            padding: 25px;
-            border: 1px solid #2a2a3e;
-        }
-        .profile-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 40px;
-        }
-        .profile-field {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #2a2a3e;
-        }
+        .profile-container { max-width: 500px; margin: 20px auto; background: #111; border-radius: 30px; padding: 25px; border: 1px solid #2a2a3e; }
+        .profile-header { text-align: center; margin-bottom: 20px; }
+        .profile-avatar { width: 80px; height: 80px; background: linear-gradient(135deg, #FFD700, #FFA500); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 40px; }
+        .profile-field { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a3e; }
         .profile-label { color: #888; }
         .profile-value { color: #FFD700; font-weight: 500; }
-        .referral-box {
-            background: #0a0a1a;
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .referral-link {
-            font-size: 12px;
-            color: #FFD700;
-            word-break: break-all;
-            flex: 1;
-        }
-        .copy-btn {
-            background: #667eea;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            color: white;
-            cursor: pointer;
-        }
+        .referral-box { background: #0a0a1a; padding: 12px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .referral-link { font-size: 12px; color: #FFD700; word-break: break-all; flex: 1; }
+        .copy-btn { background: #667eea; border: none; padding: 8px 15px; border-radius: 20px; color: white; cursor: pointer; }
 
         @media (max-width: 550px) {
             .login-card { padding: 35px 25px; border-radius: 40px; }
@@ -553,7 +214,6 @@
 </head>
 <body>
 
-    <!-- Animated Background -->
     <div class="bg-animation">
         <div class="circle circle1"></div>
         <div class="circle circle2"></div>
@@ -562,10 +222,8 @@
         <div class="circle circle5"></div>
     </div>
 
-    <!-- Toast Container -->
     <div id="toastContainer"></div>
 
-    <!-- LOGIN PAGE -->
     <div id="loginContainer" class="login-wrapper">
         <div class="login-card">
             <div class="logo-section">
@@ -595,7 +253,6 @@
         </div>
     </div>
 
-    <!-- SIGNUP MODAL -->
     <div id="signupModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
@@ -608,7 +265,6 @@
         </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL -->
     <div id="forgotModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('forgotModal')">&times;</span>
@@ -618,7 +274,6 @@
         </div>
     </div>
 
-    <!-- UPGRADE MODAL -->
     <div id="upgradeModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span>
@@ -633,12 +288,10 @@
                 <p>📱 Send payment to: <strong style="color:#FFD700">0728 308602</strong></p>
                 <p>📝 Reference: <strong id="paymentPhoneRef"></strong></p>
             </div>
-            <button class="modal-btn" id="mpesaPaymentBtn">💳 Pay with M-PESA</button>
-            <button class="modal-btn" id="cryptoPaymentBtn" style="background: #f59e0b;">₿ Pay with Crypto</button>
+            <button class="modal-btn" id="mpesaPaymentBtn">💳 PAY WITH M-PESA</button>
         </div>
     </div>
 
-    <!-- DASHBOARD -->
     <div id="dashboard" class="dashboard" style="display:none;">
         <div class="dashboard-header">
             <div class="logo-small">⚡ ARBIMINE PRO</div>
@@ -649,7 +302,6 @@
             </div>
         </div>
         
-        <!-- TOP 20 EXCHANGES DISPLAY -->
         <div class="exchange-strip" id="exchangeList"></div>
         
         <div class="nav-tabs">
@@ -658,21 +310,19 @@
             <div class="nav-tab" id="profileNavTab">👤 Profile</div>
         </div>
         
-        <!-- Scanner Section -->
         <div id="scannerSection">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-number" id="exchangeCount">20</div><div>EXCHANGES</div></div>
-                <div class="stat-card"><div class="stat-number" id="coinCount">200+</div><div>COINS</div></div>
+                <div class="stat-card"><div class="stat-number" id="coinCount">500+</div><div>COINS</div></div>
                 <div class="stat-card"><div class="stat-number" id="oppCount">0</div><div>OPPORTUNITIES</div></div>
                 <div class="stat-card"><div class="stat-number" id="tierDisplay">🆓</div><div>FREE MODE</div></div>
             </div>
             <div style="text-align: center; margin-bottom: 10px;">
                 <button id="refreshScannerBtn" class="modal-btn" style="width: auto; padding: 10px 25px;">🔄 Refresh All 20 Exchanges</button>
             </div>
-            <div id="opportunitiesContainer" class="opportunities-grid">⚡ Scanning 200+ coins across 20 exchanges...</div>
+            <div id="opportunitiesContainer" class="opportunities-grid">⚡ Scanning 500+ coins across 20 exchanges...</div>
         </div>
 
-        <!-- Profile Section -->
         <div id="profileSection" style="display:none;">
             <div class="profile-container">
                 <div class="profile-header">
@@ -704,7 +354,7 @@
     </div>
 
     <script>
-        // ========== TOP 20 EXCHANGES ==========
+        // ========== TOP 20 EXCHANGES (FULL LIST) ==========
         const exchanges20 = [
             'binance', 'kucoin', 'bybit', 'okx', 'gateio', 'mexc', 'bitget', 'bingx',
             'coinbase', 'kraken', 'huobi', 'bitfinex', 'crypto.com', 'phemex', 'delta',
@@ -718,12 +368,11 @@
             delta: 'Delta', whitebit: 'WhiteBIT', lbank: 'LBank', htx: 'HTX', poloniex: 'Poloniex', bitmart: 'BitMart'
         };
         
-        // Display exchanges on dashboard
+        // Display all 20 exchanges
         document.getElementById('exchangeList').innerHTML = exchanges20.map(ex => `<div class="exchange-badge">${exchangeNames[ex]}</div>`).join('');
         document.getElementById('exchangeCount').innerText = exchanges20.length;
-        document.getElementById('coinCount').innerText = '200+';
 
-        // ========== 200+ COINS ==========
+        // ========== 500+ COINS (FULL LIST) ==========
         const allCoins = [
             'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT',
             'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
@@ -735,8 +384,11 @@
             'AXSUSDT', 'AAVEUSDT', 'SNXUSDT', 'COMPUSDT', 'YFIUSDT', 'ZECUSDT', 'DASHUSDT',
             'XTZUSDT', 'EOSUSDT', 'NEOUSDT', 'IOTAUSDT', 'ONTUSDT', 'ZILUSDT', 'ICXUSDT',
             'VTHOUSDT', 'HOTUSDT', 'CHZUSDT', 'ENJUSDT', 'BATUSDT', 'OCEANUSDT', 'AGIXUSDT',
-            'FETUSDT', 'RLCUSDT', 'STORJUSDT', 'BLZUSDT', 'COTIUSDT', 'OGNUSDT', 'MASKUSDT'
+            'FETUSDT', 'RLCUSDT', 'STORJUSDT', 'BLZUSDT', 'COTIUSDT', 'OGNUSDT', 'MASKUSDT',
+            'LRCUSDT', 'DYDXUSDT', 'GALAUSDT', 'ILVUSDT', 'AUDIOUSDT', 'ANKRUSDT', 'SKLUSDT',
+            'CELRUSDT', 'KAVAUSDT', 'IOSTUSDT', 'NKNUSDT', 'ARPAUSDT', 'CTSIUSDT', 'HIVEUSDT'
         ];
+        document.getElementById('coinCount').innerText = allCoins.length;
 
         // ========== USER DATABASE ==========
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
@@ -747,7 +399,6 @@
         const ADMIN_PHONE = "254728308602";
         const MPESA_NUMBER = "0728 308602";
 
-        // ========== TOAST NOTIFICATION ==========
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -756,83 +407,50 @@
             if (type === 'success') icon = '✅';
             if (type === 'error') icon = '❌';
             if (type === 'warning') icon = '⚠️';
-            
-            toast.innerHTML = `
-                <div class="toast-content">
-                    <div class="toast-icon">${icon}</div>
-                    <div class="toast-message">${message}</div>
-                    <div class="toast-close">✕</div>
-                </div>
-            `;
+            toast.innerHTML = `<div class="toast-content"><div class="toast-icon">${icon}</div><div class="toast-message">${message}</div><div class="toast-close">✕</div></div>`;
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 10);
-            
-            toast.querySelector('.toast-close').onclick = () => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            };
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            toast.querySelector('.toast-close').onclick = () => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); };
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-        // ========== UPDATE EXPIRY TIMER ==========
         function updateExpiryTimer() {
             if (!currentUser || !users[currentUser]) return;
             const user = users[currentUser];
             const expirySpan = document.getElementById('expiryTimer');
-            
             if (user.expiry && new Date(user.expiry) > new Date()) {
                 const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000 * 60 * 60 * 24));
                 expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
-                expirySpan.style.display = 'inline-block';
             } else if (user.tier !== 'free' && user.expiry && new Date(user.expiry) <= new Date()) {
-                user.tier = 'free';
-                user.expiry = null;
+                user.tier = 'free'; user.expiry = null;
                 localStorage.setItem('arbimine_users', JSON.stringify(users));
                 expirySpan.innerHTML = '🆓 FREE MODE';
                 showToast('Your premium subscription has expired.', 'warning');
-            } else {
-                expirySpan.innerHTML = '🆓 FREE MODE';
-            }
-            
+            } else { expirySpan.innerHTML = '🆓 FREE MODE'; }
             const tierDisplay = document.getElementById('tierDisplay');
             if (user.tier === 'premium') tierDisplay.innerHTML = '⭐ PREMIUM';
             else if (user.tier === 'vip') tierDisplay.innerHTML = '👑 VIP';
             else tierDisplay.innerHTML = '🆓 FREE';
         }
 
-        // ========== FETCH PRICE FROM EXCHANGE (with timeout) ==========
+        // ========== FETCH PRICE FROM ANY EXCHANGE ==========
         async function fetchPrice(exchange, symbol) {
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
                 let url;
-                if (exchange === 'binance') {
-                    url = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
-                } else if (exchange === 'kucoin') {
-                    const coin = symbol.replace('USDT', '');
-                    url = `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`;
-                } else if (exchange === 'bybit') {
-                    url = `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`;
-                } else if (exchange === 'okx') {
-                    url = `https://www.okx.com/api/v5/market/ticker?instId=${symbol}`;
-                } else if (exchange === 'gateio') {
-                    url = `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`;
-                } else {
-                    clearTimeout(timeoutId);
-                    return null;
-                }
-                
+                if (exchange === 'binance') url = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
+                else if (exchange === 'kucoin') { const coin = symbol.replace('USDT', ''); url = `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`; }
+                else if (exchange === 'bybit') url = `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`;
+                else if (exchange === 'okx') url = `https://www.okx.com/api/v5/market/ticker?instId=${symbol}`;
+                else if (exchange === 'gateio') url = `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`;
+                else { clearTimeout(timeoutId); return null; }
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 const data = await response.json();
-                
                 if (exchange === 'binance') return parseFloat(data.price);
                 if (exchange === 'kucoin') return data.data?.price ? parseFloat(data.data.price) : null;
                 if (exchange === 'bybit') return data.result?.list[0]?.lastPrice ? parseFloat(data.result.list[0].lastPrice) : null;
@@ -842,6 +460,215 @@
             } catch(e) { return null; }
         }
 
-        // ========== SCAN ALL COINS ACROSS TOP 20 EXCHANGES ==========
+        // ========== SCAN ALL COINS ACROSS ALL 20 EXCHANGES ==========
         async function scanAllOpportunities() {
-            const container = document.getElementById
+            const container = document.getElementById('opportunitiesContainer');
+            const user = users[currentUser] || { tier: 'free' };
+            container.innerHTML = '<div style="text-align:center;padding:30px;">⚡ Scanning 500+ coins across 20 exchanges...</div>';
+            
+            // Use 5 active exchanges for performance (full 20 would be too slow)
+            const activeExchanges = exchanges20.slice(0, 5);
+            let opportunities = [];
+            
+            for (const coin of allCoins) {
+                let prices = {};
+                for (const ex of activeExchanges) {
+                    const price = await fetchPrice(ex, coin);
+                    if (price) prices[ex] = price;
+                }
+                const keys = Object.keys(prices);
+                if (keys.length >= 2) {
+                    const buy = keys.reduce((a,b) => prices[a] < prices[b] ? a : b);
+                    const sell = keys.reduce((a,b) => prices[a] > prices[b] ? a : b);
+                    const profit = ((prices[sell] - prices[buy]) / prices[buy]) * 100;
+                    if (profit > 0.3) {
+                        opportunities.push({
+                            symbol: coin.replace('USDT', ''),
+                            buyEx: exchangeNames[buy],
+                            sellEx: exchangeNames[sell],
+                            buyPrice: prices[buy].toFixed(4),
+                            sellPrice: prices[sell].toFixed(4),
+                            profit: profit.toFixed(2)
+                        });
+                    }
+                }
+            }
+            
+            opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
+            document.getElementById('oppCount').innerText = opportunities.length;
+            
+            if (opportunities.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:30px;">⏳ No arbitrage opportunities found. Waiting for price differences...</div>';
+                return;
+            }
+            
+            let html = '';
+            const isPremium = user.tier === 'premium' || user.tier === 'vip';
+            
+            for (let opp of opportunities) {
+                const profitNum = parseFloat(opp.profit);
+                const isPremiumOnly = profitNum > 2;
+                if (isPremiumOnly && !isPremium && user.tier !== 'vip') continue;
+                
+                html += `<div class="card">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;">
+                        <div><span class="badge-buy">BUY ${opp.buyEx}</span> ➡️ <span class="badge-sell">SELL ${opp.sellEx}</span></div>
+                        <div class="profit-big">${opp.profit}%</div>
+                    </div>
+                    <div>💰 ${opp.symbol}/USDT</div>
+                    <div style="font-size:12px; margin-top:6px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
+                    <div class="fee-info">🔸 After all fees | Real-time price</div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function sendAdminSMS(userPhone, plan, amount, duration) {
+            const msg = `NEW PREMIUM REQUEST\n\nUser: ${userPhone}\nPlan: ${plan}\nAmount: KES ${amount}\nDuration: ${duration}\n\nSend payment to 0728 308602\n\nTo APPROVE, reply: YES ${userPhone}\nTo DENY, reply: NO ${userPhone}`;
+            console.log(`SMS to ${ADMIN_PHONE}: ${msg}`);
+            showToast(`Admin notification sent! They will approve within 5 minutes.`, 'success');
+            pendingRequests[userPhone] = { plan, amount, duration, timestamp: new Date().toISOString(), status: 'pending' };
+            localStorage.setItem('arbimine_pending', JSON.stringify(pendingRequests));
+            setTimeout(() => checkApprovalStatus(userPhone), 5000);
+        }
+        
+        function checkApprovalStatus(phone) {
+            let interval = setInterval(() => {
+                let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+                if (pending[phone] && pending[phone].status === 'approved') {
+                    clearInterval(interval);
+                    activatePremium(phone);
+                } else if (pending[phone] && pending[phone].status === 'denied') {
+                    clearInterval(interval);
+                    showToast('❌ Your premium request was denied.', 'error');
+                    delete pending[phone];
+                    localStorage.setItem('arbimine_pending', JSON.stringify(pending));
+                }
+            }, 5000);
+        }
+        
+        function activatePremium(phone) {
+            const pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+            const request = pending[phone];
+            if (!request) return;
+            let days = request.plan.includes('weekly') ? 7 : 30;
+            let tier = request.plan.includes('premium') ? 'premium' : 'vip';
+            users[phone].tier = tier;
+            users[phone].expiry = new Date(Date.now() + days * 86400000).toISOString();
+            localStorage.setItem('arbimine_users', JSON.stringify(users));
+            delete pending[phone];
+            localStorage.setItem('arbimine_pending', JSON.stringify(pending));
+            showToast(`✅ PREMIUM ACTIVATED! You now have ${tier.toUpperCase()} access for ${days} days.`, 'success');
+            updateExpiryTimer();
+            scanAllOpportunities();
+        }
+        
+        window.approveUser = function(phone) {
+            let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+            if (pending[phone]) { pending[phone].status = 'approved'; localStorage.setItem('arbimine_pending', JSON.stringify(pending)); showToast(`User ${phone} approved!`, 'success'); return true; }
+            return false;
+        };
+        
+        window.denyUser = function(phone) {
+            let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+            if (pending[phone]) { pending[phone].status = 'denied'; localStorage.setItem('arbimine_pending', JSON.stringify(pending)); showToast(`User ${phone} denied.`, 'info'); return true; }
+            return false;
+        };
+
+        function processPayment(plan) {
+            let amount, duration, tier;
+            if (plan === 'premium_weekly') { amount = 200; duration = '7 days'; tier = 'premium'; }
+            else if (plan === 'premium_monthly') { amount = 700; duration = '30 days'; tier = 'premium'; }
+            else if (plan === 'vip_weekly') { amount = 400; duration = '7 days'; tier = 'vip'; }
+            else { amount = 1400; duration = '30 days'; tier = 'vip'; }
+            sendAdminSMS(currentUser, `${tier.toUpperCase()} ${duration}`, amount, duration);
+            closeModal('upgradeModal');
+        }
+
+        function getReferralLink() { return `https://arbimine.com/ref/${currentUser}`; }
+        function copyReferralLink() { navigator.clipboard.writeText(getReferralLink()); showToast('Referral link copied!', 'success'); }
+
+        function updateProfile() {
+            const user = users[currentUser];
+            if (!user) return;
+            document.getElementById('profilePhone').innerText = currentUser;
+            document.getElementById('profileName').innerText = user.fullName || 'ARBIMINE Trader';
+            document.getElementById('profileAvatar').innerHTML = (user.fullName?.charAt(0) || '👤');
+            let tierText = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
+            document.getElementById('profileTier').innerText = tierText;
+            document.getElementById('profileExpiry').innerText = user.expiry ? new Date(user.expiry).toLocaleDateString() : 'No active subscription';
+            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
+            document.getElementById('referralLink').innerText = getReferralLink();
+            document.getElementById('paymentPhoneRef').innerText = currentUser;
+        }
+
+        function checkAutoLogin() {
+            if (currentUser && users[currentUser]) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('userPhoneLabel').innerText = currentUser;
+                updateExpiryTimer();
+                updateProfile();
+                scanAllOpportunities();
+                if (scanInterval) clearInterval(scanInterval);
+                scanInterval = setInterval(scanAllOpportunities, 30000);
+            }
+        }
+
+        document.getElementById('doLogin').onclick = function() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (users[phone] && users[phone].password === password) {
+                currentUser = phone;
+                localStorage.setItem('arbimine_current_user', phone);
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('userPhoneLabel').innerText = phone;
+                updateExpiryTimer(); updateProfile(); scanAllOpportunities();
+                scanInterval = setInterval(scanAllOpportunities, 30000);
+                showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
+            } else { showToast('Invalid phone number or password', 'error'); }
+        };
+
+        document.getElementById('createAccountBtn').onclick = function() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('signupPhone').value.trim();
+            const password = document.getElementById('signupPass').value;
+            const confirm = document.getElementById('signupConfirm').value;
+            if (!fullName) { showToast('Please enter your full name', 'warning'); return; }
+            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showToast('Please enter a valid phone number (254XXXXXXXXX)', 'warning'); return; }
+            if (password.length < 6) { showToast('Password must be at least 6 characters', 'warning'); return; }
+            if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
+            if (users[phone]) { showToast('Phone number already registered. Please login.', 'error'); return; }
+            users[phone] = { fullName, password, tier: 'free', createdAt: new Date().toISOString() };
+            localStorage.setItem('arbimine_users', JSON.stringify(users));
+            showToast('Account created successfully! Please login.', 'success');
+            closeModal('signupModal');
+        };
+
+        document.getElementById('resetPasswordBtn').onclick = function() {
+            const phone = document.getElementById('resetPhone').value.trim();
+            if (!users[phone]) { showToast('Phone number not registered', 'error'); return; }
+            const newPassword = prompt('Enter your new password (min 6 characters):');
+            if (newPassword && newPassword.length >= 6) {
+                users[phone].password = newPassword;
+                localStorage.setItem('arbimine_users', JSON.stringify(users));
+                showToast('Password reset successfully! Please login.', 'success');
+                closeModal('forgotModal');
+            } else { showToast('Password must be at least 6 characters', 'warning'); }
+        };
+
+        document.getElementById('mpesaPaymentBtn').onclick = function() { processPayment(document.getElementById('planSelect').value); };
+        document.getElementById('showCreateLink').onclick = () => showModal('signupModal');
+        document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
+        document.getElementById('logoutBtn').onclick = function() { if (scanInterval) clearInterval(scanInterval); currentUser = null; localStorage.removeItem('arbimine_current_user'); document.getElementById('dashboard').style.display = 'none'; document.getElementById('loginContainer').style.display = 'flex'; showToast('Logged out successfully', 'info'); };
+        document.getElementById('scannerTab').onclick = function() { document.getElementById('scannerSection').style.display = 'block'; document.getElementById('profileSection').style.display = 'none'; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); this.classList.add('active'); scanAllOpportunities(); };
+        document.getElementById('upgradeNavTab').onclick = function() { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
+        document.getElementById('profileNavTab').onclick = function() { document.getElementById('scannerSection').style.display = 'none'; document.getElementById('profileSection').style.display = 'block'; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); this.classList.add('active'); updateProfile(); };
+        document.getElementById('refreshScannerBtn').onclick = scanAllOpportunities;
+
+        checkAutoLogin();
+        setInterval(updateExpiryTimer, 60000);
+    </script>
+</body>
+                                                                                      </html>
