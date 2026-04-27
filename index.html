@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – Professional Arbitrage Scanner</title>
+    <title>ARBIMINE – Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -18,7 +18,8 @@
             color: white;
         }
 
-        .login-wrapper {
+        /* ========== EXACT LOGIN PAGE FROM IMAGE ========== */
+        .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,45 +31,89 @@
             background: rgba(20, 20, 45, 0.85);
             backdrop-filter: blur(20px);
             border-radius: 40px;
-            padding: 50px 40px;
+            padding: 50px 45px;
             width: 100%;
             max-width: 480px;
-            border: 1px solid rgba(255, 215, 0, 0.4);
+            border: 1px solid rgba(255, 215, 0, 0.3);
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
-        .logo-section { text-align: center; margin-bottom: 30px; }
-        .logo-icon { font-size: 50px; margin-bottom: 10px; }
+        /* Logo Section */
+        .logo-section {
+            margin-bottom: 35px;
+        }
+
+        .logo-icon {
+            font-size: 55px;
+            margin-bottom: 8px;
+        }
+
         .logo-section h1 {
             font-size: 42px;
             font-weight: 800;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             background: linear-gradient(135deg, #FFD700, #FFA500);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
-        .logo-section .tagline {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
+
+        .tagline {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
             letter-spacing: 2px;
             margin-top: 6px;
         }
-        .welcome-text { text-align: center; margin-bottom: 30px; }
-        .welcome-text h2 { font-size: 28px; font-weight: 600; color: white; }
-        .input-group { margin-bottom: 18px; }
+
+        /* Welcome Text - Exactly as in image */
+        .welcome-section {
+            margin-bottom: 30px;
+        }
+
+        .welcome-section h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+        .welcome-section p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        /* Input Fields */
+        .input-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
         .input-group input {
             width: 100%;
-            padding: 14px 18px;
+            padding: 15px 20px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50px;
             color: white;
             font-size: 15px;
+            transition: 0.2s;
         }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #FFD700;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Login Button */
         .login-btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             background: linear-gradient(95deg, #667eea, #764ba2);
             border: none;
             border-radius: 50px;
@@ -76,12 +121,76 @@
             font-weight: 700;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 8px;
+            transition: 0.3s;
         }
-        .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
-        .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
-        .footer-text { text-align: center; margin-top: 35px; font-size: 10px; color: rgba(255, 255, 255, 0.3); }
 
+        .login-btn:hover {
+            transform: scale(1.02);
+            opacity: 0.95;
+        }
+
+        /* Auth Links - "or Create Account / Forgot Password?" */
+        .auth-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .auth-links a {
+            color: #FFD700;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer - Exactly as in image */
+        .footer-copyright {
+            text-align: center;
+            margin-top: 35px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Bottom Logo */
+        .bottom-logo {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .bottom-logo h3 {
+            font-size: 14px;
+            color: #FFD700;
+            letter-spacing: 1px;
+        }
+
+        .bottom-logo p {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Error Message */
+        .error-msg {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* Toast */
         .toast {
             position: fixed;
             top: 20px;
@@ -98,6 +207,7 @@
         .toast.show { transform: translateX(0); }
         .toast.error { border-left-color: #ef4444; }
 
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -119,7 +229,12 @@
             border: 1px solid #FFD700;
             position: relative;
         }
-        .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .modal-card h3 {
+            color: #FFD700;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
         .modal-card input, .modal-card select {
             width: 100%;
             padding: 12px 16px;
@@ -140,8 +255,16 @@
             margin-top: 15px;
             cursor: pointer;
         }
-        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
 
+        /* Dashboard (after login) */
         .dashboard {
             display: none;
             min-height: 100vh;
@@ -254,11 +377,6 @@
             border: 1px solid #2a2d3e;
             transition: 0.3s;
             cursor: pointer;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         .card:hover { border-color: #FFD700; transform: translateX(4px); }
         .card-header {
@@ -272,9 +390,7 @@
         .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
         .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
         .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
-        .live-badge { background: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .liquidity-warning { background: #f59e0b; font-size: 9px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+        .live-badge { background: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
         .card-details {
             margin-top: 8px;
             padding-top: 8px;
@@ -365,10 +481,10 @@
         .footer-nav a.active { color: #FFD700; }
 
         .loading { text-align: center; padding: 40px; color: #888; }
-        .scan-log { font-size: 10px; color: #666; text-align: center; padding: 5px; }
 
         @media (max-width: 550px) {
             .login-card { padding: 35px 25px; }
+            .logo-section h1 { font-size: 34px; }
             .card-header { flex-direction: column; align-items: flex-start; }
             .profit-value { align-self: flex-end; }
             .opportunities-grid { grid-template-columns: 1fr; }
@@ -379,20 +495,21 @@
 
     <div id="toastContainer"></div>
 
-    <div id="loginPage" class="login-wrapper">
+    <!-- ========== LOGIN PAGE - EXACTLY AS IN YOUR IMAGE ========== -->
+    <div id="loginPage" class="login-container">
         <div class="login-card">
             <div class="logo-section">
                 <div class="logo-icon">⚡</div>
                 <h1>ARBIMINE</h1>
-                <div class="tagline">FIND · ANALYZE · PROFIT</div>
+                <div class="tagline">FIND. ANALYZE. PROFIT.</div>
             </div>
-            <div class="welcome-text">
+            <div class="welcome-section">
                 <h2>Welcome Back!</h2>
                 <p>Log in to continue to your account</p>
             </div>
-            <div id="loginError" style="color:#ff8888; text-align:center; margin-bottom:10px; font-size:12px;"></div>
+            <div id="loginError" class="error-msg" style="display: none;"></div>
             <div class="input-group">
-                <input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)">
+                <input type="tel" id="loginPhone" placeholder="Phone Number">
             </div>
             <div class="input-group">
                 <input type="password" id="loginPassword" placeholder="Password">
@@ -402,22 +519,28 @@
                 <a id="showSignupLink">Create Account</a>
                 <a id="showForgotLink">Forgot Password?</a>
             </div>
-            <div class="footer-text">© 2025 ARBIMINE. All rights reserved.</div>
+            <div class="footer-copyright">© 2025 Arbimine, All rights reserved.</div>
+            <div class="bottom-logo">
+                <h3>ARBIMINE</h3>
+                <p>FIND. ANALYZE. PROFIT.</p>
+            </div>
         </div>
     </div>
 
+    <!-- Signup Modal -->
     <div id="signupModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
             <h3>Create Account</h3>
             <input type="text" id="fullName" placeholder="Full Name">
-            <input type="tel" id="signupPhone" placeholder="Phone (254XXXXXXXXX)">
+            <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
             <input type="password" id="signupPass" placeholder="Password (min 6 chars)">
             <input type="password" id="signupConfirm" placeholder="Confirm Password">
             <button class="modal-btn" id="createAccountBtn">CREATE ACCOUNT</button>
         </div>
     </div>
 
+    <!-- Forgot Password Modal -->
     <div id="forgotModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('forgotModal')">&times;</span>
@@ -427,6 +550,7 @@
         </div>
     </div>
 
+    <!-- Upgrade Modal -->
     <div id="upgradeModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span>
@@ -445,6 +569,7 @@
         </div>
     </div>
 
+    <!-- Dashboard -->
     <div id="dashboard" class="dashboard">
         <div class="dashboard-header">
             <div class="logo-small">⚡ ARBIMINE PRO</div>
@@ -458,7 +583,7 @@
         <div class="exchange-strip" id="exchangeStrip"></div>
         
         <div class="stats-row">
-            <div class="stat"><div class="stat-number" id="statExchanges">5</div><div class="stat-label">ACTIVE EXCHANGES</div></div>
+            <div class="stat"><div class="stat-number" id="statExchanges">5</div><div class="stat-label">EXCHANGES</div></div>
             <div class="stat"><div class="stat-number" id="statCoins">20+</div><div class="stat-label">COINS</div></div>
             <div class="stat"><div class="stat-number" id="statOpportunities">0</div><div class="stat-label">OPPORTUNITIES</div></div>
         </div>
@@ -469,7 +594,6 @@
         <div class="action-buttons">
             <button class="action-btn" id="refreshBtn">🔄 Scan Now</button>
         </div>
-        <div class="scan-log" id="scanLog">Ready to scan...</div>
 
         <div id="homeSection">
             <div class="upgrade-banner">
@@ -477,7 +601,7 @@
                 <button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
             </div>
             <div id="opportunitiesList" class="opportunities-grid">
-                <div class="loading">⚡ Click 'Scan Now' to find real arbitrage opportunities</div>
+                <div class="loading">⚡ Click 'Scan Now' to find arbitrage opportunities</div>
             </div>
         </div>
 
@@ -515,10 +639,9 @@
         let currentUser = localStorage.getItem('arbimine_current_user');
         let currentOpportunities = [];
         let currentSearchTerm = '';
-        let isScanning = false;  // 🔒 PREVENT OVERLAPPING SCANS
-        let scanLog = [];
+        let isScanning = false;
 
-        // ========== 5 EXCHANGES ==========
+        // ========== EXCHANGES ==========
         const exchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io'];
         
         const exchangeStrip = document.getElementById('exchangeStrip');
@@ -534,7 +657,7 @@
         });
         document.getElementById('statExchanges').innerText = exchanges.length;
 
-        // ========== 20+ COINS ==========
+        // ========== COINS ==========
         const coinsList = [
             'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
             'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT'
@@ -555,19 +678,11 @@
             }, 3000);
         }
 
-        // ========== ADD TO SCAN LOG ==========
-        function addToScanLog(message) {
-            scanLog.unshift(`${new Date().toLocaleTimeString()}: ${message}`);
-            if (scanLog.length > 5) scanLog.pop();
-            const logElement = document.getElementById('scanLog');
-            if (logElement) logElement.innerHTML = scanLog[0] || 'Ready to scan...';
-        }
-
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-        // ========== IMPROVED FETCH WITH TIMEOUT & ERROR HANDLING ==========
-        async function fetchWithTimeout(url, timeout = 5000) {
+        // ========== FETCH REAL PRICES ==========
+        async function fetchPriceWithTimeout(url, timeout = 5000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             try {
@@ -580,136 +695,78 @@
             }
         }
 
-        // ========== INDIVIDUAL EXCHANGE FETCHERS WITH VALIDATION ==========
         async function fetchBinancePrice(symbol) {
             try {
-                const response = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+                const response = await fetchPriceWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
                 const data = await response.json();
-                // Validate response
-                if (data && data.price && parseFloat(data.price) > 0) {
-                    return parseFloat(data.price);
-                }
+                if (data && data.price) return parseFloat(data.price);
                 return null;
-            } catch(e) { 
-                addToScanLog(`⚠️ Binance error for ${symbol}: ${e.message}`);
-                return null; 
-            }
+            } catch(e) { return null; }
         }
 
         async function fetchKucoinPrice(symbol) {
             try {
                 const coin = symbol.replace('USDT', '');
-                const response = await fetchWithTimeout(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
+                const response = await fetchPriceWithTimeout(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
                 const data = await response.json();
                 if (data && data.code === '200000' && data.data && data.data.price) {
                     return parseFloat(data.data.price);
                 }
                 return null;
-            } catch(e) { 
-                addToScanLog(`⚠️ KuCoin error for ${symbol}: ${e.message}`);
-                return null; 
-            }
+            } catch(e) { return null; }
         }
 
         async function fetchBybitPrice(symbol) {
             try {
-                const response = await fetchWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
+                const response = await fetchPriceWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
                 const data = await response.json();
                 if (data && data.retCode === 0 && data.result && data.result.list && data.result.list[0]) {
                     return parseFloat(data.result.list[0].lastPrice);
                 }
                 return null;
-            } catch(e) { 
-                addToScanLog(`⚠️ Bybit error for ${symbol}: ${e.message}`);
-                return null; 
-            }
+            } catch(e) { return null; }
         }
 
         async function fetchOKXPrice(symbol) {
             try {
-                const response = await fetchWithTimeout(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}`);
+                const response = await fetchPriceWithTimeout(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}`);
                 const data = await response.json();
                 if (data && data.code === '0' && data.data && data.data[0] && data.data[0].last) {
                     return parseFloat(data.data[0].last);
                 }
                 return null;
-            } catch(e) { 
-                addToScanLog(`⚠️ OKX error for ${symbol}: ${e.message}`);
-                return null; 
-            }
+            } catch(e) { return null; }
         }
 
         async function fetchGatePrice(symbol) {
             try {
-                const response = await fetchWithTimeout(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`);
+                const response = await fetchPriceWithTimeout(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`);
                 const data = await response.json();
                 if (data && data.length > 0 && data[0].last) {
                     return parseFloat(data[0].last);
                 }
                 return null;
-            } catch(e) { 
-                addToScanLog(`⚠️ Gate.io error for ${symbol}: ${e.message}`);
-                return null; 
-            }
+            } catch(e) { return null; }
         }
 
-        // ========== PRICE STABILITY CHECK (track price history) ==========
-        let priceHistory = {};
-
-        function isPriceStable(symbol, currentPrice) {
-            if (!priceHistory[symbol]) {
-                priceHistory[symbol] = [];
-            }
-            priceHistory[symbol].push(currentPrice);
-            if (priceHistory[symbol].length > 3) {
-                priceHistory[symbol].shift();
-            }
-            if (priceHistory[symbol].length < 2) return true;
-            
-            const avg = priceHistory[symbol].reduce((a,b) => a + b, 0) / priceHistory[symbol].length;
-            const volatility = Math.abs((currentPrice - avg) / avg) * 100;
-            return volatility < 0.5; // Less than 0.5% volatility
-        }
-
-        // ========== LIQUIDITY SCORE SIMULATION ==========
-        function getLiquidityScore(symbol, exchange) {
-            // Simulate liquidity based on coin popularity
-            const highLiquidityCoins = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP'];
-            const mediumLiquidityCoins = ['ADA', 'DOGE', 'AVAX', 'DOT', 'LINK'];
-            const coinBase = symbol.replace('USDT', '');
-            
-            if (highLiquidityCoins.includes(coinBase)) return 85;
-            if (mediumLiquidityCoins.includes(coinBase)) return 65;
-            return 45;
-        }
-
-        // ========== MAIN SCAN FUNCTION WITH ALL IMPROVEMENTS ==========
+        // ========== SCAN ALL EXCHANGES ==========
         async function scanAllExchanges() {
-            // 🔒 PREVENT OVERLAPPING SCANS
             if (isScanning) {
-                showToast('Scan already in progress, please wait...', 'warning');
+                showToast('Scan already in progress...', 'warning');
                 return;
             }
             
             isScanning = true;
-            const scanStartTime = Date.now();
-            addToScanLog('🚀 Starting scan...');
+            const container = document.getElementById('opportunitiesList');
+            container.innerHTML = '<div class="loading">🔍 Scanning exchanges for arbitrage opportunities...</div>';
             
             const user = users[currentUser] || { tier: 'free' };
             const isPremium = user.tier === 'premium' || user.tier === 'vip';
             const opportunities = [];
-            let failedAPIs = 0;
-            let slowExchanges = [];
             
-            // Show loading state
-            const container = document.getElementById('opportunitiesList');
-            container.innerHTML = '<div class="loading">🔍 Scanning exchanges for arbitrage opportunities...</div>';
-            
-            // 🚀 PARALLEL REQUESTS for each coin
             for (const symbol of coinsList) {
                 const prices = {};
                 
-                // Parallel fetch from all exchanges
                 const results = await Promise.allSettled([
                     fetchBinancePrice(symbol),
                     fetchKucoinPrice(symbol),
@@ -722,17 +779,12 @@
                 results.forEach((result, i) => {
                     if (result.status === 'fulfilled' && result.value !== null && result.value > 0) {
                         prices[exchangeNames[i]] = result.value;
-                    } else {
-                        failedAPIs++;
                     }
                 });
                 
                 const exchangeNamesWithPrices = Object.keys(prices);
-                
-                // Skip if less than 2 exchanges have prices
                 if (exchangeNamesWithPrices.length < 2) continue;
                 
-                // Find buy and sell exchanges
                 let buyEx = exchangeNamesWithPrices[0];
                 let sellEx = exchangeNamesWithPrices[0];
                 
@@ -744,23 +796,11 @@
                 const buyPrice = prices[buyEx];
                 const sellPrice = prices[sellEx];
                 
-                // Calculate gross spread
                 let grossSpread = ((sellPrice - buyPrice) / buyPrice) * 100;
-                
-                // 💰 INCREASED PROFIT THRESHOLD - only show above 0.5% net
-                const fee = 0.2; // 0.2% total fees
-                const slippage = 0.1; // 0.1% slippage
+                const fee = 0.2;
+                const slippage = 0.1;
                 const netProfit = grossSpread - fee - slippage;
                 
-                // 🛡️ LIQUIDITY CHECK
-                const liquidityScore = getLiquidityScore(symbol, buyEx);
-                if (liquidityScore < 40) continue; // Skip low liquidity coins
-                
-                // 📊 PRICE STABILITY CHECK
-                const isStable = isPriceStable(symbol, buyPrice);
-                if (!isStable) continue; // Skip unstable prices
-                
-                // Only show if net profit > 0.5% (removes noise)
                 if (netProfit > 0.5) {
                     const isPremiumOnly = netProfit > 2;
                     opportunities.push({
@@ -769,29 +809,253 @@
                         sellEx: sellEx,
                         profit: netProfit.toFixed(2),
                         grossProfit: grossSpread.toFixed(2),
-                        liquidity: liquidityScore,
                         buyPrice: buyPrice.toFixed(4),
                         sellPrice: sellPrice.toFixed(4),
-                        isPremiumOnly: isPremiumOnly,
-                        stable: isStable
+                        isPremiumOnly: isPremiumOnly
                     });
                 }
             }
             
-            // Sort by highest profit first
             opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
             currentOpportunities = opportunities;
             document.getElementById('statOpportunities').innerText = opportunities.length;
-            
-            const scanTime = Date.now() - scanStartTime;
-            addToScanLog(`✅ Scan complete in ${scanTime}ms | Found ${opportunities.length} opportunities`);
-            
-            if (failedAPIs > 0) {
-                addToScanLog(`⚠️ ${failedAPIs} API calls failed`);
-            }
             
             renderOpportunities();
             isScanning = false;
         }
 
-        // =========
+        // ========== RENDER OPPORTUNITIES ==========
+        function renderOpportunities() {
+            const container = document.getElementById('opportunitiesList');
+            const user = users[currentUser] || { tier: 'free' };
+            const isPremium = user.tier === 'premium' || user.tier === 'vip';
+            
+            let filtered = currentOpportunities;
+            if (currentSearchTerm) {
+                filtered = currentOpportunities.filter(opp => opp.coin.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+            }
+            
+            let html = '';
+            let count = 0;
+            
+            for (let opp of filtered) {
+                let show = true;
+                if (opp.isPremiumOnly && !isPremium) show = false;
+                if (!show) continue;
+                count++;
+                html += `
+                    <div class="card" onclick='showDetailView(${currentOpportunities.indexOf(opp)})'>
+                        <div class="card-header">
+                            <div>
+                                <span class="buy-badge">BUY ${opp.buyEx}</span>
+                                <span> ➡️ </span>
+                                <span class="sell-badge">SELL ${opp.sellEx}</span>
+                            </div>
+                            <div class="profit-value">${opp.profit}% <span class="live-badge">LIVE</span></div>
+                        </div>
+                        <div>💰 ${opp.coin}/USDT</div>
+                        <div style="font-size:11px; margin-top:5px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
+                        <div class="card-details">
+                            <span>📊 Gross: ${opp.grossProfit}%</span>
+                            <span>🔸 After fees: ${opp.profit}%</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (count === 0 && currentOpportunities.length > 0) {
+                html = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 ${currentOpportunities.length} opportunities found above 2%! Upgrade to see them 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
+            } else if (count === 0) {
+                html = '<div class="loading">⏳ No arbitrage opportunities found. Click Scan Now to check live prices.</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== DETAIL VIEW ==========
+        window.showDetailView = function(index) {
+            const opp = currentOpportunities[index];
+            if (!opp) return;
+            
+            const user = users[currentUser] || { tier: 'free' };
+            const isPremium = user.tier === 'premium' || user.tier === 'vip';
+            
+            if (parseFloat(opp.profit) > 2 && !isPremium) {
+                showToast('Upgrade to PRO to view details!', 'error');
+                showModal('upgradeModal');
+                return;
+            }
+            
+            const buyUrl = `https://www.${opp.buyEx.toLowerCase().replace('.', '')}.com`;
+            const sellUrl = `https://www.${opp.sellEx.toLowerCase().replace('.', '')}.com`;
+            
+            const detailHtml = `
+                <div class="detail-header">
+                    <div class="detail-profit">${opp.profit}% SPREAD</div>
+                    <div style="font-size: 22px; font-weight: bold;">${opp.coin}-USDT</div>
+                    <div style="color: #888; font-size: 11px;">Real-time spot price | After fees</div>
+                </div>
+                <div class="detail-section">
+                    <h4>1. Buy at ${opp.buyEx}</h4>
+                    <div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.buyPrice}</span></div>
+                    <div class="detail-buttons">
+                        <a href="${buyUrl}" target="_blank" class="detail-btn">BUY ON ${opp.buyEx.toUpperCase()}</a>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4>2. Sell on ${opp.sellEx}</h4>
+                    <div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.sellPrice}</span></div>
+                    <div class="detail-buttons">
+                        <a href="${sellUrl}" target="_blank" class="detail-btn">SELL ON ${opp.sellEx.toUpperCase()}</a>
+                    </div>
+                </div>
+                <div class="warning-text">
+                    ⚠️ Spot trading arbitrage. Profit shown is after fees (0.2%).<br>
+                    Act Fast! Opportunities last 10-15 minutes.
+                </div>
+            `;
+            
+            document.getElementById('detailContent').innerHTML = detailHtml;
+            document.getElementById('homeSection').style.display = 'none';
+            document.getElementById('detailView').style.display = 'block';
+            document.getElementById('profileSection').style.display = 'none';
+        };
+
+        function backToList() {
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('homeSection').style.display = 'block';
+        }
+
+        // ========== PROFILE FUNCTIONS ==========
+        function updateProfileDisplay() {
+            const user = users[currentUser];
+            if (!user) return;
+            document.getElementById('profilePhone').innerText = currentUser;
+            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
+            document.getElementById('referralLink').innerText = `https://arbimine.com/ref/${currentUser}`;
+            const tierText = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
+            document.getElementById('profileTier').innerHTML = tierText;
+            document.getElementById('paymentPhoneRef').innerText = currentUser;
+            
+            const expirySpan = document.getElementById('expiryTimer');
+            if (user.expiry && new Date(user.expiry) > new Date()) {
+                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
+                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
+            } else {
+                expirySpan.innerHTML = '🆓 FREE';
+            }
+        }
+
+        // ========== AUTHENTICATION ==========
+        function handleLogin() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (users[phone] && users[phone].password === password) {
+                currentUser = phone;
+                localStorage.setItem('arbimine_current_user', phone);
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('userPhoneLabel').innerText = phone;
+                updateProfileDisplay();
+                showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
+            } else {
+                const errorDiv = document.getElementById('loginError');
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = 'Invalid phone number or password';
+                setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
+            }
+        }
+
+        function createAccount() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('signupPhone').value.trim();
+            const password = document.getElementById('signupPass').value;
+            const confirm = document.getElementById('signupConfirm').value;
+            
+            if (!fullName) { showToast('Enter full name', 'error'); return; }
+            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showToast('Valid phone: 254XXXXXXXXX', 'error'); return; }
+            if (password.length < 6) { showToast('Password min 6 chars', 'error'); return; }
+            if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
+            if (users[phone]) { showToast('Phone already registered', 'error'); return; }
+            
+            users[phone] = { fullName, password, tier: 'free', createdAt: new Date().toISOString() };
+            localStorage.setItem('arbimine_users', JSON.stringify(users));
+            showToast('Account created! Please login.', 'success');
+            closeModal('signupModal');
+        }
+
+        function resetPassword() {
+            const phone = document.getElementById('resetPhone').value.trim();
+            if (!users[phone]) { showToast('Phone not registered', 'error'); return; }
+            const newPassword = prompt('Enter new password (min 6 chars):');
+            if (newPassword && newPassword.length >= 6) {
+                users[phone].password = newPassword;
+                localStorage.setItem('arbimine_users', JSON.stringify(users));
+                showToast('Password reset! Please login.', 'success');
+                closeModal('forgotModal');
+            }
+        }
+
+        function processPayment() {
+            const plan = document.getElementById('planSelect').value;
+            let amount;
+            if (plan === 'premium_weekly') amount = 200;
+            else if (plan === 'premium_monthly') amount = 700;
+            else if (plan === 'vip_weekly') amount = 400;
+            else amount = 1400;
+            
+            showToast(`Send KES ${amount} to 0728 308602. Reference: ${currentUser}. Admin will activate.`, 'success');
+            closeModal('upgradeModal');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('arbimine_current_user');
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            showToast('Logged out', 'info');
+        }
+
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('doLoginBtn').onclick = handleLogin;
+        document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
+        document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
+        document.getElementById('createAccountBtn').onclick = createAccount;
+        document.getElementById('resetPasswordBtn').onclick = resetPassword;
+        document.getElementById('processPaymentBtn').onclick = processPayment;
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('upgradeBannerBtn').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
+        document.getElementById('refreshBtn').onclick = scanAllExchanges;
+        document.getElementById('searchInput').addEventListener('input', (e) => { currentSearchTerm = e.target.value; renderOpportunities(); });
+        document.getElementById('backToListBtn').onclick = backToList;
+        document.getElementById('copyReferralBtn').onclick = () => { navigator.clipboard.writeText(document.getElementById('referralLink').innerText); showToast('Referral link copied!', 'success'); };
+        
+        // Navigation
+        document.getElementById('navHome').onclick = () => {
+            document.getElementById('homeSection').style.display = 'block';
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'none';
+            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById('navHome').classList.add('active');
+        };
+        document.getElementById('navGoPro').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
+        document.getElementById('navChat').onclick = () => showToast('💬 Chat Room coming soon!', 'info');
+        document.getElementById('navProfile').onclick = () => {
+            document.getElementById('homeSection').style.display = 'none';
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'block';
+            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById('navProfile').classList.add('active');
+            updateProfileDisplay();
+        };
+
+        // Auto login check
+        if (currentUser && users[currentUser]) {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userPhoneLabel').innerText = currentUser;
+            updateProfileDisplay();
+        }
+    </script>
+</body>
+    </html>
