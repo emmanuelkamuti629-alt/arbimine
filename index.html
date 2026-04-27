@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE - Arbitrage Scanner</title>
+    <title>ARBIMINE - Crypto Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -12,12 +12,112 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #0a0a0a;
             min-height: 100vh;
             color: white;
         }
 
+        /* Auth Modal - Login/Signup */
+        .auth-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-container {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #ffd700;
+            text-align: center;
+        }
+
+        .auth-logo h1 {
+            font-size: 42px;
+            color: #ffd700;
+            letter-spacing: 3px;
+        }
+
+        .auth-logo p {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            letter-spacing: 1px;
+        }
+
+        .auth-logo .tagline {
+            font-size: 11px;
+            color: #f5576c;
+            margin-top: 10px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin: 30px 0 20px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .auth-form input::placeholder {
+            color: #666;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Main App */
         .header {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             padding: 20px;
@@ -28,22 +128,33 @@
         .header h1 {
             font-size: 32px;
             color: #ffd700;
+            letter-spacing: 2px;
         }
 
         .header p {
             font-size: 12px;
             color: #888;
+            margin-top: 5px;
         }
 
         .nav-bar {
             background: #1a1a1a;
             padding: 12px;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
+            gap: 10px;
             border-bottom: 1px solid #333;
             position: sticky;
             top: 0;
+            z-index: 100;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .nav-link {
@@ -51,15 +162,44 @@
             text-decoration: none;
             padding: 8px 16px;
             border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
         }
 
         .pro-nav {
             background: linear-gradient(135deg, #f093fb, #f5576c);
         }
 
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #ffd700, #f5576c);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 5px 12px;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+        }
+
         .exchange-section {
             padding: 15px;
             background: #111;
+            border-bottom: 1px solid #333;
         }
 
         .exchange-title {
@@ -82,6 +222,7 @@
             color: white;
             font-size: 11px;
             text-decoration: none;
+            cursor: pointer;
         }
 
         .upgrade-banner {
@@ -95,17 +236,7 @@
 
         .upgrade-banner h3 {
             color: #ffd700;
-        }
-
-        .pro-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+            margin-bottom: 10px;
         }
 
         .stats-bar {
@@ -116,7 +247,7 @@
             margin: 15px;
             border-radius: 15px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
 
         .stat {
@@ -124,7 +255,7 @@
         }
 
         .stat-value {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #ffd700;
         }
@@ -139,6 +270,8 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
         }
 
         .card {
@@ -146,6 +279,13 @@
             border-radius: 12px;
             padding: 15px;
             border: 1px solid #333;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            border-color: #f5576c;
+            transform: translateX(5px);
         }
 
         .card-header {
@@ -159,20 +299,22 @@
 
         .buy-badge {
             background: #10b981;
-            padding: 4px 10px;
-            border-radius: 15px;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 11px;
+            font-weight: bold;
         }
 
         .sell-badge {
             background: #ef4444;
-            padding: 4px 10px;
-            border-radius: 15px;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 11px;
+            font-weight: bold;
         }
 
         .profit {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             color: #10b981;
         }
@@ -183,12 +325,24 @@
             margin-top: 10px;
         }
 
+        .liquidity {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .timestamp {
+            font-size: 10px;
+            color: #666;
+        }
+
         .instruction {
             font-size: 11px;
             color: #ffd700;
             margin-top: 8px;
         }
 
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -203,18 +357,24 @@
         }
 
         .modal-content {
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
             border-radius: 20px;
             padding: 25px;
-            max-width: 450px;
+            max-width: 500px;
             width: 90%;
-            border: 1px solid #333;
+            border: 1px solid #ffd700;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .modal-header h2 {
             color: #ffd700;
-            text-align: center;
-            margin-bottom: 20px;
+            font-size: 24px;
         }
 
         .price-options {
@@ -236,6 +396,7 @@
 
         .price-card.selected {
             border-color: #ffd700;
+            background: rgba(255,215,0,0.1);
         }
 
         .price-amount {
@@ -263,14 +424,16 @@
             color: #ffd700;
         }
 
-        .deposit-address {
-            font-size: 11px;
+        .binance-id {
             background: #111;
             padding: 10px;
             border-radius: 8px;
-            word-break: break-all;
             font-family: monospace;
             margin: 10px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
         }
 
         .copy-btn {
@@ -281,6 +444,19 @@
             color: white;
             cursor: pointer;
             width: 100%;
+            margin-top: 5px;
+        }
+
+        .continue-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
         }
 
         .whatsapp-btn {
@@ -315,7 +491,8 @@
         .footer-link {
             color: #888;
             text-decoration: none;
-            font-size: 11px;
+            font-size: 12px;
+            cursor: pointer;
         }
 
         .loading {
@@ -324,117 +501,503 @@
             color: #888;
         }
 
+        .profile-info {
+            background: #111;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px;
+        }
+
+        .profile-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .profile-label {
+            color: #888;
+        }
+
+        .profile-value {
+            color: #ffd700;
+        }
+
+        .refer-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            padding: 12px;
+            border-radius: 10px;
+            color: #ef4444;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .chat-container {
+            background: #111;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .chat-message {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 5px 0;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .chat-send {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .rules-box {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px;
+            border: 1px solid #ffd700;
+        }
+
+        .rules-box h4 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .rules-box ul {
+            padding-left: 20px;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .rules-box li {
+            margin: 5px 0;
+        }
+
+        .agree-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
         @media (max-width: 600px) {
             .price-options { flex-direction: column; }
             .stats-bar { flex-direction: column; text-align: center; }
+            .nav-bar { flex-direction: column; text-align: center; }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>⚡ ARBIMINE</h1>
-        <p>FIND.ANALYZE.PROFIT.</p>
-    </div>
-
-    <div class="nav-bar">
-        <a href="#" class="nav-link">🏠 Home</a>
-        <a href="#" class="nav-link pro-nav" onclick="showUpgradeModal()">⭐ GO PRO</a>
-        <a href="#" class="nav-link">💬 Chat Room</a>
-        <a href="#" class="nav-link">👤 Profile</a>
-    </div>
-
-    <div class="exchange-section">
-        <div class="exchange-title">📱 EXCHANGE SIGNUP LINKS</div>
-        <div class="exchange-links">
-            <a href="#" class="exchange-btn">Binance</a>
-            <a href="#" class="exchange-btn">KuCoin</a>
-            <a href="#" class="exchange-btn">Bybit</a>
-            <a href="#" class="exchange-btn">OKX</a>
-            <a href="#" class="exchange-btn">Gate.io</a>
+    <!-- Login/Signup Modal -->
+    <div id="authModal" class="auth-modal">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <h1>⚡ ARBIMINE</h1>
+                <p>FIND.ANALYZE.PROFIT.</p>
+                <div class="tagline">CRYPTO ARBITRAGE SCANNER</div>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">LOGIN</button>
+                <button class="auth-tab" onclick="switchTab('signup')">CREATE ACCOUNT</button>
+            </div>
+            <div id="loginForm" class="auth-form">
+                <input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <button class="auth-btn" onclick="login()">LOG IN</button>
+                <p style="text-align:center; margin-top:10px; font-size:12px;"><a href="#" style="color:#ffd700;">Forgot Password?</a></p>
+            </div>
+            <div id="signupForm" class="auth-form" style="display:none">
+                <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
+                <input type="password" id="signupPassword" placeholder="Create Password">
+                <input type="password" id="signupConfirm" placeholder="Confirm Password">
+                <button class="auth-btn" onclick="signup()">CREATE ACCOUNT</button>
+            </div>
+            <div class="auth-footer">
+                <p>© 2025 ARBIMINE. All rights reserved</p>
+            </div>
         </div>
     </div>
 
-    <div class="upgrade-banner">
-        <h3>🔒 UPGRADE TO PRO</h3>
-        <p>Unlock >2% Profit Opportunities</p>
-        <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
+    <!-- Main App -->
+    <div id="mainApp" style="display:none">
+        <div class="header">
+            <h1>⚡ ARBIMINE</h1>
+            <p>FIND.ANALYZE.PROFIT.</p>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-links">
+                <a href="#" class="nav-link" onclick="showHome()">🏠 Home</a>
+                <a href="#" class="nav-link pro-nav" onclick="showUpgradeModal()">⭐ GO PRO</a>
+                <a href="#" class="nav-link" onclick="showChat()">💬 Chat Room</a>
+                <a href="#" class="nav-link" onclick="showProfile()">👤 Profile</a>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span id="userPhoneDisplay"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Home Section -->
+        <div id="homeSection">
+            <div class="exchange-section">
+                <div class="exchange-title">📱 EXCHANGE SIGNUP LINKS</div>
+                <div class="exchange-links">
+                    <a href="#" class="exchange-btn">Binance</a>
+                    <a href="#" class="exchange-btn">KuCoin</a>
+                    <a href="#" class="exchange-btn">Bybit</a>
+                    <a href="#" class="exchange-btn">OKX</a>
+                    <a href="#" class="exchange-btn">Gate.io</a>
+                    <a href="#" class="exchange-btn">BingX</a>
+                    <a href="#" class="exchange-btn">MEXC</a>
+                    <a href="#" class="exchange-btn">Bitget</a>
+                    <a href="#" class="exchange-btn">BitMart</a>
+                </div>
+            </div>
+
+            <div class="upgrade-banner">
+                <h3>🔒 UPGRADE TO PRO</h3>
+                <p>Get your PRO Membership Today! Unlock >2% Profit Opportunities</p>
+                <button class="pro-btn" onclick="showUpgradeModal()">⭐ GO PRO</button>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat"><div class="stat-value">9</div><div class="stat-label">EXCHANGES</div></div>
+                <div class="stat"><div class="stat-value">200+</div><div class="stat-label">COINS</div></div>
+                <div class="stat"><div class="stat-value" id="oppCount">0</div><div class="stat-label">OPPORTUNITIES</div></div>
+                <div class="stat"><div class="stat-value" id="premiumBadge">🆓</div><div class="stat-label">FREE MODE (0-2%)</div></div>
+                <div class="stat"><button class="pro-btn" style="padding: 8px 20px;" onclick="refreshScan()">🔄 Refresh</button></div>
+            </div>
+
+            <div id="opportunities" class="opportunities">
+                <div class="loading">🔍 SCANNING MARKETS...</div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profileSection" style="display:none">
+            <div class="profile-info">
+                <div class="profile-row"><span class="profile-label">NAME:</span><span class="profile-value" id="profileName">ARBIMINE User</span></div>
+                <div class="profile-row"><span class="profile-label">EMAIL/PHONE:</span><span class="profile-value" id="profileEmail"></span></div>
+                <div class="profile-row"><span class="profile-label">MEMBER SINCE:</span><span class="profile-value" id="profileSince"></span></div>
+                <div class="profile-row"><span class="profile-label">ACCOUNT ID:</span><span class="profile-value" id="profileId"></span></div>
+                <div class="profile-row"><span class="profile-label">STATUS:</span><span class="profile-value" id="profileStatus">🆓 FREE</span></div>
+                <button class="refer-btn" onclick="copyReferral()">🔗 REFER & EARN</button>
+                <button class="delete-btn" onclick="deleteAccount()">🗑️ DELETE ACCOUNT</button>
+            </div>
+        </div>
+
+        <!-- Chat Room Section -->
+        <div id="chatSection" style="display:none">
+            <div id="chatRulesModal" style="display:block">
+                <div class="rules-box">
+                    <h4>📢 Welcome to the Chat!</h4>
+                    <p style="font-size:12px; color:#888; margin-bottom:10px;">By using this chat, you agree to follow these rules:</p>
+                    <ul>
+                        <li>✅ Be Respectful: No offensive or abusive messages.</li>
+                        <li>✅ Stay Relevant: No spamming, advertising or off-topic content.</li>
+                        <li>✅ Report Issues: You can report any inappropriate messages.</li>
+                    </ul>
+                    <button class="agree-btn" onclick="acceptChatRules()">I AGREE</button>
+                </div>
+            </div>
+            <div id="chatContent" style="display:none">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message">🤖 Welcome to ARBIMINE Chat Room!</div>
+                        <div class="chat-message">💬 Share arbitrage opportunities, ask questions, and connect with other traders.</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Type your message...">
+                        <button class="chat-send" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-nav">
+            <a href="#" class="footer-link" onclick="showHome()">🏠 Home</a>
+            <a href="#" class="footer-link" onclick="showUpgradeModal()">⭐ GO PRO</a>
+            <a href="#" class="footer-link" onclick="showChat()">💬 Chat Room</a>
+            <a href="#" class="footer-link" onclick="showProfile()">👤 Profile</a>
+        </div>
+
+        <div style="text-align: center; padding: 15px; font-size: 10px; color: #666;">
+            <p>📱 M-PESA: 0728 308602 | ₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321</p>
+            <p>© 2025 ARBIMINE - FIND.ANALYZE.PROFIT.</p>
+        </div>
     </div>
 
-    <div class="stats-bar">
-        <div class="stat"><div class="stat-value">5</div><div class="stat-label">EXCHANGES</div></div>
-        <div class="stat"><div class="stat-value">150+</div><div class="stat-label">COINS</div></div>
-        <div class="stat"><div class="stat-value" id="oppCount">0</div><div class="stat-label">OPPORTUNITIES</div></div>
-        <div class="stat"><div class="stat-value">🆓</div><div class="stat-label">FREE MODE</div></div>
-        <div class="stat"><button class="pro-btn" style="padding: 8px 20px;" onclick="refreshScan()">🔄 Refresh</button></div>
-    </div>
-
-    <div id="opportunities" class="opportunities">
-        <div class="loading">⚡ Scanning 150+ coins...</div>
-    </div>
-
-    <div class="footer-nav">
-        <a href="#" class="footer-link">🏠 Home</a>
-        <a href="#" class="footer-link">⭐ GO PRO</a>
-        <a href="#" class="footer-link">💬 Chat Room</a>
-        <a href="#" class="footer-link">👤 Profile</a>
-    </div>
-
-    <div style="text-align: center; padding: 15px; font-size: 10px; color: #666;">
-        <p>📱 Pochi La Biashara: 0728 308602 | ₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321</p>
-        <p>© 2025 ARBIMINE</p>
-    </div>
-
+    <!-- Upgrade Modal -->
     <div id="upgradeModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close" onclick="closeUpgradeModal()">&times;</span>
             <div class="modal-header"><h2>⭐ UPGRADE TO PRO</h2></div>
-
+            <p style="text-align:center; font-size:12px; color:#888;">Get your PRO Membership Today!</p>
             <div class="price-options">
                 <div class="price-card" onclick="selectPlan('weekly')" id="planWeekly">
                     <div>WEEKLY</div>
                     <div class="price-amount">KES 200</div>
-                    <div>7 days</div>
+                    <div>7 days access</div>
                 </div>
                 <div class="price-card selected" onclick="selectPlan('monthly')" id="planMonthly">
                     <div>MONTHLY</div>
                     <div class="price-amount">KES 700</div>
-                    <div>30 days</div>
+                    <div>30 days access</div>
                 </div>
             </div>
-
+            
             <div class="payment-method">
-                <h4>📱 POCHI LA BIASHARA</h4>
-                <div class="payment-number">0728 308602</div>
-                <p style="font-size: 11px; margin-top: 8px;">Reference: Your phone number</p>
+                <h4>💳 CONTINUE WITH</h4>
+                <button class="continue-btn" onclick="showMpesaPayment()">📱 M-PESA - KES <span id="mpesaAmount">700</span></button>
+                <button class="continue-btn" onclick="showCryptoPayment()">₿ PAY WITH CRYPTO</button>
             </div>
-
-            <div class="payment-method">
-                <h4>₿ USDT (ERC20)</h4>
-                <div class="deposit-address" id="cryptoAddress">0x583be7a1ead6c09e06ad3a68202b846241ce4321</div>
-                <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy Address</button>
-                <p style="font-size: 10px; margin-top: 8px;">⚠️ Send only USDT on ERC20 network</p>
+            
+            <div id="mpesaPayment" style="display:none">
+                <div class="payment-method">
+                    <h4>📱 POCHI LA BIASHARA</h4>
+                    <div class="payment-number">0728 308602</div>
+                    <p style="font-size:11px; margin-top:8px;">Send M-PESA payment to this number</p>
+                    <p style="font-size:11px;">Reference: <strong id="userPhoneRef"></strong></p>
+                    <button class="whatsapp-btn" onclick="confirmMpesaPayment()">✅ I HAVE PAID - CONFIRM</button>
+                </div>
             </div>
-
-            <button class="whatsapp-btn" onclick="sendWhatsApp()">📱 Confirm Payment on WhatsApp</button>
+            
+            <div id="cryptoPayment" style="display:none">
+                <div class="payment-method">
+                    <h4>₿ PAY WITH BINANCE PAY</h4>
+                    <p style="font-size:12px;">Send payment via Binance Pay to:</p>
+                    <div class="binance-id">Binance ID: <strong>1192951384</strong></div>
+                    <p style="font-size:11px;">Reference: <strong id="cryptoEmailRef"></strong></p>
+                    <button class="copy-btn" onclick="copyBinanceId()">📋 Copy Binance ID</button>
+                </div>
+                <div class="payment-method">
+                    <h4>₿ USDT (ERC20)</h4>
+                    <div class="deposit-address" id="cryptoAddress">0x583be7a1ead6c09e06ad3a68202b846241ce4321</div>
+                    <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy Address</button>
+                </div>
+                <button class="whatsapp-btn" onclick="confirmCryptoPayment()">✅ I HAVE PAID - CONFIRM</button>
+            </div>
+            
+            <p style="font-size:10px; text-align:center; margin-top:15px; color:#666;">Your plan will be activated within 24 hours of processing payment. Usually within 3 hours.</p>
         </div>
     </div>
 
     <script>
-        let isPremium = false;
+        // User database
+        let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
+        let currentUser = localStorage.getItem('arbimine_current_user');
         let selectedPlan = 'monthly';
-        let userPhone = '254XXXXXXXXX';
+        let messages = JSON.parse(localStorage.getItem('arbimine_messages') || '[]');
+        let chatAccepted = localStorage.getItem('arbimine_chat_accepted') === 'true';
+        let isPremium = false;
 
-        function copyCryptoAddress() {
-            let address = document.getElementById('cryptoAddress').innerText;
-            navigator.clipboard.writeText(address);
-            alert('✅ Address copied!');
+        function checkAuth() {
+            if (currentUser && users[currentUser]) {
+                document.getElementById('authModal').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                document.getElementById('userPhoneDisplay').innerText = currentUser;
+                document.getElementById('userPhoneRef').innerText = currentUser;
+                document.getElementById('cryptoEmailRef').innerText = currentUser;
+                document.getElementById('userAvatar').innerText = currentUser.slice(-4);
+                document.getElementById('profileEmail').innerText = currentUser;
+                document.getElementById('profileId').innerText = Math.floor(Math.random() * 90000) + 10000;
+                document.getElementById('profileSince').innerText = new Date().toLocaleDateString();
+                
+                if (users[currentUser].premium) {
+                    isPremium = true;
+                    document.getElementById('premiumBadge').innerHTML = '⭐';
+                    document.getElementById('profileStatus').innerHTML = '⭐ PREMIUM';
+                }
+                refreshScan();
+                setInterval(refreshScan, 30000);
+            }
+        }
+
+        function switchTab(tab) {
+            if (tab === 'login') {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('signupForm').style.display = 'none';
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.querySelectorAll('.auth-tab')[1].classList.remove('active');
+            } else {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('signupForm').style.display = 'block';
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.querySelectorAll('.auth-tab')[0].classList.remove('active');
+            }
+        }
+
+        function login() {
+            let phone = document.getElementById('loginPhone').value;
+            let password = document.getElementById('loginPassword').value;
+            
+            if (users[phone] && users[phone].password === password) {
+                currentUser = phone;
+                localStorage.setItem('arbimine_current_user', phone);
+                checkAuth();
+            } else {
+                alert('Invalid phone number or password. Please create an account.');
+            }
+        }
+
+        function signup() {
+            let phone = document.getElementById('signupPhone').value;
+            let password = document.getElementById('signupPassword').value;
+            let confirm = document.getElementById('signupConfirm').value;
+            
+            if (!phone || phone.length !== 12 || !phone.startsWith('254')) {
+                alert('Use valid phone number: 254XXXXXXXXX');
+                return;
+            }
+            if (password.length < 4) {
+                alert('Password must be at least 4 characters');
+                return;
+            }
+            if (password !== confirm) {
+                alert('Passwords do not match');
+                return;
+            }
+            if (users[phone]) {
+                alert('Phone already registered. Please login.');
+                return;
+            }
+            
+            users[phone] = { password: password, premium: false };
+            localStorage.setItem('arbimine_users', JSON.stringify(users));
+            alert('Account created successfully! Please login.');
+            switchTab('login');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('arbimine_current_user');
+            document.getElementById('authModal').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        function showHome() {
+            document.getElementById('homeSection').style.display = 'block';
+            document.getElementById('profileSection').style.display = 'none';
+            document.getElementById('chatSection').style.display = 'none';
+            refreshScan();
+        }
+
+        function showProfile() {
+            document.getElementById('homeSection').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'block';
+            document.getElementById('chatSection').style.display = 'none';
+        }
+
+        function showChat() {
+            document.getElementById('homeSection').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'none';
+            document.getElementById('chatSection').style.display = 'block';
+            if (!chatAccepted) {
+                document.getElementById('chatRulesModal').style.display = 'block';
+                document.getElementById('chatContent').style.display = 'none';
+            } else {
+                document.getElementById('chatRulesModal').style.display = 'none';
+                document.getElementById('chatContent').style.display = 'block';
+                loadMessages();
+            }
+        }
+
+        function acceptChatRules() {
+            chatAccepted = true;
+            localStorage.setItem('arbimine_chat_accepted', 'true');
+            document.getElementById('chatRulesModal').style.display = 'none';
+            document.getElementById('chatContent').style.display = 'block';
+            loadMessages();
+        }
+
+        function loadMessages() {
+            let container = document.getElementById('chatMessages');
+            container.innerHTML = '<div class="chat-message">🤖 Welcome to ARBIMINE Chat Room!</div>';
+            messages.forEach(msg => {
+                container.innerHTML += `<div class="chat-message"><strong>${msg.user}:</strong> ${msg.text}</div>`;
+            });
+        }
+
+        function sendMessage() {
+            let input = document.getElementById('chatInput');
+            let text = input.value.trim();
+            if (text) {
+                messages.push({ user: currentUser, text: text, time: new Date().toISOString() });
+                localStorage.setItem('arbimine_messages', JSON.stringify(messages));
+                loadMessages();
+                input.value = '';
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                delete users[currentUser];
+                localStorage.setItem('arbimine_users', JSON.stringify(users));
+                logout();
+                alert('Account deleted successfully.');
+            }
+        }
+
+        function copyReferral() {
+            let link = `https://arbimine.com/ref/${currentUser}`;
+            navigator.clipboard.writeText(link);
+            alert('Referral link copied! Share with friends.');
         }
 
         function showUpgradeModal() {
             document.getElementById('upgradeModal').style.display = 'flex';
+            document.getElementById('mpesaPayment').style.display = 'none';
+            document.getElementById('cryptoPayment').style.display = 'none';
         }
 
-        function closeModal() {
+        function closeUpgradeModal() {
             document.getElementById('upgradeModal').style.display = 'none';
         }
 
@@ -444,94 +1007,28 @@
             document.getElementById('planMonthly').classList.remove('selected');
             if (plan === 'weekly') {
                 document.getElementById('planWeekly').classList.add('selected');
+                document.getElementById('mpesaAmount').innerText = '200';
             } else {
                 document.getElementById('planMonthly').classList.add('selected');
+                document.getElementById('mpesaAmount').innerText = '700';
             }
         }
 
-        function sendWhatsApp() {
-            let amount = selectedPlan === 'weekly' ? '200' : '700';
-            let msg = `🚀 ARBIMINE PREMIUM REQUEST\n\nPhone: ${userPhone}\nPlan: ${selectedPlan.toUpperCase()}\nAmount: KES ${amount}\n\nPayment sent to:\n📱 Pochi La Biashara: 0728 308602\n₿ USDT ERC20: 0x583be7a1ead6c09e06ad3a68202b846241ce4321`;
-            window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
-            alert("✅ Request sent! Admin will activate premium.");
-            closeModal();
+        function showMpesaPayment() {
+            document.getElementById('mpesaPayment').style.display = 'block';
+            document.getElementById('cryptoPayment').style.display = 'none';
         }
 
-        const exchanges = ['binance', 'kucoin', 'bybit', 'okx', 'gateio'];
-        const exchangeNames = { binance: 'Binance', kucoin: 'KuCoin', bybit: 'Bybit', okx: 'OKX', gateio: 'Gate.io' };
-        const allCoins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT'];
-
-        async function fetchPrice(exchange, symbol) {
-            try {
-                if (exchange === 'binance') {
-                    let r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-                    let d = await r.json();
-                    return parseFloat(d.price);
-                }
-                if (exchange === 'kucoin') {
-                    let coin = symbol.replace('USDT', '');
-                    let r = await fetch(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
-                    let d = await r.json();
-                    return d.data?.price ? parseFloat(d.data.price) : null;
-                }
-                if (exchange === 'bybit') {
-                    let r = await fetch(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
-                    let d = await r.json();
-                    return d.result?.list[0]?.lastPrice ? parseFloat(d.result.list[0].lastPrice) : null;
-                }
-            } catch(e) { return null; }
-            return null;
+        function showCryptoPayment() {
+            document.getElementById('mpesaPayment').style.display = 'none';
+            document.getElementById('cryptoPayment').style.display = 'block';
         }
 
-        async function scanCoin(symbol) {
-            let prices = {};
-            for (let ex of exchanges) {
-                let price = await fetchPrice(ex, symbol);
-                if (price) prices[ex] = price;
-            }
-            let keys = Object.keys(prices);
-            if (keys.length >= 2) {
-                let buy = keys.reduce((a,b) => prices[a] < prices[b] ? a : b);
-                let sell = keys.reduce((a,b) => prices[a] > prices[b] ? a : b);
-                let profit = ((prices[sell] - prices[buy]) / prices[buy]) * 100;
-                if (profit > 0.3) {
-                    return {
-                        symbol: symbol.replace('USDT', ''),
-                        buyEx: exchangeNames[buy],
-                        sellEx: exchangeNames[sell],
-                        buyPrice: prices[buy].toFixed(4),
-                        sellPrice: prices[sell].toFixed(4),
-                        profit: profit.toFixed(1),
-                        liquidity: Math.floor(Math.random() * 5000) + 100
-                    };
-                }
-            }
-            return null;
+        function copyBinanceId() {
+            navigator.clipboard.writeText('1192951384');
+            alert('Binance ID copied! Send payment to this ID.');
         }
 
-        async function refreshScan() {
-            let container = document.getElementById('opportunities');
-            container.innerHTML = '<div class="loading">⚡ Scanning...</div>';
-            let results = await Promise.all(allCoins.map(coin => scanCoin(coin)));
-            let opportunities = results.filter(r => r !== null);
-            opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
-            document.getElementById('oppCount').innerText = opportunities.length;
-            
-            if (opportunities.length === 0) {
-                container.innerHTML = '<div class="loading">⏳ No opportunities found</div>';
-                return;
-            }
-            
-            let html = '';
-            for (let opp of opportunities) {
-                if (parseFloat(opp.profit) > 2 && !isPremium) continue;
-                html += `<div class="card"><div class="card-header"><div class="exchange-pair"><span class="buy-badge">BUY ${opp.buyEx}</span> ➡️ <span class="sell-badge">SELL ${opp.sellEx}</span></div><div class="profit">${opp.profit}%</div></div><div class="card-details"><div>💰 ${opp.symbol}/USDT</div><div class="instruction">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div></div></div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        refreshScan();
-        setInterval(refreshScan, 30000);
-    </script>
-</body>
-</html>
+        function copyCryptoAddress() {
+            let address = document.getElementById('cryptoAddress').innerText;
+            navigator.clipboard.writeText(address);
