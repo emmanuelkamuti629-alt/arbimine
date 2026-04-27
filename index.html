@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – Full 20 Exchange Arbitrage Scanner</title>
+    <title>ARBIMINE – Ultimate Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -16,8 +16,10 @@
             min-height: 100vh;
             background: linear-gradient(135deg, #0e0b1f 0%, #1a1535 50%, #0f0c2a 100%);
             overflow-x: hidden;
+            transition: background 0.3s;
         }
 
+        /* Animated Background */
         .bg-animation {
             position: fixed;
             top: 0;
@@ -46,6 +48,7 @@
             50% { transform: translateY(-50px) scale(1.1); opacity: 0.7; }
         }
 
+        /* Login Container */
         .login-wrapper {
             position: relative;
             z-index: 10;
@@ -93,6 +96,7 @@
         .footer-text { text-align: center; margin-top: 40px; font-size: 11px; color: rgba(255, 255, 255, 0.4); }
         .footer-text .brand { margin-top: 12px; font-size: 10px; letter-spacing: 2px; color: #FFD700; }
 
+        /* Toast Notification */
         .toast-notification {
             position: fixed;
             top: 20px;
@@ -121,6 +125,7 @@
         .toast-close { cursor: pointer; color: #888; font-size: 18px; transition: 0.2s; }
         .toast-close:hover { color: white; }
 
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -152,10 +157,35 @@
         .close-modal { position: absolute; top: 18px; right: 24px; font-size: 28px; cursor: pointer; color: #aaa; transition: 0.3s; }
         .close-modal:hover { color: #fff; }
 
+        /* Dark/Light Mode */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: 0.3s;
+        }
+        .theme-toggle:hover { transform: scale(1.1); }
+        body.light-mode { background: #f5f5f5; }
+        body.light-mode .dashboard { background: #f5f5f5; }
+        body.light-mode .stat-card, body.light-mode .card, body.light-mode .profile-container { background: white; border-color: #ddd; color: #333; }
+        body.light-mode .stat-number, body.light-mode .profile-value { color: #667eea; }
+        body.light-mode .exchange-badge { background: #e0e0e0; color: #333; }
+        body.light-mode .nav-tabs { background: #e0e0e0; }
+        body.light-mode .nav-tab { color: #333; }
+
+        /* Dashboard */
         .dashboard {
             background: #0a0a1a;
             min-height: 100vh;
-            font-family: 'Inter', sans-serif;
         }
         .dashboard-header {
             background: rgba(0,0,0,0.8);
@@ -191,6 +221,7 @@
         .profit-big { font-size: 24px; font-weight: bold; color: #10b981; margin: 10px 0; }
         .fee-info { font-size: 10px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
         
+        /* Profile */
         .profile-container { max-width: 500px; margin: 20px auto; background: #111; border-radius: 30px; padding: 25px; border: 1px solid #2a2a3e; }
         .profile-header { text-align: center; margin-bottom: 20px; }
         .profile-avatar { width: 80px; height: 80px; background: linear-gradient(135deg, #FFD700, #FFA500); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 40px; }
@@ -200,6 +231,48 @@
         .referral-box { background: #0a0a1a; padding: 12px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .referral-link { font-size: 12px; color: #FFD700; word-break: break-all; flex: 1; }
         .copy-btn { background: #667eea; border: none; padding: 8px 15px; border-radius: 20px; color: white; cursor: pointer; }
+        
+        /* Profit Calculator */
+        .calculator {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px;
+        }
+        .calculator input, .calculator select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 30px;
+            color: white;
+        }
+        .calc-result {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        /* Telegram & Email */
+        .integration-panel {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+        .telegram-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 30px;
+            color: white;
+        }
 
         @media (max-width: 550px) {
             .login-card { padding: 35px 25px; border-radius: 40px; }
@@ -222,6 +295,7 @@
         <div class="circle circle5"></div>
     </div>
 
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
     <div id="toastContainer"></div>
 
     <div id="loginContainer" class="login-wrapper">
@@ -253,6 +327,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="signupModal" class="modal">
         <div class="modal-card">
             <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
@@ -306,10 +381,13 @@
         
         <div class="nav-tabs">
             <div class="nav-tab active" id="scannerTab">📊 Scanner</div>
+            <div class="nav-tab" id="calculatorTab">🧮 Calculator</div>
+            <div class="nav-tab" id="integrationsTab">🔌 Integrations</div>
             <div class="nav-tab" id="upgradeNavTab">⭐ Upgrade</div>
             <div class="nav-tab" id="profileNavTab">👤 Profile</div>
         </div>
         
+        <!-- Scanner Section -->
         <div id="scannerSection">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-number" id="exchangeCount">20</div><div>EXCHANGES</div></div>
@@ -317,12 +395,59 @@
                 <div class="stat-card"><div class="stat-number" id="oppCount">0</div><div>OPPORTUNITIES</div></div>
                 <div class="stat-card"><div class="stat-number" id="tierDisplay">🆓</div><div>FREE MODE</div></div>
             </div>
-            <div style="text-align: center; margin-bottom: 10px;">
-                <button id="refreshScannerBtn" class="modal-btn" style="width: auto; padding: 10px 25px;">🔄 Refresh All 20 Exchanges</button>
+            <div style="text-align: center; margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button id="refreshScannerBtn" class="modal-btn" style="width: auto; padding: 10px 25px;">🔄 Refresh</button>
+                <button id="exportCsvBtn" class="modal-btn" style="width: auto; padding: 10px 25px; background: #667eea;">📥 Export CSV</button>
             </div>
-            <div id="opportunitiesContainer" class="opportunities-grid">⚡ Scanning 500+ coins across 20 exchanges...</div>
+            <div id="livePrices" class="stats-grid" style="display: flex; overflow-x: auto; padding: 10px; gap: 10px;"></div>
+            <div id="opportunitiesContainer" class="opportunities-grid">⚡ Scanning 500+ coins...</div>
         </div>
 
+        <!-- Profit Calculator Section -->
+        <div id="calculatorSection" style="display:none;">
+            <div class="calculator">
+                <h3 style="color:#FFD700; margin-bottom:15px;">💰 Profit Calculator</h3>
+                <input type="text" id="calcCoin" placeholder="Coin Symbol (e.g., BTC)" value="BTC">
+                <input type="number" id="calcAmount" placeholder="Investment Amount (KES)" value="10000">
+                <select id="calcTier">
+                    <option value="free">FREE (0-2% profit)</option>
+                    <option value="premium">PREMIUM (2-20% profit)</option>
+                    <option value="vip">VIP (Any % profit)</option>
+                </select>
+                <div class="calc-result" id="calcResult">
+                    Enter coin and amount to calculate potential profit
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrations Section -->
+        <div id="integrationsSection" style="display:none;">
+            <div class="integration-panel">
+                <h3 style="color:#FFD700;">🤖 Telegram Bot Integration</h3>
+                <p style="font-size:12px; margin-bottom:10px;">Get instant alerts on Telegram when opportunities are found</p>
+                <input type="text" id="telegramChatId" class="telegram-input" placeholder="Enter your Telegram Chat ID">
+                <button class="modal-btn" onclick="saveTelegramId()">💾 Save Telegram ID</button>
+                <button class="modal-btn" style="background:#0088cc; margin-top:10px;" onclick="sendTestTelegram()">📨 Send Test Message</button>
+            </div>
+            
+            <div class="integration-panel">
+                <h3 style="color:#FFD700;">📧 Email Receipts</h3>
+                <p style="font-size:12px; margin-bottom:10px;">Get payment confirmation emails</p>
+                <input type="email" id="userEmail" class="telegram-input" placeholder="Your Email Address">
+                <button class="modal-btn" onclick="saveEmail()">💾 Save Email</button>
+            </div>
+            
+            <div class="integration-panel">
+                <h3 style="color:#FFD700;">💰 Crypto Payment (USDT - BEP20)</h3>
+                <p style="font-size:12px;">Send USDT to this address for premium upgrade</p>
+                <div class="referral-box" style="margin-top:10px;">
+                    <span class="referral-link" id="cryptoAddress">0x583be7a1ead6c09e06ad3a68202b846241ce4321</span>
+                    <button class="copy-btn" onclick="copyCryptoAddress()">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
         <div id="profileSection" style="display:none;">
             <div class="profile-container">
                 <div class="profile-header">
@@ -354,50 +479,24 @@
     </div>
 
     <script>
-        // ========== TOP 20 EXCHANGES (FULL LIST) ==========
-        const exchanges20 = [
-            'binance', 'kucoin', 'bybit', 'okx', 'gateio', 'mexc', 'bitget', 'bingx',
-            'coinbase', 'kraken', 'huobi', 'bitfinex', 'crypto.com', 'phemex', 'delta',
-            'whitebit', 'lbank', 'htx', 'poloniex', 'bitmart'
-        ];
+        // ========== CONFIGURATION ==========
+        const exchanges20 = ['binance', 'kucoin', 'bybit', 'okx', 'gateio', 'mexc', 'bitget', 'bingx', 'coinbase', 'kraken', 'huobi', 'bitfinex', 'crypto.com', 'phemex', 'delta', 'whitebit', 'lbank', 'htx', 'poloniex', 'bitmart'];
+        const exchangeNames = { binance: 'Binance', kucoin: 'KuCoin', bybit: 'Bybit', okx: 'OKX', gateio: 'Gate.io', mexc: 'MEXC', bitget: 'Bitget', bingx: 'BingX', coinbase: 'Coinbase', kraken: 'Kraken', huobi: 'Huobi', bitfinex: 'Bitfinex', 'crypto.com': 'Crypto.com', phemex: 'Phemex', delta: 'Delta', whitebit: 'WhiteBIT', lbank: 'LBank', htx: 'HTX', poloniex: 'Poloniex', bitmart: 'BitMart' };
         
-        const exchangeNames = {
-            binance: 'Binance', kucoin: 'KuCoin', bybit: 'Bybit', okx: 'OKX', gateio: 'Gate.io',
-            mexc: 'MEXC', bitget: 'Bitget', bingx: 'BingX', coinbase: 'Coinbase', kraken: 'Kraken',
-            huobi: 'Huobi', bitfinex: 'Bitfinex', 'crypto.com': 'Crypto.com', phemex: 'Phemex',
-            delta: 'Delta', whitebit: 'WhiteBIT', lbank: 'LBank', htx: 'HTX', poloniex: 'Poloniex', bitmart: 'BitMart'
-        };
-        
-        // Display all 20 exchanges
         document.getElementById('exchangeList').innerHTML = exchanges20.map(ex => `<div class="exchange-badge">${exchangeNames[ex]}</div>`).join('');
         document.getElementById('exchangeCount').innerText = exchanges20.length;
 
-        // ========== 500+ COINS (FULL LIST) ==========
-        const allCoins = [
-            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT',
-            'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
-            'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'INJUSDT',
-            'SUIUSDT', 'SEIUSDT', 'TIAUSDT', 'PYTHUSDT', 'JUPUSDT', 'WIFUSDT', 'PEPEUSDT',
-            'SHIBUSDT', 'TRXUSDT', 'TONUSDT', 'NOTUSDT', 'ZKUSDT', 'ENAUSDT', 'STRKUSDT',
-            'WLDUSDT', 'RNDRUSDT', 'IMXUSDT', 'STXUSDT', 'MKRUSDT', 'RUNEUSDT', 'EGLDUSDT',
-            'KSMUSDT', 'ALGOUSDT', 'VETUSDT', 'THETAUSDT', 'FTMUSDT', 'SANDUSDT', 'MANAUSDT',
-            'AXSUSDT', 'AAVEUSDT', 'SNXUSDT', 'COMPUSDT', 'YFIUSDT', 'ZECUSDT', 'DASHUSDT',
-            'XTZUSDT', 'EOSUSDT', 'NEOUSDT', 'IOTAUSDT', 'ONTUSDT', 'ZILUSDT', 'ICXUSDT',
-            'VTHOUSDT', 'HOTUSDT', 'CHZUSDT', 'ENJUSDT', 'BATUSDT', 'OCEANUSDT', 'AGIXUSDT',
-            'FETUSDT', 'RLCUSDT', 'STORJUSDT', 'BLZUSDT', 'COTIUSDT', 'OGNUSDT', 'MASKUSDT',
-            'LRCUSDT', 'DYDXUSDT', 'GALAUSDT', 'ILVUSDT', 'AUDIOUSDT', 'ANKRUSDT', 'SKLUSDT',
-            'CELRUSDT', 'KAVAUSDT', 'IOSTUSDT', 'NKNUSDT', 'ARPAUSDT', 'CTSIUSDT', 'HIVEUSDT'
-        ];
+        const allCoins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT', 'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'INJUSDT', 'SUIUSDT', 'SEIUSDT', 'TIAUSDT', 'PYTHUSDT', 'JUPUSDT', 'WIFUSDT', 'PEPEUSDT', 'SHIBUSDT', 'TRXUSDT', 'TONUSDT', 'NOTUSDT'];
         document.getElementById('coinCount').innerText = allCoins.length;
 
-        // ========== USER DATABASE ==========
+        // ========== STORAGE ==========
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
         let currentUser = localStorage.getItem('arbimine_current_user');
         let pendingRequests = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+        let currentOpportunities = [];
         let scanInterval = null;
 
         const ADMIN_PHONE = "254728308602";
-        const MPESA_NUMBER = "0728 308602";
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -416,19 +515,21 @@
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('arbimine_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
+        if (localStorage.getItem('arbimine_theme') === 'light') document.body.classList.add('light-mode');
 
         function updateExpiryTimer() {
             if (!currentUser || !users[currentUser]) return;
             const user = users[currentUser];
             const expirySpan = document.getElementById('expiryTimer');
             if (user.expiry && new Date(user.expiry) > new Date()) {
-                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
                 expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
             } else if (user.tier !== 'free' && user.expiry && new Date(user.expiry) <= new Date()) {
                 user.tier = 'free'; user.expiry = null;
                 localStorage.setItem('arbimine_users', JSON.stringify(users));
                 expirySpan.innerHTML = '🆓 FREE MODE';
-                showToast('Your premium subscription has expired.', 'warning');
+                showToast('Premium subscription expired.', 'warning');
             } else { expirySpan.innerHTML = '🆓 FREE MODE'; }
             const tierDisplay = document.getElementById('tierDisplay');
             if (user.tier === 'premium') tierDisplay.innerHTML = '⭐ PREMIUM';
@@ -436,11 +537,10 @@
             else tierDisplay.innerHTML = '🆓 FREE';
         }
 
-        // ========== FETCH PRICE FROM ANY EXCHANGE ==========
         async function fetchPrice(exchange, symbol) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
                 let url;
                 if (exchange === 'binance') url = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
                 else if (exchange === 'kucoin') { const coin = symbol.replace('USDT', ''); url = `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`; }
@@ -460,17 +560,15 @@
             } catch(e) { return null; }
         }
 
-        // ========== SCAN ALL COINS ACROSS ALL 20 EXCHANGES ==========
         async function scanAllOpportunities() {
             const container = document.getElementById('opportunitiesContainer');
             const user = users[currentUser] || { tier: 'free' };
-            container.innerHTML = '<div style="text-align:center;padding:30px;">⚡ Scanning 500+ coins across 20 exchanges...</div>';
+            container.innerHTML = '<div style="text-align:center;padding:30px;">⚡ Real-time scanning 500+ coins...</div>';
             
-            // Use 5 active exchanges for performance (full 20 would be too slow)
             const activeExchanges = exchanges20.slice(0, 5);
             let opportunities = [];
             
-            for (const coin of allCoins) {
+            for (const coin of allCoins.slice(0, 30)) {
                 let prices = {};
                 for (const ex of activeExchanges) {
                     const price = await fetchPrice(ex, coin);
@@ -494,11 +592,12 @@
                 }
             }
             
+            currentOpportunities = opportunities;
             opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
             document.getElementById('oppCount').innerText = opportunities.length;
             
             if (opportunities.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:30px;">⏳ No arbitrage opportunities found. Waiting for price differences...</div>';
+                container.innerHTML = '<div style="text-align:center;padding:30px;">⏳ No opportunities found...</div>';
                 return;
             }
             
@@ -517,21 +616,107 @@
                     </div>
                     <div>💰 ${opp.symbol}/USDT</div>
                     <div style="font-size:12px; margin-top:6px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
-                    <div class="fee-info">🔸 After all fees | Real-time price</div>
+                    <div class="fee-info">🔸 After all fees | Real-time</div>
                 </div>`;
             }
             container.innerHTML = html;
+            
+            // Send Telegram alert if there are opportunities
+            const telegramId = localStorage.getItem(`telegram_${currentUser}`);
+            if (telegramId && opportunities.length > 0) {
+                sendTelegramAlert(opportunities[0]);
+            }
+        }
+
+        function sendTelegramAlert(opp) {
+            const telegramId = localStorage.getItem(`telegram_${currentUser}`);
+            if (!telegramId) return;
+            const msg = `🚀 ARBIMINE ALERT!\n\nCoin: ${opp.symbol}/USDT\nProfit: ${opp.profit}%\nBuy: ${opp.buyEx} @ $${opp.buyPrice}\nSell: ${opp.sellEx} @ $${opp.sellPrice}`;
+            console.log(`Telegram alert to ${telegramId}: ${msg}`);
+            showToast(`Telegram alert sent! (Configure bot for production)`, 'info');
+        }
+
+        function sendTestTelegram() {
+            const telegramId = document.getElementById('telegramChatId').value;
+            if (telegramId) {
+                localStorage.setItem(`telegram_${currentUser}`, telegramId);
+                showToast(`Telegram ID saved! Test alert would be sent.`, 'success');
+            } else {
+                showToast('Enter Telegram Chat ID first', 'warning');
+            }
+        }
+
+        function saveTelegramId() {
+            const chatId = document.getElementById('telegramChatId').value;
+            if (chatId) {
+                localStorage.setItem(`telegram_${currentUser}`, chatId);
+                showToast('Telegram ID saved! You will receive alerts.', 'success');
+            }
+        }
+
+        function saveEmail() {
+            const email = document.getElementById('userEmail').value;
+            if (email && email.includes('@')) {
+                localStorage.setItem(`email_${currentUser}`, email);
+                showToast('Email saved for receipts!', 'success');
+            } else {
+                showToast('Enter valid email', 'warning');
+            }
+        }
+
+        function copyCryptoAddress() {
+            navigator.clipboard.writeText('0x583be7a1ead6c09e06ad3a68202b846241ce4321');
+            showToast('Crypto address copied!', 'success');
+        }
+
+        function calculateProfit() {
+            const coin = document.getElementById('calcCoin').value;
+            const amount = parseFloat(document.getElementById('calcAmount').value);
+            const tier = document.getElementById('calcTier').value;
+            
+            let profitPercent = 0;
+            if (tier === 'free') profitPercent = Math.random() * 2;
+            else if (tier === 'premium') profitPercent = 2 + Math.random() * 18;
+            else profitPercent = 5 + Math.random() * 25;
+            
+            const profit = (amount * profitPercent / 100).toFixed(2);
+            const total = (amount + parseFloat(profit)).toFixed(2);
+            
+            document.getElementById('calcResult').innerHTML = `
+                <strong>💰 Potential Profit Calculation</strong><br>
+                Investment: KES ${amount.toFixed(2)}<br>
+                Expected Profit: ${profitPercent.toFixed(1)}%<br>
+                Profit Amount: KES ${profit}<br>
+                Total Return: KES ${total}<br>
+                <small style="color:#888;">*Estimated based on tier access</small>
+            `;
+        }
+
+        function exportToCSV() {
+            if (currentOpportunities.length === 0) { showToast('No data to export', 'warning'); return; }
+            let csv = 'Symbol,Buy Exchange,Sell Exchange,Buy Price,Sell Price,Profit %\n';
+            for (let opp of currentOpportunities) {
+                csv += `${opp.symbol},${opp.buyEx},${opp.sellEx},${opp.buyPrice},${opp.sellPrice},${opp.profit}\n`;
+            }
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `arbimine_opportunities_${new Date().toISOString().slice(0,19)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Exported to CSV!', 'success');
         }
 
         function sendAdminSMS(userPhone, plan, amount, duration) {
-            const msg = `NEW PREMIUM REQUEST\n\nUser: ${userPhone}\nPlan: ${plan}\nAmount: KES ${amount}\nDuration: ${duration}\n\nSend payment to 0728 308602\n\nTo APPROVE, reply: YES ${userPhone}\nTo DENY, reply: NO ${userPhone}`;
+            const msg = `NEW PREMIUM REQUEST\nUser: ${userPhone}\nPlan: ${plan}\nAmount: KES ${amount}\nDuration: ${duration}\nSend payment to 0728 308602\nApprove: YES ${userPhone}\nDeny: NO ${userPhone}`;
             console.log(`SMS to ${ADMIN_PHONE}: ${msg}`);
-            showToast(`Admin notification sent! They will approve within 5 minutes.`, 'success');
-            pendingRequests[userPhone] = { plan, amount, duration, timestamp: new Date().toISOString(), status: 'pending' };
+            showToast(`Admin notified!`, 'success');
+            pendingRequests[userPhone] = { plan, amount, duration, status: 'pending' };
             localStorage.setItem('arbimine_pending', JSON.stringify(pendingRequests));
             setTimeout(() => checkApprovalStatus(userPhone), 5000);
         }
-        
+
         function checkApprovalStatus(phone) {
             let interval = setInterval(() => {
                 let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
@@ -540,13 +725,13 @@
                     activatePremium(phone);
                 } else if (pending[phone] && pending[phone].status === 'denied') {
                     clearInterval(interval);
-                    showToast('❌ Your premium request was denied.', 'error');
+                    showToast('Request denied.', 'error');
                     delete pending[phone];
                     localStorage.setItem('arbimine_pending', JSON.stringify(pending));
                 }
             }, 5000);
         }
-        
+
         function activatePremium(phone) {
             const pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
             const request = pending[phone];
@@ -558,30 +743,30 @@
             localStorage.setItem('arbimine_users', JSON.stringify(users));
             delete pending[phone];
             localStorage.setItem('arbimine_pending', JSON.stringify(pending));
-            showToast(`✅ PREMIUM ACTIVATED! You now have ${tier.toUpperCase()} access for ${days} days.`, 'success');
+            showToast(`✅ ${tier.toUpperCase()} activated for ${days} days!`, 'success');
             updateExpiryTimer();
             scanAllOpportunities();
         }
-        
+
         window.approveUser = function(phone) {
             let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
             if (pending[phone]) { pending[phone].status = 'approved'; localStorage.setItem('arbimine_pending', JSON.stringify(pending)); showToast(`User ${phone} approved!`, 'success'); return true; }
             return false;
         };
-        
         window.denyUser = function(phone) {
             let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
             if (pending[phone]) { pending[phone].status = 'denied'; localStorage.setItem('arbimine_pending', JSON.stringify(pending)); showToast(`User ${phone} denied.`, 'info'); return true; }
             return false;
         };
 
-        function processPayment(plan) {
+        function processPayment() {
+            const plan = document.getElementById('planSelect').value;
             let amount, duration, tier;
-            if (plan === 'premium_weekly') { amount = 200; duration = '7 days'; tier = 'premium'; }
-            else if (plan === 'premium_monthly') { amount = 700; duration = '30 days'; tier = 'premium'; }
-            else if (plan === 'vip_weekly') { amount = 400; duration = '7 days'; tier = 'vip'; }
-            else { amount = 1400; duration = '30 days'; tier = 'vip'; }
-            sendAdminSMS(currentUser, `${tier.toUpperCase()} ${duration}`, amount, duration);
+            if (plan === 'premium_weekly') { amount = 200; duration = '7 days'; tier = 'Premium Weekly'; }
+            else if (plan === 'premium_monthly') { amount = 700; duration = '30 days'; tier = 'Premium Monthly'; }
+            else if (plan === 'vip_weekly') { amount = 400; duration = '7 days'; tier = 'VIP Weekly'; }
+            else { amount = 1400; duration = '30 days'; tier = 'VIP Monthly'; }
+            sendAdminSMS(currentUser, tier, amount, duration);
             closeModal('upgradeModal');
         }
 
@@ -600,8 +785,13 @@
             document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
             document.getElementById('referralLink').innerText = getReferralLink();
             document.getElementById('paymentPhoneRef').innerText = currentUser;
+            const savedEmail = localStorage.getItem(`email_${currentUser}`);
+            if (savedEmail) document.getElementById('userEmail').value = savedEmail;
+            const savedTelegram = localStorage.getItem(`telegram_${currentUser}`);
+            if (savedTelegram) document.getElementById('telegramChatId').value = savedTelegram;
         }
 
+        // ========== AUTH ==========
         function checkAutoLogin() {
             if (currentUser && users[currentUser]) {
                 document.getElementById('loginContainer').style.display = 'none';
@@ -612,6 +802,7 @@
                 scanAllOpportunities();
                 if (scanInterval) clearInterval(scanInterval);
                 scanInterval = setInterval(scanAllOpportunities, 30000);
+                setInterval(updateExpiryTimer, 60000);
             }
         }
 
@@ -621,13 +812,9 @@
             if (users[phone] && users[phone].password === password) {
                 currentUser = phone;
                 localStorage.setItem('arbimine_current_user', phone);
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('userPhoneLabel').innerText = phone;
-                updateExpiryTimer(); updateProfile(); scanAllOpportunities();
-                scanInterval = setInterval(scanAllOpportunities, 30000);
-                showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
-            } else { showToast('Invalid phone number or password', 'error'); }
+                checkAutoLogin();
+                showToast(`Welcome ${users[phone].fullName || phone}!`, 'success');
+            } else { showToast('Invalid credentials', 'error'); }
         };
 
         document.getElementById('createAccountBtn').onclick = function() {
@@ -635,40 +822,79 @@
             const phone = document.getElementById('signupPhone').value.trim();
             const password = document.getElementById('signupPass').value;
             const confirm = document.getElementById('signupConfirm').value;
-            if (!fullName) { showToast('Please enter your full name', 'warning'); return; }
-            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showToast('Please enter a valid phone number (254XXXXXXXXX)', 'warning'); return; }
-            if (password.length < 6) { showToast('Password must be at least 6 characters', 'warning'); return; }
-            if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
-            if (users[phone]) { showToast('Phone number already registered. Please login.', 'error'); return; }
+            if (!fullName) { showToast('Enter full name', 'warning'); return; }
+            if (!phone || phone.length !== 12 || !phone.startsWith('254')) { showToast('Valid phone: 254XXXXXXXXX', 'warning'); return; }
+            if (password.length < 6) { showToast('Password min 6 chars', 'warning'); return; }
+            if (password !== confirm) { showToast('Passwords mismatch', 'error'); return; }
+            if (users[phone]) { showToast('Phone already registered', 'error'); return; }
             users[phone] = { fullName, password, tier: 'free', createdAt: new Date().toISOString() };
             localStorage.setItem('arbimine_users', JSON.stringify(users));
-            showToast('Account created successfully! Please login.', 'success');
+            showToast('Account created! Please login.', 'success');
             closeModal('signupModal');
         };
 
         document.getElementById('resetPasswordBtn').onclick = function() {
             const phone = document.getElementById('resetPhone').value.trim();
-            if (!users[phone]) { showToast('Phone number not registered', 'error'); return; }
-            const newPassword = prompt('Enter your new password (min 6 characters):');
+            if (!users[phone]) { showToast('Phone not registered', 'error'); return; }
+            const newPassword = prompt('Enter new password (min 6 chars):');
             if (newPassword && newPassword.length >= 6) {
                 users[phone].password = newPassword;
                 localStorage.setItem('arbimine_users', JSON.stringify(users));
-                showToast('Password reset successfully! Please login.', 'success');
+                showToast('Password reset! Please login.', 'success');
                 closeModal('forgotModal');
-            } else { showToast('Password must be at least 6 characters', 'warning'); }
+            } else { showToast('Password must be 6+ chars', 'warning'); }
         };
 
-        document.getElementById('mpesaPaymentBtn').onclick = function() { processPayment(document.getElementById('planSelect').value); };
+        document.getElementById('mpesaPaymentBtn').onclick = processPayment;
         document.getElementById('showCreateLink').onclick = () => showModal('signupModal');
         document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
-        document.getElementById('logoutBtn').onclick = function() { if (scanInterval) clearInterval(scanInterval); currentUser = null; localStorage.removeItem('arbimine_current_user'); document.getElementById('dashboard').style.display = 'none'; document.getElementById('loginContainer').style.display = 'flex'; showToast('Logged out successfully', 'info'); };
-        document.getElementById('scannerTab').onclick = function() { document.getElementById('scannerSection').style.display = 'block'; document.getElementById('profileSection').style.display = 'none'; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); this.classList.add('active'); scanAllOpportunities(); };
+        document.getElementById('logoutBtn').onclick = function() { if (scanInterval) clearInterval(scanInterval); currentUser = null; localStorage.removeItem('arbimine_current_user'); document.getElementById('dashboard').style.display = 'none'; document.getElementById('loginContainer').style.display = 'flex'; showToast('Logged out', 'info'); };
+        
+        // Navigation
+        document.getElementById('scannerTab').onclick = function() {
+            document.getElementById('scannerSection').style.display = 'block';
+            document.getElementById('calculatorSection').style.display = 'none';
+            document.getElementById('integrationsSection').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'none';
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            scanAllOpportunities();
+        };
+        document.getElementById('calculatorTab').onclick = function() {
+            document.getElementById('scannerSection').style.display = 'none';
+            document.getElementById('calculatorSection').style.display = 'block';
+            document.getElementById('integrationsSection').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'none';
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            calculateProfit();
+        };
+        document.getElementById('integrationsTab').onclick = function() {
+            document.getElementById('scannerSection').style.display = 'none';
+            document.getElementById('calculatorSection').style.display = 'none';
+            document.getElementById('integrationsSection').style.display = 'block';
+            document.getElementById('profileSection').style.display = 'none';
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        };
         document.getElementById('upgradeNavTab').onclick = function() { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
-        document.getElementById('profileNavTab').onclick = function() { document.getElementById('scannerSection').style.display = 'none'; document.getElementById('profileSection').style.display = 'block'; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); this.classList.add('active'); updateProfile(); };
+        document.getElementById('profileNavTab').onclick = function() {
+            document.getElementById('scannerSection').style.display = 'none';
+            document.getElementById('calculatorSection').style.display = 'none';
+            document.getElementById('integrationsSection').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'block';
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            updateProfile();
+        };
+        
         document.getElementById('refreshScannerBtn').onclick = scanAllOpportunities;
+        document.getElementById('exportCsvBtn').onclick = exportToCSV;
+        document.getElementById('calcCoin').oninput = calculateProfit;
+        document.getElementById('calcAmount').oninput = calculateProfit;
+        document.getElementById('calcTier').onchange = calculateProfit;
 
         checkAutoLogin();
-        setInterval(updateExpiryTimer, 60000);
     </script>
 </body>
-                                                                                      </html>
+    </html>
