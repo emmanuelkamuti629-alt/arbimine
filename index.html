@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE - Crypto Arbitrage Scanner</title>
+    <title>ARBIMINE – Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -12,14 +12,14 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3a 50%, #24243e 100%);
             min-height: 100vh;
             color: white;
         }
 
-        /* ---------- LOGIN / AUTH ---------- */
-        .auth-container {
+        /* ---------- LOGIN CARD (exactly as requested) ---------- */
+        .login-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -27,97 +27,125 @@
             padding: 20px;
         }
 
-        .auth-card {
-            background: rgba(255, 255, 255, 0.05);
+        .login-card {
+            background: rgba(20, 20, 40, 0.75);
             backdrop-filter: blur(12px);
-            border-radius: 32px;
-            padding: 40px 32px;
+            border-radius: 36px;
+            padding: 48px 40px;
             width: 100%;
-            max-width: 440px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+            max-width: 460px;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.4);
+            text-align: center;
         }
 
-        .logo {
-            text-align: center;
+        .logo-area {
             margin-bottom: 32px;
         }
 
-        .logo h1 {
-            font-size: 38px;
-            color: #FFD700;
+        .logo-area h1 {
+            font-size: 42px;
+            font-weight: 800;
             letter-spacing: 2px;
+            background: linear-gradient(135deg, #FFD700, #FFB347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        .logo p {
+        .logo-area p {
             font-size: 12px;
             color: #aaa;
+            letter-spacing: 1.5px;
+            margin-top: 8px;
+        }
+
+        .logo-area .tagline {
+            font-size: 11px;
+            color: #FFD700;
             margin-top: 6px;
-        }
-
-        .welcome {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-
-        .welcome h2 {
-            font-size: 26px;
             font-weight: 500;
         }
 
-        .input-group {
-            margin-bottom: 18px;
+        .welcome-text {
+            margin-bottom: 32px;
         }
 
-        .input-group input {
+        .welcome-text h2 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .welcome-text p {
+            color: #ccc;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        .input-field {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-field input {
             width: 100%;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.08);
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.07);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
+            border-radius: 32px;
             color: white;
             font-size: 15px;
             transition: 0.2s;
         }
 
-        .input-group input:focus {
+        .input-field input:focus {
             outline: none;
             border-color: #FFD700;
             background: rgba(255, 255, 255, 0.12);
         }
 
-        .btn-primary {
+        .login-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(95deg, #667eea, #764ba2);
             border: none;
             border-radius: 40px;
             color: white;
-            font-weight: bold;
+            font-weight: 700;
             font-size: 16px;
             cursor: pointer;
             transition: 0.2s;
+            margin-top: 8px;
         }
 
-        .btn-primary:hover {
+        .login-btn:hover {
             transform: scale(1.01);
-            opacity: 0.9;
+            opacity: 0.92;
         }
 
         .auth-links {
-            text-align: center;
-            margin-top: 20px;
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
         }
 
         .auth-links a {
             color: #FFD700;
             font-size: 13px;
-            margin: 0 12px;
             cursor: pointer;
             text-decoration: none;
+            font-weight: 500;
         }
 
-        /* ---------- MODALS ---------- */
+        .copyright {
+            margin-top: 36px;
+            font-size: 11px;
+            color: #6c6c8a;
+        }
+
+        /* ---------- MODALS (signup / verify / forgot) ---------- */
         .modal {
             display: none;
             position: fixed;
@@ -132,32 +160,33 @@
         }
 
         .modal-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 28px;
-            padding: 28px 24px;
-            max-width: 420px;
+            background: linear-gradient(145deg, #1a1a2e, #12122c);
+            border-radius: 32px;
+            padding: 32px 28px;
+            max-width: 460px;
             width: 90%;
             border: 1px solid #FFD700;
+            position: relative;
         }
 
         .modal-card h3 {
             color: #FFD700;
-            font-size: 24px;
-            margin-bottom: 18px;
+            font-size: 26px;
+            margin-bottom: 24px;
             text-align: center;
         }
 
         .modal-card input {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            background: #0a0a0a;
-            border: 1px solid #333;
-            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            background: #0a0a1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 30px;
             color: white;
         }
 
-        .btn-modal {
+        .modal-btn {
             width: 100%;
             padding: 12px;
             background: #10b981;
@@ -165,13 +194,15 @@
             border-radius: 40px;
             color: white;
             font-weight: bold;
+            margin-top: 16px;
             cursor: pointer;
-            margin-top: 12px;
         }
 
         .close-modal {
-            float: right;
-            font-size: 24px;
+            position: absolute;
+            top: 18px;
+            right: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: #aaa;
         }
@@ -181,17 +212,18 @@
             display: none;
         }
 
-        .app-header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 18px 24px;
+        .top-bar {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid #2a2a3e;
+            border-bottom: 1px solid #2a2a4a;
         }
 
-        .app-header h1 {
+        .top-bar h1 {
             font-size: 28px;
             color: #FFD700;
         }
@@ -199,124 +231,114 @@
         .user-area {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 18px;
         }
 
         .avatar {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: #FFD700;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: #1a1a2e;
+            color: #12122c;
         }
 
-        .logout-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            padding: 6px 14px;
-            border-radius: 40px;
-            color: white;
-            cursor: pointer;
-        }
-
-        .nav-tabs {
-            background: #111;
+        .nav-row {
+            background: #0f0f1a;
             padding: 12px 20px;
             display: flex;
-            gap: 20px;
+            gap: 24px;
             flex-wrap: wrap;
-            border-bottom: 1px solid #2a2a3e;
+            border-bottom: 1px solid #222;
         }
 
         .nav-tab {
-            color: white;
             cursor: pointer;
-            padding: 6px 18px;
-            border-radius: 30px;
+            padding: 6px 20px;
+            border-radius: 40px;
             font-size: 14px;
+            transition: 0.2s;
         }
 
-        .tab-premium {
+        .premium-tab {
             background: linear-gradient(135deg, #f093fb, #f5576c);
         }
 
-        .tab-vip {
-            background: linear-gradient(135deg, #FFD700, #ff6b6b);
-            color: #1a1a2e;
+        .vip-tab {
+            background: linear-gradient(135deg, #FFD700, #ff8c00);
+            color: #12122c;
             font-weight: bold;
         }
 
         .exchange-strip {
-            background: #0a0a0a;
-            padding: 14px 20px;
+            background: #0a0a12;
+            padding: 12px 20px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             border-bottom: 1px solid #222;
         }
 
         .exchange-badge {
-            background: #1e1e2e;
-            border: 1px solid #333;
-            padding: 4px 12px;
+            background: #181830;
+            border: 1px solid #2f2f4a;
+            padding: 4px 14px;
             border-radius: 40px;
             font-size: 11px;
             color: #FFD700;
         }
 
-        .stats-row {
+        .stats-panel {
             display: flex;
             justify-content: space-around;
-            background: #0f0f0f;
-            margin: 20px 16px;
-            padding: 15px;
-            border-radius: 24px;
+            background: #0c0c18;
+            margin: 20px;
+            padding: 18px;
+            border-radius: 32px;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 20px;
         }
 
         .stat {
             text-align: center;
         }
 
-        .stat-number {
-            font-size: 28px;
+        .stat-value {
+            font-size: 32px;
             font-weight: bold;
             color: #FFD700;
         }
 
-        .upgrade-banner {
-            background: linear-gradient(135deg, #1e1a3a, #1a1a2e);
-            margin: 16px;
+        .upgrade-reminder {
+            background: linear-gradient(115deg, #1e1a3a, #181830);
+            margin: 16px 20px;
             padding: 18px;
-            border-radius: 24px;
+            border-radius: 28px;
             text-align: center;
             border: 1px solid #f5576c;
         }
 
-        .opportunities-grid {
+        .opportunity-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
             padding: 16px;
-            max-height: 520px;
+            max-height: 540px;
             overflow-y: auto;
         }
 
-        .opp-card {
+        .card {
             background: #111;
-            border-radius: 20px;
-            padding: 16px;
+            border-radius: 24px;
+            padding: 18px;
             border: 1px solid #2a2a3e;
             transition: 0.2s;
-            cursor: pointer;
         }
 
-        .opp-card:hover {
+        .card:hover {
             border-color: #f5576c;
             transform: translateX(5px);
         }
@@ -324,7 +346,7 @@
         .badge-buy {
             background: #10b981;
             padding: 4px 12px;
-            border-radius: 40px;
+            border-radius: 30px;
             font-size: 11px;
             font-weight: bold;
             display: inline-block;
@@ -333,260 +355,251 @@
         .badge-sell {
             background: #ef4444;
             padding: 4px 12px;
-            border-radius: 40px;
+            border-radius: 30px;
             font-size: 11px;
             font-weight: bold;
             display: inline-block;
         }
 
-        .profit-value {
+        .profit-big {
             font-size: 26px;
             font-weight: bold;
             color: #10b981;
         }
 
-        .footer-nav {
-            background: #0a0a0a;
-            padding: 12px;
+        .footer-links {
+            background: #080812;
+            padding: 14px;
             display: flex;
             justify-content: center;
-            gap: 24px;
-            margin-top: 20px;
+            gap: 28px;
+            margin-top: 24px;
         }
-
-        .footer-nav span {
+        .footer-links span {
             color: #aaa;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
-        }
-
-        @media (max-width: 600px) {
-            .opportunities-grid {
-                grid-template-columns: 1fr;
-            }
-            .stats-row {
-                flex-direction: column;
-                align-items: center;
-            }
         }
     </style>
 </head>
 <body>
 
-<!-- ==================== LOGIN / SIGNUP ==================== -->
-<div id="authScreen" class="auth-container">
-    <div class="auth-card">
-        <div class="logo">
+<!-- ========== LOGIN PAGE (EXACT MATCH) ========== -->
+<div id="loginContainer" class="login-wrapper">
+    <div class="login-card">
+        <div class="logo-area">
             <h1>ARBIMINE</h1>
-            <p>FIND.ANALYZE.PROFIT.</p>
+            <p>FIND. ANALYZE. PROFIT.</p>
         </div>
-        <div class="welcome">
+        <div class="welcome-text">
             <h2>Welcome Back!</h2>
             <p>Log in to continue to your account</p>
         </div>
-        <div id="loginError" style="color:#ff8888; text-align:center; margin-bottom:12px; font-size:13px;"></div>
-        <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)"></div>
-        <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
-        <button class="btn-primary" id="doLoginBtn">LOG IN</button>
+        <div id="loginErrorMsg" style="color: #ff8a7a; font-size:13px; margin-bottom:12px;"></div>
+        <div class="input-field">
+            <input type="tel" id="loginPhone" placeholder="Phone Number">
+        </div>
+        <div class="input-field">
+            <input type="password" id="loginPassword" placeholder="Password">
+        </div>
+        <button class="login-btn" id="doLogin">LOG IN</button>
         <div class="auth-links">
-            <a id="showSignupLink">Create Account</a>
+            <a id="showCreateLink">Create Account</a>
             <a id="showForgotLink">Forgot Password?</a>
         </div>
-        <div style="text-align:center; margin-top:28px; font-size:10px; color:#666;">© 2025 ARBIMINE. All rights reserved</div>
+        <div class="copyright">© 2025 ARBIMINE. All rights reserved.</div>
     </div>
 </div>
 
-<!-- ==================== SIGNUP MODAL (step1) ==================== -->
+<!-- ========== SIGNUP MODAL (step 1) ========== -->
 <div id="signupModal" class="modal">
     <div class="modal-card">
         <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
         <h3>Create Account</h3>
         <input type="text" id="fullName" placeholder="Full Name">
         <input type="email" id="signupEmail" placeholder="Email Address">
-        <input type="tel" id="signupPhone" placeholder="Phone (254XXXXXXXXX)">
-        <input type="password" id="signupPassword" placeholder="Password">
+        <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
+        <input type="password" id="signupPass" placeholder="Password">
         <input type="password" id="signupConfirm" placeholder="Confirm Password">
-        <button class="btn-modal" id="sendCodeBtn">SEND VERIFICATION CODE</button>
+        <button class="modal-btn" id="sendVerifyCodeBtn">SEND VERIFICATION CODE</button>
     </div>
 </div>
 
-<!-- ==================== EMAIL VERIFICATION MODAL ==================== -->
+<!-- ========== EMAIL VERIFICATION MODAL ========== -->
 <div id="verifyModal" class="modal">
     <div class="modal-card">
         <span class="close-modal" onclick="closeModal('verifyModal')">&times;</span>
         <h3>Verify Email</h3>
-        <p style="font-size:13px; margin-bottom:16px;">Enter the 6‑digit code sent to your email</p>
-        <input type="text" id="verifyCodeInput" placeholder="Code" maxlength="6">
-        <button class="btn-modal" id="verifyAccountBtn">VERIFY & CREATE ACCOUNT</button>
+        <p style="font-size:13px; margin-bottom:15px;">Enter the 6‑digit code sent to your email</p>
+        <input type="text" id="verifyCode" placeholder="Verification code" maxlength="6">
+        <button class="modal-btn" id="confirmVerifyBtn">VERIFY & CREATE ACCOUNT</button>
         <div style="text-align:center; margin-top:12px;"><a id="resendCodeLink" style="color:#FFD700; font-size:12px; cursor:pointer;">Resend Code</a></div>
     </div>
 </div>
 
-<!-- ==================== FORGOT PASSWORD (reset request) ==================== -->
+<!-- ========== FORGOT PASSWORD (request reset) ========== -->
 <div id="forgotModal" class="modal">
     <div class="modal-card">
         <span class="close-modal" onclick="closeModal('forgotModal')">&times;</span>
         <h3>Reset Password</h3>
         <input type="tel" id="resetPhone" placeholder="Phone Number">
         <input type="email" id="resetEmail" placeholder="Email Address">
-        <button class="btn-modal" id="sendResetCodeBtn">SEND RESET CODE</button>
+        <button class="modal-btn" id="sendResetCodeBtn">SEND RESET CODE</button>
     </div>
 </div>
 
-<!-- ==================== RESET PASSWORD (enter code + new pass) ==================== -->
-<div id="resetModal" class="modal">
+<!-- ========== RESET PASSWORD (enter code + new pass) ========== -->
+<div id="resetPasswordModal" class="modal">
     <div class="modal-card">
-        <span class="close-modal" onclick="closeModal('resetModal')">&times;</span>
+        <span class="close-modal" onclick="closeModal('resetPasswordModal')">&times;</span>
         <h3>Reset Password</h3>
         <input type="text" id="resetCodeInput" placeholder="Verification Code">
         <input type="password" id="newPassword" placeholder="New Password">
         <input type="password" id="confirmNewPass" placeholder="Confirm Password">
-        <button class="btn-modal" id="finalResetBtn">RESET PASSWORD</button>
+        <button class="modal-btn" id="finalResetBtn">RESET PASSWORD</button>
     </div>
 </div>
 
-<!-- ==================== MAIN DASHBOARD (after login) ==================== -->
+<!-- ========== MAIN DASHBOARD ========== -->
 <div id="dashboard" class="dashboard">
-    <div class="app-header">
+    <div class="top-bar">
         <h1>⚡ ARBIMINE</h1>
         <div class="user-area">
             <div class="avatar" id="userAvatar">👤</div>
             <span id="userPhoneLabel"></span>
-            <button class="logout-btn" id="logoutBtn">Logout</button>
+            <button id="logoutBtn" style="background:#333; border:none; padding:6px 14px; border-radius:30px; color:white; cursor:pointer;">Logout</button>
         </div>
     </div>
-    <div class="nav-tabs">
+    <div class="nav-row">
         <div class="nav-tab" id="homeTab">🏠 Home</div>
-        <div class="nav-tab tab-premium" id="premiumTab">⭐ PREMIUM</div>
-        <div class="nav-tab tab-vip" id="vipTab">👑 VIP</div>
-        <div class="nav-tab" id="profileTab">👤 Profile</div>
+        <div class="nav-tab premium-tab" id="premiumTab">⭐ PREMIUM</div>
+        <div class="nav-tab vip-tab" id="vipTab">👑 VIP</div>
+        <div class="nav-tab" id="profileNavTab">👤 Profile</div>
     </div>
     <!-- HOME SECTION -->
     <div id="homeSection">
         <div class="exchange-strip" id="exchangeList"></div>
-        <div class="stats-row">
-            <div class="stat"><div class="stat-number" id="statExchanges">10</div><div>EXCHANGES</div></div>
-            <div class="stat"><div class="stat-number" id="statCoins">100+</div><div>COINS</div></div>
-            <div class="stat"><div class="stat-number" id="statOpp">0</div><div>OPPORTUNITIES</div></div>
-            <div class="stat"><div class="stat-number" id="tierIcon">🆓</div><div id="tierLabel">FREE (0-2%)</div></div>
-            <div class="stat"><button id="refreshBtn" style="background:#333; border:none; padding:6px 18px; border-radius:40px; color:white; cursor:pointer;">🔄 Refresh</button></div>
+        <div class="stats-panel">
+            <div class="stat"><div class="stat-value" id="exchCount">10</div><div>EXCHANGES</div></div>
+            <div class="stat"><div class="stat-value" id="coinCount">120+</div><div>COINS</div></div>
+            <div class="stat"><div class="stat-value" id="oppCount">0</div><div>OPPORTUNITIES</div></div>
+            <div class="stat"><div class="stat-value" id="tierIcon">🆓</div><div id="tierLabel">FREE (0-2%)</div></div>
+            <div class="stat"><button id="refreshBtn" style="background:#2a2a3e; border:none; padding:6px 18px; border-radius:40px; color:white; cursor:pointer;">🔄 Refresh</button></div>
         </div>
-        <div class="upgrade-banner">
-            <div style="font-weight:bold; margin-bottom:6px;">🔓 Upgrade to unlock higher profits</div>
-            <div>⭐ PREMIUM: up to 20% &nbsp;&nbsp;|&nbsp;&nbsp; 👑 VIP: any % profit</div>
-            <div style="margin-top:10px;"><span id="premiumBannerBtn" style="background:#f093fb; padding:6px 18px; border-radius:40px; cursor:pointer;">⭐ PREMIUM (KES 200/wk)</span> &nbsp; <span id="vipBannerBtn" style="background:#FFD700; color:#1a1a2e; padding:6px 18px; border-radius:40px; cursor:pointer;">👑 VIP (KES 400/wk)</span></div>
+        <div class="upgrade-reminder">
+            ⭐ PREMIUM: up to 20% &nbsp;&nbsp;|&nbsp;&nbsp; 👑 VIP: any % profit<br>
+            <span id="premiumBannerBtn" style="display:inline-block; background:#f5576c; padding:5px 20px; border-radius:40px; margin-top:8px; cursor:pointer;">⭐ PREMIUM (KES 200/wk)</span>
+            <span id="vipBannerBtn" style="display:inline-block; background:#FFD700; color:#12122c; padding:5px 20px; border-radius:40px; margin-left:10px; cursor:pointer;">👑 VIP (KES 400/wk)</span>
         </div>
-        <div id="opportunitiesContainer" class="opportunities-grid"><div class="loading">⚡ Scanning live markets ...</div></div>
+        <div id="opportunityContainer" class="opportunity-grid"><div class="loading" style="text-align:center; padding:30px;">⚡ Scanning live markets ...</div></div>
     </div>
     <!-- PROFILE SECTION -->
     <div id="profileSection" style="display:none;">
-        <div style="background:#111; margin:20px; border-radius:28px; padding:20px;">
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                <div><span style="color:#aaa;">Full Name</span><br><span id="profileFullName" style="color:#FFD700; font-weight:bold;"></span></div>
+        <div style="background:#0c0c18; margin:20px; border-radius:32px; padding:24px;">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+                <div><span style="color:#aaa;">Full Name</span><br><span id="profileFullName" style="color:#FFD700;"></span></div>
                 <div><span style="color:#aaa;">Email</span><br><span id="profileEmail" style="color:#FFD700;"></span></div>
                 <div><span style="color:#aaa;">Phone</span><br><span id="profilePhone" style="color:#FFD700;"></span></div>
             </div>
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin:16px 0;">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin:18px 0;">
                 <div><span style="color:#aaa;">Member since</span><br><span id="profileSince" style="color:#FFD700;"></span></div>
                 <div><span style="color:#aaa;">Account ID</span><br><span id="profileId" style="color:#FFD700;"></span></div>
                 <div><span style="color:#aaa;">Subscription</span><br><span id="profileTier" style="color:#FFD700;"></span></div>
             </div>
-            <button id="referBtn" style="background:linear-gradient(135deg,#f093fb,#f5576c); border:none; width:100%; padding:12px; border-radius:40px; margin-top:10px; font-weight:bold;">🔗 REFER & EARN</button>
-            <button id="deleteAccBtn" style="background:transparent; border:1px solid #ef4444; color:#ef4444; width:100%; padding:12px; border-radius:40px; margin-top:12px;">DELETE ACCOUNT</button>
+            <button id="referBtn" style="background:linear-gradient(135deg,#f093fb,#f5576c); border:none; width:100%; padding:12px; border-radius:40px; font-weight:bold;">🔗 REFER & EARN</button>
+            <button id="deleteAccountBtn" style="background:transparent; border:1px solid #ef4444; color:#ef4444; width:100%; padding:12px; border-radius:40px; margin-top:14px;"> DELETE ACCOUNT</button>
         </div>
+    </div>
+    <div class="footer-links">
+        <span id="footerHome">🏠 Home</span>
+        <span id="footerPremium">⭐ PREMIUM</span>
+        <span id="footerVip">👑 VIP</span>
+        <span id="footerProfile">👤 Profile</span>
     </div>
 </div>
 
 <script>
-    // ---------- LOCALSTORAGE USER MANAGEMENT + PENDING VERIFICATION ----------
+    // ---------- STORAGE ----------
     let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-    let pendingVerification = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
+    let pending = JSON.parse(localStorage.getItem('arbimine_pending') || '{}');
     let currentUser = localStorage.getItem('arbimine_current_user');
-    let selectedPlan = null;          // for upgrade buttons
-    let selectedVIPPlan = null;
 
-    // Helper: generate 6 digit code
+    // Helper: generate 6-digit code
     function generateCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
-    // ---------- UI helpers ----------
+    // UI: close modal
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-    // populate exchanges
-    const exchangesList = ['Binance','KuCoin','Bybit','OKX','Gate.io','MEXC','Bitget','BingX','Coinbase','Kraken'];
-    document.getElementById('exchangeList').innerHTML = exchangesList.map(ex => `<div class="exchange-badge">${ex}</div>`).join('');
+    // ---------- EXCHANGE LIST ----------
+    const exchanges = ['Binance','KuCoin','Bybit','OKX','Gate.io','MEXC','Bitget','BingX','Coinbase','Kraken'];
+    document.getElementById('exchangeList').innerHTML = exchanges.map(ex => `<div class="exchange-badge">${ex}</div>`).join('');
 
-    // ---------- SIMULATED PRICE & ARBITRAGE (lightning fast) ----------
-    const coins = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','DOT','LINK','MATIC','UNI','ATOM','LTC'];
-
-    function generateOpportunities(userTier) {
+    // ---------- ARBITRAGE GENERATOR (simulated real-time) ----------
+    const coins = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','DOT','LINK','MATIC','ATOM','LTC','UNI'];
+    function generateOpportunities(tier) {
         let opps = [];
-        for (let i=0; i<18; i++) {
-            let profit = (Math.random() * 35).toFixed(1);
+        for (let i=0;i<24;i++) {
+            let profit = (Math.random() * 38).toFixed(1);
             let locked = false;
-            if (userTier === 'free' && profit > 2) locked = true;
-            else if (userTier === 'premium' && profit > 20) locked = true;
-            else if (userTier === 'vip') locked = false;
+            if (tier === 'free' && profit > 2) locked = true;
+            else if (tier === 'premium' && profit > 20) locked = true;
+            else if (tier === 'vip') locked = false;
             opps.push({
                 symbol: coins[Math.floor(Math.random() * coins.length)],
-                buyEx: exchangesList[Math.floor(Math.random() * exchangesList.length)],
-                sellEx: exchangesList[Math.floor(Math.random() * exchangesList.length)],
+                buyExchange: exchanges[Math.floor(Math.random() * exchanges.length)],
+                sellExchange: exchanges[Math.floor(Math.random() * exchanges.length)],
                 profit: profit,
-                buyPrice: (Math.random() * 50000 + 50).toFixed(2),
-                sellPrice: (Math.random() * 50000 + 80).toFixed(2),
-                liquidity: Math.floor(Math.random() * 20000) + 500,
+                buyPrice: (Math.random() * 55000 + 100).toFixed(2),
+                sellPrice: (Math.random() * 56000 + 150).toFixed(2),
+                liquidity: Math.floor(Math.random() * 18000) + 800,
                 locked: locked
             });
         }
         return opps.sort((a,b) => b.profit - a.profit);
     }
 
-    function renderOpportunities() {
+    function renderDashboard() {
         let user = users[currentUser] || { tier: 'free' };
         let tier = user.tier || 'free';
         let opps = generateOpportunities(tier);
-        let container = document.getElementById('opportunitiesContainer');
-        document.getElementById('statOpp').innerText = opps.length;
-
+        let container = document.getElementById('opportunityContainer');
+        document.getElementById('oppCount').innerText = opps.length;
         let visibleCount = 0;
         let html = '';
         for (let opp of opps) {
             if (opp.locked) continue;
             visibleCount++;
-            html += `<div class="opp-card">
-                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                            <div><span class="badge-buy">BUY ${opp.buyEx}</span> ➡️ <span class="badge-sell">SELL ${opp.sellEx}</span></div>
-                            <div class="profit-value">${opp.profit}%</div>
+            html += `<div class="card">
+                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px;">
+                            <div><span class="badge-buy">BUY ${opp.buyExchange}</span> ➡️ <span class="badge-sell">SELL ${opp.sellExchange}</span></div>
+                            <div class="profit-big">${opp.profit}%</div>
                         </div>
                         <div>💰 ${opp.symbol}/USDT</div>
                         <div style="font-size:11px; color:#aaa;">💧 Liquidity: $${opp.liquidity}</div>
-                        <div class="instruction" style="margin-top:8px; color:#FFD700; font-size:12px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
+                        <div style="margin-top:10px; color:#FFD700; font-size:12px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
                     </div>`;
         }
         if (visibleCount === 0 && opps.length > 0) {
             let premiumCount = opps.filter(o => (o.profit > 2 && o.profit <= 20)).length;
             let vipCount = opps.filter(o => o.profit > 20).length;
-            html = `<div class="opp-card" style="text-align:center; padding:28px;">
-                        🔒 <strong>Upgrade to see more profits</strong><br>
-                        ${premiumCount} opportunities between 2-20% (PREMIUM)<br>
-                        ${vipCount} opportunities above 20% (VIP)<br>
-                        <span style="margin-top:12px; display:inline-block; background:#f5576c; padding:6px 18px; border-radius:30px; cursor:pointer;" onclick="openPremiumModal()">⭐ GET PREMIUM</span> &nbsp;
-                        <span style="background:#FFD700; color:#1a1a2e; padding:6px 18px; border-radius:30px; cursor:pointer;" onclick="openVIPModal()">👑 GET VIP</span>
+            html = `<div class="card" style="text-align:center; padding:32px;">
+                        🔒 <strong>Upgrade to unlock more profits</strong><br>
+                        ${premiumCount} opportunities 2–20% (PREMIUM)<br>
+                        ${vipCount} opportunities >20% (VIP)<br>
+                        <div style="margin-top:14px;"><span onclick="openPremiumModal()" style="background:#f5576c; padding:6px 18px; border-radius:40px;">⭐ GET PREMIUM</span> &nbsp; 
+                        <span onclick="openVIPModal()" style="background:#FFD700; color:#12122c; padding:6px 18px; border-radius:40px;">👑 GET VIP</span></div>
                     </div>`;
         }
         container.innerHTML = html;
-    }
 
-    function refreshDashboard() {
-        renderOpportunities();
-        let user = users[currentUser] || { tier: 'free' };
-        let tier = user.tier || 'free';
+        // Update stats & tier display
         let icon = tier === 'free' ? '🆓' : (tier === 'premium' ? '⭐' : '👑');
-        let label = tier === 'free' ? 'FREE (0-2%)' : (tier === 'premium' ? 'PREMIUM (up to 20%)' : 'VIP (any %)');
+        let label = tier === 'free' ? 'FREE (0-2%)' : (tier === 'premium' ? 'PREMIUM (2-20%)' : 'VIP (any %)');
         document.getElementById('tierIcon').innerHTML = icon;
         document.getElementById('tierLabel').innerHTML = label;
 
-        // update profile info
+        // profile panel data
         if (document.getElementById('profileFullName')) {
             document.getElementById('profileFullName').innerText = user.fullName || 'ARBIMINE Trader';
             document.getElementById('profileEmail').innerText = user.email || currentUser;
@@ -594,165 +607,160 @@
             document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
             document.getElementById('profileId').innerText = 'ARB-' + currentUser.slice(-6);
             document.getElementById('profileTier').innerHTML = icon + ' ' + (tier === 'free' ? 'FREE' : tier.toUpperCase());
-            document.getElementById('userAvatar').innerHTML = (user.fullName ? user.fullName.charAt(0) : currentUser.slice(-4));
+            document.getElementById('userAvatar').innerHTML = (user.fullName ? user.fullName.charAt(0) : currentUser?.slice(-4));
             document.getElementById('userPhoneLabel').innerText = currentUser;
         }
     }
 
-    // ---------- AUTH FLOW (email verification simulation) ----------
-    document.getElementById('doLoginBtn').onclick = () => {
+    // ---------- AUTH FLOW ----------
+    document.getElementById('doLogin').onclick = () => {
         let phone = document.getElementById('loginPhone').value.trim();
         let pwd = document.getElementById('loginPassword').value;
         if (users[phone] && users[phone].password === pwd) {
             currentUser = phone;
             localStorage.setItem('arbimine_current_user', phone);
-            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            refreshDashboard();
-            setInterval(()=> renderOpportunities(), 22000);
+            renderDashboard();
+            setInterval(() => renderDashboard(), 24000);
         } else {
-            document.getElementById('loginError').innerText = 'Invalid phone or password. Create account first.';
+            document.getElementById('loginErrorMsg').innerText = 'Invalid credentials or account not created.';
         }
     };
 
-    // show signup modal
-    document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
+    document.getElementById('showCreateLink').onclick = () => showModal('signupModal');
     document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
 
-    // send verification code (step1)
-    document.getElementById('sendCodeBtn').onclick = () => {
-        let full = document.getElementById('fullName').value.trim();
+    // SIGNUP step1: send verification code (demo)
+    document.getElementById('sendVerifyCodeBtn').onclick = () => {
+        let name = document.getElementById('fullName').value.trim();
         let email = document.getElementById('signupEmail').value.trim();
         let phone = document.getElementById('signupPhone').value.trim();
-        let pwd = document.getElementById('signupPassword').value;
+        let pwd = document.getElementById('signupPass').value;
         let confirm = document.getElementById('signupConfirm').value;
-        if (!full || !email.includes('@') || !phone.match(/^254\d{9}$/)) { alert('Valid name, email & phone (254XXXXXXXXX) required'); return; }
-        if (pwd.length < 4) { alert('Password min 4 chars'); return; }
-        if (pwd !== confirm) { alert('Passwords mismatch'); return; }
+        if (!name || !email.includes('@') || !phone.match(/^254\d{9}$/)) { alert('Valid name, email, phone 254XXXXXXXXX'); return; }
+        if (pwd.length < 4 || pwd !== confirm) { alert('Password min 4 chars and match'); return; }
         if (users[phone]) { alert('Phone already registered. Please login.'); closeModal('signupModal'); return; }
         let code = generateCode();
-        pendingVerification[email] = { fullName: full, email, phone, password: pwd, code, expires: Date.now() + 5*60000 };
-        localStorage.setItem('arbimine_pending', JSON.stringify(pendingVerification));
-        alert(`📧 Verification code sent to ${email}\nDemo code: ${code}`);
+        pending[email] = { name, email, phone, password: pwd, code, expires: Date.now() + 5*60000 };
+        localStorage.setItem('arbimine_pending', JSON.stringify(pending));
+        alert(`📧 Verification code sent to ${email}\nDemo: ${code}`);
         closeModal('signupModal');
         showModal('verifyModal');
     };
 
-    document.getElementById('verifyAccountBtn').onclick = () => {
-        let code = document.getElementById('verifyCodeInput').value;
+    document.getElementById('confirmVerifyBtn').onclick = () => {
+        let code = document.getElementById('verifyCode').value;
         let found = null;
-        for (let email in pendingVerification) {
-            let p = pendingVerification[email];
-            if (p.code === code && p.expires > Date.now()) { found = p; break; }
+        for (let email in pending) {
+            if (pending[email].code === code && pending[email].expires > Date.now()) { found = pending[email]; break; }
         }
-        if (!found) { alert('Invalid or expired code'); return; }
+        if (!found) { alert('Invalid/expired code'); return; }
         users[found.phone] = {
-            fullName: found.fullName, email: found.email, password: found.password,
+            fullName: found.name, email: found.email, password: found.password,
             tier: 'free', createdAt: new Date().toISOString()
         };
         localStorage.setItem('arbimine_users', JSON.stringify(users));
-        delete pendingVerification[found.email];
-        localStorage.setItem('arbimine_pending', JSON.stringify(pendingVerification));
+        delete pending[found.email];
+        localStorage.setItem('arbimine_pending', JSON.stringify(pending));
         alert('✅ Account verified! Please login.');
         closeModal('verifyModal');
     };
 
-    document.getElementById('resendCodeLink').onclick = () => {
-        alert('New code sent (demo: generate new). For production use real email service.');
-    };
+    document.getElementById('resendCodeLink').onclick = () => alert('Demo: new code would be sent (use same generation)');
 
-    // forgot password request
+    // FORGOT PASSWORD
     document.getElementById('sendResetCodeBtn').onclick = () => {
         let phone = document.getElementById('resetPhone').value.trim();
         let email = document.getElementById('resetEmail').value.trim();
         if (users[phone] && users[phone].email === email) {
             let code = generateCode();
-            pendingVerification['reset_'+phone] = { code, expires: Date.now() + 5*60000 };
-            localStorage.setItem('arbimine_pending', JSON.stringify(pendingVerification));
+            pending['reset_' + phone] = { code, expires: Date.now() + 5*60000 };
+            localStorage.setItem('arbimine_pending', JSON.stringify(pending));
             alert(`Reset code sent to ${email} (demo: ${code})`);
             closeModal('forgotModal');
-            showModal('resetModal');
-        } else {
-            alert('Phone/email not registered');
-        }
+            showModal('resetPasswordModal');
+        } else alert('Phone/email not found');
     };
 
     document.getElementById('finalResetBtn').onclick = () => {
         let code = document.getElementById('resetCodeInput').value;
         let newP = document.getElementById('newPassword').value;
         let conf = document.getElementById('confirmNewPass').value;
-        if (newP !== conf || newP.length<4) { alert('Passwords not match or too short'); return; }
-        let found = null;
-        for (let key in pendingVerification) {
-            if (key.startsWith('reset_') && pendingVerification[key].code === code && pendingVerification[key].expires > Date.now()) {
-                found = key.replace('reset_','');
+        if (newP !== conf || newP.length < 4) { alert('Passwords mismatch or too short'); return; }
+        let foundKey = null;
+        for (let k in pending) {
+            if (k.startsWith('reset_') && pending[k].code === code && pending[k].expires > Date.now()) {
+                foundKey = k.replace('reset_','');
                 break;
             }
         }
-        if (found && users[found]) {
-            users[found].password = newP;
+        if (foundKey && users[foundKey]) {
+            users[foundKey].password = newP;
             localStorage.setItem('arbimine_users', JSON.stringify(users));
-            delete pendingVerification['reset_'+found];
-            localStorage.setItem('arbimine_pending', JSON.stringify(pendingVerification));
-            alert('Password updated! Login now.');
-            closeModal('resetModal');
-        } else alert('Invalid or expired code');
+            delete pending['reset_' + foundKey];
+            localStorage.setItem('arbimine_pending', JSON.stringify(pending));
+            alert('Password updated! Please login.');
+            closeModal('resetPasswordModal');
+        } else alert('Invalid/expired code');
     };
 
-    // logout
+    // LOGOUT
     document.getElementById('logoutBtn').onclick = () => {
         currentUser = null;
         localStorage.removeItem('arbimine_current_user');
         document.getElementById('dashboard').style.display = 'none';
-        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('loginContainer').style.display = 'flex';
     };
 
-    // tabs navigation
+    // TABS
     document.getElementById('homeTab').onclick = () => {
         document.getElementById('homeSection').style.display = 'block';
         document.getElementById('profileSection').style.display = 'none';
-        refreshDashboard();
+        renderDashboard();
     };
-    document.getElementById('profileTab').onclick = () => {
+    document.getElementById('profileNavTab').onclick = () => {
         document.getElementById('homeSection').style.display = 'none';
         document.getElementById('profileSection').style.display = 'block';
-        refreshDashboard();
+        renderDashboard();
     };
-    // premium / vip upgrade UI
-    function openPremiumModal() {
-        let plan = prompt("Select plan:\n1: WEEKLY (KES 200)\n2: MONTHLY (KES 700)");
-        if (plan === '1') selectedPlan = 'weekly';
-        else if (plan === '2') selectedPlan = 'monthly';
-        else return;
-        let amount = selectedPlan === 'weekly' ? '200' : '700';
-        let msg = `PREMIUM REQUEST\nPhone: ${currentUser}\nPlan: ${selectedPlan.toUpperCase()}\nAmount: KES ${amount}\nPaid to Pochi La Biashara 0728 308602`;
+    document.getElementById('footerHome').onclick = () => document.getElementById('homeTab').click();
+    document.getElementById('footerProfile').onclick = () => document.getElementById('profileNavTab').click();
+    document.getElementById('footerPremium').onclick = () => openPremiumModal();
+    document.getElementById('footerVip').onclick = () => openVIPModal();
+
+    // PRICE UPGRADE FLOW (whatsapp request)
+    window.openPremiumModal = function() {
+        let plan = prompt("Choose PREMIUM plan:\n1: WEEKLY (KES 200)\n2: MONTHLY (KES 700)");
+        let selected = plan === '1' ? 'weekly' : (plan === '2' ? 'monthly' : null);
+        if (!selected) return;
+        let amount = selected === 'weekly' ? '200' : '700';
+        let msg = `PREMIUM REQUEST\nPhone: ${currentUser}\nPlan: ${selected}\nAmount: KES ${amount}\nPaid to Pochi La Biashara 0728 308602`;
         window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
-        alert(`✅ Request sent! Admin will activate after payment confirmation.`);
-    }
-    function openVIPModal() {
-        let plan = prompt("VIP plan:\n1: WEEKLY (KES 400)\n2: MONTHLY (KES 1,400)");
-        if (plan === '1') selectedVIPPlan = 'weekly';
-        else if (plan === '2') selectedVIPPlan = 'monthly';
-        else return;
-        let amount = selectedVIPPlan === 'weekly' ? '400' : '1400';
-        let msg = `VIP REQUEST\nPhone: ${currentUser}\nPlan: VIP ${selectedVIPPlan.toUpperCase()}\nAmount: KES ${amount}\nPaid to 0728 308602`;
+        alert('✅ Request sent. Admin will activate premium after payment confirmation.');
+    };
+    window.openVIPModal = function() {
+        let plan = prompt("Choose VIP plan:\n1: WEEKLY (KES 400)\n2: MONTHLY (KES 1,400)");
+        let selected = plan === '1' ? 'weekly' : (plan === '2' ? 'monthly' : null);
+        if (!selected) return;
+        let amount = selected === 'weekly' ? '400' : '1400';
+        let msg = `VIP REQUEST\nPhone: ${currentUser}\nPlan: VIP ${selected}\nAmount: KES ${amount}\nPaid to 0728 308602`;
         window.open(`https://wa.me/254728308602?text=${encodeURIComponent(msg)}`, '_blank');
-        alert(`✅ VIP request sent. Admin will activate after payment.`);
-    }
+        alert('✅ VIP request sent. Admin will activate after payment.');
+    };
     document.getElementById('premiumTab').onclick = openPremiumModal;
     document.getElementById('vipTab').onclick = openVIPModal;
     document.getElementById('premiumBannerBtn').onclick = openPremiumModal;
     document.getElementById('vipBannerBtn').onclick = openVIPModal;
-    document.getElementById('refreshBtn').onclick = () => renderOpportunities();
+    document.getElementById('refreshBtn').onclick = () => renderDashboard();
 
-    // refer & delete account
     document.getElementById('referBtn')?.addEventListener('click', () => {
         let link = `https://arbimine.com/ref/${currentUser}`;
         navigator.clipboard.writeText(link);
         alert('Referral link copied!');
     });
-    document.getElementById('deleteAccBtn')?.addEventListener('click', () => {
-        if (confirm('PERMANENTLY delete your account? All data lost.')) {
+    document.getElementById('deleteAccountBtn')?.addEventListener('click', () => {
+        if (confirm('PERMANENTLY delete account? Data lost forever.')) {
             delete users[currentUser];
             localStorage.setItem('arbimine_users', JSON.stringify(users));
             alert('Account deleted.');
@@ -760,15 +768,15 @@
         }
     });
 
-    // initial render if already logged in
+    // Auto-login if already logged in
     if (currentUser && users[currentUser]) {
-        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
-        refreshDashboard();
-        setInterval(()=> renderOpportunities(), 22000);
+        renderDashboard();
+        setInterval(() => renderDashboard(), 24000);
     } else {
-        document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('loginContainer').style.display = 'flex';
     }
 </script>
 </body>
