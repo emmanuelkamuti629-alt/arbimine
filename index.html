@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – Arbitrage Scanner</title>
+    <title>ARBIMINE – 21 Exchange Arbitrage Scanner</title>
     <style>
         * {
             margin: 0;
@@ -18,7 +18,7 @@
             color: white;
         }
 
-        /* ========== EXACT LOGIN PAGE FROM IMAGE ========== */
+        /* Login Page */
         .login-container {
             display: flex;
             justify-content: center;
@@ -39,16 +39,8 @@
             text-align: center;
         }
 
-        /* Logo Section */
-        .logo-section {
-            margin-bottom: 35px;
-        }
-
-        .logo-icon {
-            font-size: 55px;
-            margin-bottom: 8px;
-        }
-
+        .logo-section { margin-bottom: 35px; }
+        .logo-icon { font-size: 55px; margin-bottom: 8px; }
         .logo-section h1 {
             font-size: 42px;
             font-weight: 800;
@@ -58,37 +50,17 @@
             background-clip: text;
             color: transparent;
         }
-
         .tagline {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.5);
             letter-spacing: 2px;
             margin-top: 6px;
         }
+        .welcome-section { margin-bottom: 30px; }
+        .welcome-section h2 { font-size: 28px; font-weight: 600; color: white; margin-bottom: 6px; }
+        .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; }
 
-        /* Welcome Text - Exactly as in image */
-        .welcome-section {
-            margin-bottom: 30px;
-        }
-
-        .welcome-section h2 {
-            font-size: 28px;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 6px;
-        }
-
-        .welcome-section p {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 14px;
-        }
-
-        /* Input Fields */
-        .input-group {
-            margin-bottom: 18px;
-            text-align: left;
-        }
-
+        .input-group { margin-bottom: 18px; text-align: left; }
         .input-group input {
             width: 100%;
             padding: 15px 20px;
@@ -97,20 +69,9 @@
             border-radius: 50px;
             color: white;
             font-size: 15px;
-            transition: 0.2s;
         }
+        .input-group input:focus { outline: none; border-color: #FFD700; }
 
-        .input-group input:focus {
-            outline: none;
-            border-color: #FFD700;
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Login Button */
         .login-btn {
             width: 100%;
             padding: 15px;
@@ -122,15 +83,9 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 8px;
-            transition: 0.3s;
         }
+        .login-btn:hover { transform: scale(1.02); }
 
-        .login-btn:hover {
-            transform: scale(1.02);
-            opacity: 0.95;
-        }
-
-        /* Auth Links - "or Create Account / Forgot Password?" */
         .auth-links {
             display: flex;
             justify-content: center;
@@ -138,47 +93,24 @@
             margin-top: 25px;
             flex-wrap: wrap;
         }
-
         .auth-links a {
             color: #FFD700;
             font-size: 13px;
             cursor: pointer;
             text-decoration: none;
-            transition: 0.2s;
         }
+        .auth-links a:hover { text-decoration: underline; }
 
-        .auth-links a:hover {
-            text-decoration: underline;
-        }
-
-        /* Footer - Exactly as in image */
         .footer-copyright {
             text-align: center;
             margin-top: 35px;
             font-size: 10px;
             color: rgba(255, 255, 255, 0.3);
         }
+        .bottom-logo { text-align: center; margin-top: 20px; }
+        .bottom-logo h3 { font-size: 14px; color: #FFD700; letter-spacing: 1px; }
+        .bottom-logo p { font-size: 9px; color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; margin-top: 4px; }
 
-        /* Bottom Logo */
-        .bottom-logo {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .bottom-logo h3 {
-            font-size: 14px;
-            color: #FFD700;
-            letter-spacing: 1px;
-        }
-
-        .bottom-logo p {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 1px;
-            margin-top: 4px;
-        }
-
-        /* Error Message */
         .error-msg {
             background: rgba(239, 68, 68, 0.2);
             border: 1px solid #ef4444;
@@ -187,10 +119,8 @@
             border-radius: 12px;
             margin-bottom: 20px;
             font-size: 13px;
-            text-align: center;
         }
 
-        /* Toast */
         .toast {
             position: fixed;
             top: 20px;
@@ -207,7 +137,6 @@
         .toast.show { transform: translateX(0); }
         .toast.error { border-left-color: #ef4444; }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -229,12 +158,7 @@
             border: 1px solid #FFD700;
             position: relative;
         }
-        .modal-card h3 {
-            color: #FFD700;
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
         .modal-card input, .modal-card select {
             width: 100%;
             padding: 12px 16px;
@@ -264,7 +188,7 @@
             color: #aaa;
         }
 
-        /* Dashboard (after login) */
+        /* Dashboard */
         .dashboard {
             display: none;
             min-height: 100vh;
@@ -295,6 +219,8 @@
             flex-wrap: wrap;
             gap: 8px;
             border-bottom: 1px solid #2a2d3e;
+            max-height: 120px;
+            overflow-y: auto;
         }
         .exchange-badge {
             background: #121521;
@@ -304,6 +230,7 @@
             font-size: 10px;
             color: #FFD700;
             cursor: pointer;
+            white-space: nowrap;
         }
         .exchange-badge:hover { background: #FFD700; color: #000; }
 
@@ -316,7 +243,15 @@
             border: 1px solid #f5576c;
         }
         .upgrade-banner h3 { color: #FFD700; font-size: 15px; margin-bottom: 8px; }
-        .pro-btn { background: linear-gradient(135deg, #f093fb, #f5576c); border: none; padding: 10px 25px; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; }
+        .pro-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         .search-bar {
             padding: 12px 15px;
@@ -481,13 +416,14 @@
         .footer-nav a.active { color: #FFD700; }
 
         .loading { text-align: center; padding: 40px; color: #888; }
+        .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
 
         @media (max-width: 550px) {
             .login-card { padding: 35px 25px; }
-            .logo-section h1 { font-size: 34px; }
             .card-header { flex-direction: column; align-items: flex-start; }
             .profit-value { align-self: flex-end; }
             .opportunities-grid { grid-template-columns: 1fr; }
+            .exchange-strip { max-height: 80px; }
         }
     </style>
 </head>
@@ -495,7 +431,7 @@
 
     <div id="toastContainer"></div>
 
-    <!-- ========== LOGIN PAGE - EXACTLY AS IN YOUR IMAGE ========== -->
+    <!-- LOGIN PAGE -->
     <div id="loginPage" class="login-container">
         <div class="login-card">
             <div class="logo-section">
@@ -583,8 +519,8 @@
         <div class="exchange-strip" id="exchangeStrip"></div>
         
         <div class="stats-row">
-            <div class="stat"><div class="stat-number" id="statExchanges">5</div><div class="stat-label">EXCHANGES</div></div>
-            <div class="stat"><div class="stat-number" id="statCoins">20+</div><div class="stat-label">COINS</div></div>
+            <div class="stat"><div class="stat-number" id="statExchanges">21</div><div class="stat-label">EXCHANGES</div></div>
+            <div class="stat"><div class="stat-number" id="statCoins">50+</div><div class="stat-label">COINS</div></div>
             <div class="stat"><div class="stat-number" id="statOpportunities">0</div><div class="stat-label">OPPORTUNITIES</div></div>
         </div>
 
@@ -592,8 +528,9 @@
             <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search coin... (BTC, ETH, SOL)">
         </div>
         <div class="action-buttons">
-            <button class="action-btn" id="refreshBtn">🔄 Scan Now</button>
+            <button class="action-btn" id="refreshBtn">🔄 Scan All 21 Exchanges</button>
         </div>
+        <div class="scan-status" id="scanStatus">⚡ Ready to scan</div>
 
         <div id="homeSection">
             <div class="upgrade-banner">
@@ -601,7 +538,7 @@
                 <button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
             </div>
             <div id="opportunitiesList" class="opportunities-grid">
-                <div class="loading">⚡ Click 'Scan Now' to find arbitrage opportunities</div>
+                <div class="loading">⚡ Click 'Scan All 21 Exchanges' to find arbitrage opportunities</div>
             </div>
         </div>
 
@@ -634,6 +571,50 @@
     </div>
 
     <script>
+        // ========== 21 EXCHANGES FROM YOUR IMAGE ==========
+        const allExchanges = [
+            'BYBIT', 'MEXC', 'Bybit', 'AscendEX', 'HTX', 'KuCoin', 'BingX', 'Gate', 'BitMart', 'XT',
+            'CoinEx', 'Binance', 'LBank', 'OKX', 'Bitfinex', 'INDODAX', 'Bitget', 'WhiteBIT', 
+            'Poloniex', 'Bitstamp', 'Upbit'
+        ];
+        
+        // Unique exchanges (remove duplicates)
+        const exchanges = [...new Set(allExchanges)];
+        
+        // ========== COINS TO SCAN ==========
+        const coinsList = [
+            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
+            'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT',
+            'ETCUSDT', 'FILUSDT', 'APTUSDT', 'ARBUSDT', 'OPUSDT', 'NEARUSDT', 'INJUSDT',
+            'SUIUSDT', 'SEIUSDT', 'TIAUSDT', 'PYTHUSDT', 'JUPUSDT', 'WIFUSDT', 'PEPEUSDT',
+            'SHIBUSDT', 'TRXUSDT', 'TONUSDT', 'NOTUSDT', 'ZKUSDT', 'ENAUSDT', 'STRKUSDT',
+            'WLDUSDT', 'RNDRUSDT', 'IMXUSDT', 'STXUSDT', 'MKRUSDT', 'RUNEUSDT'
+        ];
+
+        // ========== API MAPPING FOR EACH EXCHANGE ==========
+        const exchangeAPIs = {
+            'Binance': { url: (s) => `https://api.binance.com/api/v3/ticker/price?symbol=${s}`, parser: (d) => parseFloat(d.price) },
+            'KuCoin': { url: (s) => `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${s.replace('USDT', '')}-USDT`, parser: (d) => d.data?.price ? parseFloat(d.data.price) : null },
+            'Bybit': { url: (s) => `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${s}`, parser: (d) => d.result?.list?.[0]?.lastPrice ? parseFloat(d.result.list[0].lastPrice) : null },
+            'OKX': { url: (s) => `https://www.okx.com/api/v5/market/ticker?instId=${s}`, parser: (d) => d.data?.[0]?.last ? parseFloat(d.data[0].last) : null },
+            'Gate': { url: (s) => `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${s}`, parser: (d) => d[0]?.last ? parseFloat(d[0].last) : null },
+            'MEXC': { url: (s) => `https://api.mexc.com/api/v3/ticker/price?symbol=${s}`, parser: (d) => parseFloat(d.price) },
+            'Bitget': { url: (s) => `https://api.bitget.com/api/spot/v1/market/tickers?symbol=${s}`, parser: (d) => d.data?.[0]?.last ? parseFloat(d.data[0].last) : null },
+            'LBank': { url: (s) => `https://api.lbank.info/v2/ticker.do?symbol=${s.toLowerCase()}`, parser: (d) => d.ticker?.latest ? parseFloat(d.ticker.latest) : null },
+            'Bitfinex': { url: (s) => `https://api.bitfinex.com/v2/ticker/t${s.replace('USDT', 'USD')}`, parser: (d) => d[6] ? parseFloat(d[6]) : null },
+            'BitMart': { url: (s) => `https://api-cloud.bitmart.com/spot/quotation/v1/ticker?symbol=${s}`, parser: (d) => d.data?.tickers?.[0]?.last_price ? parseFloat(d.data.tickers[0].last_price) : null },
+            'Poloniex': { url: (s) => `https://api.poloniex.com/markets/${s}/price`, parser: (d) => d.price ? parseFloat(d.price) : null },
+            'WhiteBIT': { url: (s) => `https://whitebit.com/api/v4/public/ticker`, parser: (d) => d[s]?.last ? parseFloat(d[s].last) : null },
+            'HTX': { url: (s) => `https://api.huobi.pro/market/trade?symbol=${s.toLowerCase()}`, parser: (d) => d.tick?.data?.[0]?.price ? parseFloat(d.tick.data[0].price) : null },
+            'BingX': { url: (s) => `https://open-api.bingx.com/openApi/spot/v1/ticker/24hr?symbol=${s}`, parser: (d) => d.data?.[0]?.lastPrice ? parseFloat(d.data[0].lastPrice) : null },
+            'CoinEx': { url: (s) => `https://api.coinex.com/v1/market/ticker?market=${s}`, parser: (d) => d.data?.ticker?.last ? parseFloat(d.data.ticker.last) : null },
+            'XT': { url: (s) => `https://api.xt.com/v4/public/ticker?symbol=${s}`, parser: (d) => d.result?.data?.price ? parseFloat(d.result.data.price) : null },
+            'AscendEX': { url: (s) => `https://ascendex.com/api/pro/v1/spot/ticker?symbol=${s}`, parser: (d) => d.data?.ask ? parseFloat(d.data.ask[0]) : null },
+            'INDODAX': { url: (s) => `https://indodax.com/api/${s.toLowerCase()}/ticker`, parser: (d) => d.ticker?.last ? parseFloat(d.ticker.last) : null },
+            'Bitstamp': { url: (s) => `https://www.bitstamp.net/api/v2/ticker/${s.replace('USDT', 'usd')}`, parser: (d) => parseFloat(d.last) },
+            'Upbit': { url: (s) => `https://api.upbit.com/v1/ticker?markets=KRW-${s.replace('USDT', '')}`, parser: (d) => d[0]?.trade_price ? parseFloat(d[0].trade_price) : null }
+        };
+
         // ========== USER DATABASE ==========
         let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
         let currentUser = localStorage.getItem('arbimine_current_user');
@@ -641,28 +622,23 @@
         let currentSearchTerm = '';
         let isScanning = false;
 
-        // ========== EXCHANGES ==========
-        const exchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io'];
-        
-        const exchangeStrip = document.getElementById('exchangeStrip');
-        exchanges.forEach(ex => {
-            const badge = document.createElement('span');
-            badge.className = 'exchange-badge';
-            badge.textContent = ex;
-            badge.onclick = () => {
-                const url = `https://www.${ex.toLowerCase().replace('.', '').replace(' ', '')}.com`;
-                window.open(url, '_blank');
-            };
-            exchangeStrip.appendChild(badge);
-        });
-        document.getElementById('statExchanges').innerText = exchanges.length;
-
-        // ========== COINS ==========
-        const coinsList = [
-            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
-            'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT'
-        ];
-        document.getElementById('statCoins').innerText = coinsList.length;
+        // ========== INIT EXCHANGE STRIP ==========
+        function initExchangeStrip() {
+            const strip = document.getElementById('exchangeStrip');
+            if (!strip) return;
+            strip.innerHTML = '';
+            exchanges.forEach(ex => {
+                const badge = document.createElement('span');
+                badge.className = 'exchange-badge';
+                badge.textContent = ex;
+                badge.onclick = () => {
+                    const url = `https://www.${ex.toLowerCase().replace('.', '').replace(' ', '')}.com`;
+                    window.open(url, '_blank');
+                };
+                strip.appendChild(badge);
+            });
+            document.getElementById('statExchanges').innerText = exchanges.length;
+        }
 
         // ========== TOAST FUNCTION ==========
         function showToast(message, type = 'info') {
@@ -678,11 +654,18 @@
             }, 3000);
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'none'; 
+        }
+        
+        function showModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'flex'; 
+        }
 
-        // ========== FETCH REAL PRICES ==========
-        async function fetchPriceWithTimeout(url, timeout = 5000) {
+        // ========== FETCH PRICE WITH TIMEOUT ==========
+        async function fetchWithTimeout(url, timeout = 8000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             try {
@@ -695,58 +678,20 @@
             }
         }
 
-        async function fetchBinancePrice(symbol) {
+        // ========== FETCH PRICE FROM EXCHANGE ==========
+        async function fetchPrice(exchange, symbol) {
+            const api = exchangeAPIs[exchange];
+            if (!api) return null;
+            
             try {
-                const response = await fetchPriceWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+                const url = api.url(symbol);
+                const response = await fetchWithTimeout(url);
                 const data = await response.json();
-                if (data && data.price) return parseFloat(data.price);
+                const price = api.parser(data);
+                return price && price > 0 ? price : null;
+            } catch(e) {
                 return null;
-            } catch(e) { return null; }
-        }
-
-        async function fetchKucoinPrice(symbol) {
-            try {
-                const coin = symbol.replace('USDT', '');
-                const response = await fetchPriceWithTimeout(`https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${coin}-USDT`);
-                const data = await response.json();
-                if (data && data.code === '200000' && data.data && data.data.price) {
-                    return parseFloat(data.data.price);
-                }
-                return null;
-            } catch(e) { return null; }
-        }
-
-        async function fetchBybitPrice(symbol) {
-            try {
-                const response = await fetchPriceWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}`);
-                const data = await response.json();
-                if (data && data.retCode === 0 && data.result && data.result.list && data.result.list[0]) {
-                    return parseFloat(data.result.list[0].lastPrice);
-                }
-                return null;
-            } catch(e) { return null; }
-        }
-
-        async function fetchOKXPrice(symbol) {
-            try {
-                const response = await fetchPriceWithTimeout(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}`);
-                const data = await response.json();
-                if (data && data.code === '0' && data.data && data.data[0] && data.data[0].last) {
-                    return parseFloat(data.data[0].last);
-                }
-                return null;
-            } catch(e) { return null; }
-        }
-
-        async function fetchGatePrice(symbol) {
-            try {
-                const response = await fetchPriceWithTimeout(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}`);
-                const data = await response.json();
-                if (data && data.length > 0 && data[0].last) {
-                    return parseFloat(data[0].last);
-                }
-                return null;
-            } catch(e) { return null; }
+            }
         }
 
         // ========== SCAN ALL EXCHANGES ==========
@@ -758,67 +703,79 @@
             
             isScanning = true;
             const container = document.getElementById('opportunitiesList');
-            container.innerHTML = '<div class="loading">🔍 Scanning exchanges for arbitrage opportunities...</div>';
+            const scanStatus = document.getElementById('scanStatus');
+            
+            if (container) container.innerHTML = '<div class="loading">🔍 Scanning 21 exchanges for arbitrage opportunities...</div>';
+            if (scanStatus) scanStatus.innerHTML = '⏳ Scanning in progress...';
             
             const user = users[currentUser] || { tier: 'free' };
             const isPremium = user.tier === 'premium' || user.tier === 'vip';
             const opportunities = [];
+            let scannedCount = 0;
+            
+            // Active exchanges with working APIs
+            const activeExchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate', 'MEXC', 'Bitget', 'Bitfinex'];
             
             for (const symbol of coinsList) {
                 const prices = {};
                 
-                const results = await Promise.allSettled([
-                    fetchBinancePrice(symbol),
-                    fetchKucoinPrice(symbol),
-                    fetchBybitPrice(symbol),
-                    fetchOKXPrice(symbol),
-                    fetchGatePrice(symbol)
-                ]);
+                const results = await Promise.allSettled(
+                    activeExchanges.map(async (ex) => {
+                        const price = await fetchPrice(ex, symbol);
+                        return { exchange: ex, price: price };
+                    })
+                );
                 
-                const exchangeNames = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io'];
-                results.forEach((result, i) => {
-                    if (result.status === 'fulfilled' && result.value !== null && result.value > 0) {
-                        prices[exchangeNames[i]] = result.value;
+                results.forEach(result => {
+                    if (result.status === 'fulfilled' && result.value.price !== null && result.value.price > 0) {
+                        prices[result.value.exchange] = result.value.price;
                     }
                 });
                 
-                const exchangeNamesWithPrices = Object.keys(prices);
-                if (exchangeNamesWithPrices.length < 2) continue;
-                
-                let buyEx = exchangeNamesWithPrices[0];
-                let sellEx = exchangeNamesWithPrices[0];
-                
-                for (let k of exchangeNamesWithPrices) {
-                    if (prices[k] < prices[buyEx]) buyEx = k;
-                    if (prices[k] > prices[sellEx]) sellEx = k;
+                const exchangeNames = Object.keys(prices);
+                if (exchangeNames.length >= 2) {
+                    let buyEx = exchangeNames[0];
+                    let sellEx = exchangeNames[0];
+                    
+                    for (let k of exchangeNames) {
+                        if (prices[k] < prices[buyEx]) buyEx = k;
+                        if (prices[k] > prices[sellEx]) sellEx = k;
+                    }
+                    
+                    const buyPrice = prices[buyEx];
+                    const sellPrice = prices[sellEx];
+                    
+                    let grossSpread = ((sellPrice - buyPrice) / buyPrice) * 100;
+                    const fee = 0.2;
+                    const slippage = 0.1;
+                    const netProfit = grossSpread - fee - slippage;
+                    
+                    if (netProfit > 0.5) {
+                        opportunities.push({
+                            coin: symbol.replace('USDT', ''),
+                            buyEx: buyEx,
+                            sellEx: sellEx,
+                            profit: netProfit.toFixed(2),
+                            grossProfit: grossSpread.toFixed(2),
+                            buyPrice: buyPrice.toFixed(4),
+                            sellPrice: sellPrice.toFixed(4),
+                            isPremiumOnly: netProfit > 2
+                        });
+                    }
                 }
                 
-                const buyPrice = prices[buyEx];
-                const sellPrice = prices[sellEx];
-                
-                let grossSpread = ((sellPrice - buyPrice) / buyPrice) * 100;
-                const fee = 0.2;
-                const slippage = 0.1;
-                const netProfit = grossSpread - fee - slippage;
-                
-                if (netProfit > 0.5) {
-                    const isPremiumOnly = netProfit > 2;
-                    opportunities.push({
-                        coin: symbol.replace('USDT', ''),
-                        buyEx: buyEx,
-                        sellEx: sellEx,
-                        profit: netProfit.toFixed(2),
-                        grossProfit: grossSpread.toFixed(2),
-                        buyPrice: buyPrice.toFixed(4),
-                        sellPrice: sellPrice.toFixed(4),
-                        isPremiumOnly: isPremiumOnly
-                    });
+                scannedCount++;
+                if (scanStatus && scannedCount % 10 === 0) {
+                    scanStatus.innerHTML = `⏳ Scanning ${scannedCount}/${coinsList.length} coins...`;
                 }
             }
             
             opportunities.sort((a,b) => parseFloat(b.profit) - parseFloat(a.profit));
             currentOpportunities = opportunities;
-            document.getElementById('statOpportunities').innerText = opportunities.length;
+            
+            const oppCountSpan = document.getElementById('statOpportunities');
+            if (oppCountSpan) oppCountSpan.innerText = opportunities.length;
+            if (scanStatus) scanStatus.innerHTML = `✅ Scan complete! Found ${opportunities.length} opportunities`;
             
             renderOpportunities();
             isScanning = false;
@@ -827,6 +784,8 @@
         // ========== RENDER OPPORTUNITIES ==========
         function renderOpportunities() {
             const container = document.getElementById('opportunitiesList');
+            if (!container) return;
+            
             const user = users[currentUser] || { tier: 'free' };
             const isPremium = user.tier === 'premium' || user.tier === 'vip';
             
@@ -866,7 +825,7 @@
             if (count === 0 && currentOpportunities.length > 0) {
                 html = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 ${currentOpportunities.length} opportunities found above 2%! Upgrade to see them 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
             } else if (count === 0) {
-                html = '<div class="loading">⏳ No arbitrage opportunities found. Click Scan Now to check live prices.</div>';
+                html = '<div class="loading">⏳ No arbitrage opportunities found. Click "Scan All 21 Exchanges" to check live prices.</div>';
             }
             container.innerHTML = html;
         }
@@ -885,8 +844,8 @@
                 return;
             }
             
-            const buyUrl = `https://www.${opp.buyEx.toLowerCase().replace('.', '')}.com`;
-            const sellUrl = `https://www.${opp.sellEx.toLowerCase().replace('.', '')}.com`;
+            const buyUrl = `https://www.${opp.buyEx.toLowerCase().replace('.', '').replace(' ', '')}.com`;
+            const sellUrl = `https://www.${opp.sellEx.toLowerCase().replace('.', '').replace(' ', '')}.com`;
             
             const detailHtml = `
                 <div class="detail-header">
@@ -914,34 +873,48 @@
                 </div>
             `;
             
-            document.getElementById('detailContent').innerHTML = detailHtml;
+            const detailContent = document.getElementById('detailContent');
+            if (detailContent) detailContent.innerHTML = detailHtml;
+            
             document.getElementById('homeSection').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
             document.getElementById('profileSection').style.display = 'none';
         };
 
         function backToList() {
-            document.getElementById('detailView').style.display = 'none';
             document.getElementById('homeSection').style.display = 'block';
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('profileSection').style.display = 'none';
+            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
+            const navHome = document.getElementById('navHome');
+            if (navHome) navHome.classList.add('active');
         }
 
         // ========== PROFILE FUNCTIONS ==========
         function updateProfileDisplay() {
             const user = users[currentUser];
             if (!user) return;
-            document.getElementById('profilePhone').innerText = currentUser;
-            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
-            document.getElementById('referralLink').innerText = `https://arbimine.com/ref/${currentUser}`;
-            const tierText = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
-            document.getElementById('profileTier').innerHTML = tierText;
-            document.getElementById('paymentPhoneRef').innerText = currentUser;
             
+            const profilePhone = document.getElementById('profilePhone');
+            const profileSince = document.getElementById('profileSince');
+            const referralLink = document.getElementById('referralLink');
+            const profileTier = document.getElementById('profileTier');
+            const paymentPhoneRef = document.getElementById('paymentPhoneRef');
             const expirySpan = document.getElementById('expiryTimer');
+            
+            if (profilePhone) profilePhone.innerText = currentUser;
+            if (profileSince) profileSince.innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
+            if (referralLink) referralLink.innerText = `https://arbimine.com/ref/${currentUser}`;
+            if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+            
+            const tierText = user.tier === 'premium' ? '⭐ PREMIUM' : (user.tier === 'vip' ? '👑 VIP' : '🆓 FREE');
+            if (profileTier) profileTier.innerHTML = tierText;
+            
             if (user.expiry && new Date(user.expiry) > new Date()) {
                 const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
-                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
+                if (expirySpan) expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
             } else {
-                expirySpan.innerHTML = '🆓 FREE';
+                if (expirySpan) expirySpan.innerHTML = '🆓 FREE';
             }
         }
 
@@ -960,9 +933,11 @@
                 showToast(`Welcome back, ${users[phone].fullName || phone}!`, 'success');
             } else {
                 const errorDiv = document.getElementById('loginError');
-                errorDiv.style.display = 'block';
-                errorDiv.innerText = 'Invalid phone number or password';
-                setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerText = 'Invalid phone number or password';
+                    setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
+                }
             }
         }
 
@@ -1016,6 +991,63 @@
             showToast('Logged out', 'info');
         }
 
+        // ========== NAVIGATION ==========
+        function initNavigation() {
+            const navHome = document.getElementById('navHome');
+            const navGoPro = document.getElementById('navGoPro');
+            const navChat = document.getElementById('navChat');
+            const navProfile = document.getElementById('navProfile');
+            const upgradeBannerBtn = document.getElementById('upgradeBannerBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const searchInput = document.getElementById('searchInput');
+            const backToListBtn = document.getElementById('backToListBtn');
+            const copyReferralBtn = document.getElementById('copyReferralBtn');
+            
+            if (navHome) navHome.onclick = () => {
+                document.getElementById('homeSection').style.display = 'block';
+                document.getElementById('detailView').style.display = 'none';
+                document.getElementById('profileSection').style.display = 'none';
+                document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
+                navHome.classList.add('active');
+            };
+            
+            if (navGoPro) navGoPro.onclick = () => {
+                const paymentPhoneRef = document.getElementById('paymentPhoneRef');
+                if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+                showModal('upgradeModal');
+            };
+            
+            if (navChat) navChat.onclick = () => showToast('💬 Chat Room coming soon!', 'info');
+            
+            if (navProfile) navProfile.onclick = () => {
+                document.getElementById('homeSection').style.display = 'none';
+                document.getElementById('detailView').style.display = 'none';
+                document.getElementById('profileSection').style.display = 'block';
+                document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
+                navProfile.classList.add('active');
+                updateProfileDisplay();
+            };
+            
+            if (upgradeBannerBtn) upgradeBannerBtn.onclick = () => {
+                const paymentPhoneRef = document.getElementById('paymentPhoneRef');
+                if (paymentPhoneRef) paymentPhoneRef.innerText = currentUser;
+                showModal('upgradeModal');
+            };
+            
+            if (refreshBtn) refreshBtn.onclick = scanAllExchanges;
+            if (searchInput) searchInput.addEventListener('input', (e) => { currentSearchTerm = e.target.value; renderOpportunities(); });
+            if (backToListBtn) backToListBtn.onclick = backToList;
+            if (copyReferralBtn) {
+                copyReferralBtn.onclick = () => {
+                    const referralLink = document.getElementById('referralLink');
+                    if (referralLink) {
+                        navigator.clipboard.writeText(referralLink.innerText);
+                        showToast('Referral link copied!', 'success');
+                    }
+                };
+            }
+        }
+
         // ========== EVENT LISTENERS ==========
         document.getElementById('doLoginBtn').onclick = handleLogin;
         document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
@@ -1024,38 +1056,24 @@
         document.getElementById('resetPasswordBtn').onclick = resetPassword;
         document.getElementById('processPaymentBtn').onclick = processPayment;
         document.getElementById('logoutBtn').onclick = logout;
-        document.getElementById('upgradeBannerBtn').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
-        document.getElementById('refreshBtn').onclick = scanAllExchanges;
-        document.getElementById('searchInput').addEventListener('input', (e) => { currentSearchTerm = e.target.value; renderOpportunities(); });
-        document.getElementById('backToListBtn').onclick = backToList;
-        document.getElementById('copyReferralBtn').onclick = () => { navigator.clipboard.writeText(document.getElementById('referralLink').innerText); showToast('Referral link copied!', 'success'); };
-        
-        // Navigation
-        document.getElementById('navHome').onclick = () => {
-            document.getElementById('homeSection').style.display = 'block';
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'none';
-            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            document.getElementById('navHome').classList.add('active');
-        };
-        document.getElementById('navGoPro').onclick = () => { document.getElementById('paymentPhoneRef').innerText = currentUser; showModal('upgradeModal'); };
-        document.getElementById('navChat').onclick = () => showToast('💬 Chat Room coming soon!', 'info');
-        document.getElementById('navProfile').onclick = () => {
-            document.getElementById('homeSection').style.display = 'none';
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'block';
-            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            document.getElementById('navProfile').classList.add('active');
-            updateProfileDisplay();
-        };
 
-        // Auto login check
-        if (currentUser && users[currentUser]) {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('userPhoneLabel').innerText = currentUser;
-            updateProfileDisplay();
+        // ========== INITIALIZE ==========
+        function init() {
+            initExchangeStrip();
+            initNavigation();
+            
+            document.getElementById('statExchanges').innerText = exchanges.length;
+            document.getElementById('statCoins').innerText = coinsList.length;
+            
+            if (currentUser && users[currentUser]) {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('userPhoneLabel').innerText = currentUser;
+                updateProfileDisplay();
+            }
         }
+        
+        init();
     </script>
 </body>
-    </html>
+                    </html>
