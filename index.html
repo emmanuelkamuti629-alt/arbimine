@@ -472,7 +472,7 @@
     </div>
 
     <script>
-        // Simple dashboard styles inject (to avoid clutter)
+        // Dashboard styles
         const style = document.createElement('style');
         style.textContent = `
             .dashboard {
@@ -567,12 +567,11 @@
         `;
         document.head.appendChild(style);
 
-        // Placeholder functions (simplified for demo)
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-        
+
+        // Demo login - replace with real auth
         document.getElementById('doLogin').onclick = function() {
-            // Demo login - for full code integration, replace with real auth
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
         };
@@ -587,15 +586,14 @@
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
         };
-        // Mock other tab functions
-        document.getElementById('premiumTab').onclick = () => alert('Upgrade to Premium: KES 200/week (up to 20% profit)');
-        document.getElementById('vipTab').onclick = () => alert('Upgrade to VIP: KES 400/week (any % profit)');
-        document.getElementById('profileTab').onclick = () => alert('Profile: Full Name, Email, Subscription status');
-        document.getElementById('sendVerifyCodeBtn').onclick = () => { alert('Verification code sent (demo)'); closeModal('signupModal'); showModal('verifyModal'); };
+        document.getElementById('premiumTab').onclick = () => alert('⭐ PREMIUM PLAN: KES 200/week (Up to 20% profit)');
+        document.getElementById('vipTab').onclick = () => alert('👑 VIP PLAN: KES 400/week (Any % profit)');
+        document.getElementById('profileTab').onclick = () => alert('Profile: View your account details and subscription status');
+        document.getElementById('sendVerifyCodeBtn').onclick = () => { alert('Verification code sent to your email (Demo)'); closeModal('signupModal'); showModal('verifyModal'); };
         document.getElementById('confirmVerifyBtn').onclick = () => { alert('Account verified! Please login.'); closeModal('verifyModal'); };
-        document.getElementById('resendCodeLink').onclick = () => alert('New code sent');
-        document.getElementById('sendResetCodeBtn').onclick = () => { alert('Reset code sent'); closeModal('forgotModal'); showModal('resetPasswordModal'); };
-        document.getElementById('finalResetBtn').onclick = () => { alert('Password reset successfully'); closeModal('resetPasswordModal'); };
+        document.getElementById('resendCodeLink').onclick = () => alert('New verification code sent');
+        document.getElementById('sendResetCodeBtn').onclick = () => { alert('Reset code sent to your email'); closeModal('forgotModal'); showModal('resetPasswordModal'); };
+        document.getElementById('finalResetBtn').onclick = () => { alert('Password reset successfully! Please login.'); closeModal('resetPasswordModal'); };
     </script>
 </body>
-    </html>
+</html>
