@@ -1,235 +1,169 @@
-#!/usr/bin/env python3
-"""
-ArbiHunt Clone - Real-time Crypto Arbitrage Scanner
-Shows BUY/SELL opportunities with liquidity and profit percentages
-"""
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
 
-import asyncio
-import ccxt.async_support as ccxt_async
-from datetime import datetime
-from typing import Dict, List, Optional
-import time
-from colorama import init, Fore, Back, Style
-import json
+const app = express();
+app.use(cors());
 
-# Initialize colorama
-init(autoreset=True)
+// =============================
+// SAFE FETCH ORDER BOOK
+// =============================
+async function fetchBook(name, url, parser) {
+    try {
+        const res = await axios.get(url);
+        const d = parser(res.data);
 
-class ArbiHuntClone:
-    def __init__(self):
-        self.exchanges = []
-        self.opportunities = []
-        self.scan_count = 0
-        
-    def setup_exchanges(self):
-        """Setup all exchanges (matching ArbiHunt's style)"""
-        exchange_list = [
-            'binance', 'gateio', 'kucoin', 'mexc', 'bitmart',
-            'ascendex', 'digifinex', 'bybit', 'okx', 'huobi'
-        ]
-        
-        print(f"{Fore.CYAN}{'='*70}")
-        print(f"{Fore.YELLOW}🎯 ArbiHunt Clone - Live Arbitrage Scanner")
-        print(f"{Fore.CYAN}{'='*70}\n")
-        
-        for exchange_id in exchange_list:
-            try:
-                exchange_class = getattr(ccxt_async, exchange_id)
-                exchange = exchange_class({
-                    'enableRateLimit': True,
-                    'rateLimit': 1000,
-                    'timeout': 30000,
+        if (!d || !d.bid || !d.ask) return null;
+
+        return {
+            ex: name,
+            bid: parseFloat(d.bid),
+            ask: parseFloat(d.ask)
+        };
+    } catch {
+        return null;
+    }
+}
+
+// =============================
+// API: REAL ORDER BOOK SCAN
+// =============================
+app.get("/api/scan", async (req, res) => {
+    try {
+
+        const books = await Promise.all([
+            fetchBook("Binance",
+                "https://api.binance.com/api/v3/ticker/bookTicker?symbol=BTCUSDT",
+                d => ({ bid: d.bidPrice, ask: d.askPrice })
+            ),
+
+            fetchBook("KuCoin",
+                "https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=BTC-USDT",
+                d => ({ bid: d.data.bestBid, ask: d.data.bestAsk })
+            ),
+
+            fetchBook("OKX",
+                "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT",
+                d => ({
+                    bid: d.data[0].bidPx,
+                    ask: d.data[0].askPx
                 })
-                self.exchanges.append({
-                    'id': exchange_id,
-                    'name': exchange_id.upper(),
-                    'instance': exchange
+            ),
+
+            fetchBook("Bybit",
+                "https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT",
+                d => ({
+                    bid: d.result.list[0].bid1Price,
+                    ask: d.result.list[0].ask1Price
                 })
-                print(f"{Fore.GREEN}✓ Connected to {exchange_id.upper()}")
-            except Exception as e:
-                print(f"{Fore.RED}✗ Failed {exchange_id.upper()}")
-                
-        print(f"\n{Fore.GREEN}✓ Ready with {len(self.exchanges)} exchanges\n")
-        
-    async def get_ticker_data(self, exchange):
-        """Get all tickers from an exchange"""
-        try:
-            tickers = await exchange['instance'].fetch_tickers()
-            usdt_pairs = {}
-            
-            for symbol, data in tickers.items():
-                if symbol.endswith('/USDT'):
-                    if data.get('bid') and data.get('ask') and data.get('volume'):
-                        # Calculate liquidity in USD
-                        liquidity = data['volume'] * data['last'] if data.get('last') else 0
-                        
-                        usdt_pairs[symbol] = {
-                            'bid': data['bid'],
-                            'ask': data['ask'],
-                            'last': data.get('last', 0),
-                            'volume': data.get('volume', 0),
-                            'liquidity': liquidity,
-                            'exchange': exchange['id']
-                        }
-            
-            return exchange['id'], usdt_pairs
-        except Exception as e:
-            return exchange['id'], {}
-    
-    async def scan_all_exchanges(self):
-        """Parallel scan all exchanges"""
-        tasks = [self.get_ticker_data(ex) for ex in self.exchanges]
-        results = await asyncio.gather(*tasks)
-        return dict(results)
-    
-    def find_opportunities(self, all_data: Dict) -> List[Dict]:
-        """Find arbitrage opportunities exactly like ArbiHunt"""
-        opportunities = []
-        
-        # Get all unique coins
-        all_coins = set()
-        for exchange_data in all_data.values():
-            all_coins.update(exchange_data.keys())
-        
-        for coin in all_coins:
-            buy_opportunities = []  # Low ask prices
-            sell_opportunities = []  # High bid prices
-            
-            # Collect all buy/sell prices for this coin
-            for exchange_id, exchange_data in all_data.items():
-                if coin in exchange_data:
-                    data = exchange_data[coin]
-                    # For buying (lowest ask)
-                    buy_opportunities.append({
-                        'exchange': exchange_id,
-                        'price': data['ask'],
-                        'liquidity': data['liquidity']
-                    })
-                    # For selling (highest bid)
-                    sell_opportunities.append({
-                        'exchange': exchange_id,
-                        'price': data['bid'],
-                        'liquidity': data['liquidity']
-                    })
-            
-            # Find best buy and best sell
-            if buy_opportunities and sell_opportunities:
-                best_buy = min(buy_opportunities, key=lambda x: x['price'])
-                best_sell = max(sell_opportunities, key=lambda x: x['price'])
-                
-                # Different exchanges only
-                if best_buy['exchange'] != best_sell['exchange']:
-                    # Calculate profit percentage
-                    profit_percent = ((best_sell['price'] - best_buy['price']) / best_buy['price']) * 100
-                    
-                    # Subtract fees (0.2% total)
-                    net_profit = profit_percent - 0.2
-                    
-                    # Minimum liquidity filter
-                    min_liquidity = min(best_buy['liquidity'], best_sell['liquidity'])
-                    
-                    if net_profit > 0.3 and min_liquidity > 100:  # ArbiHunt style filtering
-                        opportunities.append({
-                            'coin': coin.replace('/USDT', ''),
-                            'buy_exchange': best_buy['exchange'].upper(),
-                            'sell_exchange': best_sell['exchange'].upper(),
-                            'profit': round(net_profit, 1),
-                            'liquidity': int(min_liquidity),
-                            'buy_price': best_buy['price'],
-                            'sell_price': best_sell['price'],
-                            'gross_profit': round(profit_percent, 1),
-                            'last_verified': datetime.now()
-                        })
-        
-        # Sort by profit (highest first)
-        opportunities.sort(key=lambda x: x['profit'], reverse=True)
-        return opportunities[:10]  # Top 10 like ArbiHunt
-    
-    def display_opportunities(self, opportunities: List[Dict], scan_time: float):
-        """Display opportunities exactly like ArbiHunt UI"""
-        self.scan_count += 1
-        
-        # Clear screen for real-time effect
-        print("\033[2J\033[H")
-        
-        # Header
-        print(f"{Fore.CYAN}{'='*70}")
-        print(f"{Fore.YELLOW}🎯 ArbiHunt - Live Arbitrage Scanner")
-        print(f"{Fore.CYAN}{'='*70}")
-        print(f"{Fore.WHITE}EXCHANGE SIGNUP LINKS")
-        print(f"{Fore.CYAN}{'='*70}")
-        
-        # PRO upgrade banner
-        print(f"{Fore.MAGENTA}💎 Upgrade to PRO to Discover Profit Opportunities Above 2%")
-        print(f"{Fore.YELLOW}🔒 GO PRO")
-        print(f"{Fore.CYAN}{'='*70}\n")
-        
-        if not opportunities:
-            print(f"{Fore.YELLOW}🔍 Scanning for opportunities...")
-            print(f"{Fore.BLUE}⏳ Last scan: {scan_time:.1f} seconds\n")
-        else:
-            # Display each opportunity
-            for i, opp in enumerate(opportunities, 1):
-                # Color based on profit
-                if opp['profit'] >= 1.5:
-                    profit_color = Fore.GREEN
-                elif opp['profit'] >= 0.8:
-                    profit_color = Fore.YELLOW
-                else:
-                    profit_color = Fore.WHITE
-                
-                print(f"{Fore.GREEN}BUY {opp['buy_exchange']:<12} {Fore.RED}SELL {opp['sell_exchange']}")
-                print(f"{Fore.WHITE}{opp['coin']}/USDT")
-                print(f"{Fore.BLUE}Liquidity: ${opp['liquidity']:,}")
-                print(f"{Fore.MAGENTA}Last Verified {int(time.time() - opp['last_verified'].timestamp())} seconds ago")
-                print(f"{profit_color}{opp['profit']}%")
-                print(f"{Fore.CYAN}{'-'*50}")
-        
-        # Footer
-        print(f"{Fore.BLUE}🔄 Scan #{self.scan_count} completed in {scan_time:.1f}s")
-        print(f"{Fore.CYAN}{'='*70}")
-        print(f"{Fore.MAGENTA}💡 Press Ctrl+C to stop scanning")
-    
-    async def continuous_scan(self):
-        """Main scanning loop"""
-        self.setup_exchanges()
-        
-        print(f"{Fore.GREEN}🚀 Starting continuous scan...\n")
-        
-        try:
-            while True:
-                start_time = time.time()
-                
-                # Scan all exchanges
-                all_data = await self.scan_all_exchanges()
-                
-                # Find opportunities
-                opportunities = self.find_opportunities(all_data)
-                
-                # Display results
-                scan_time = time.time() - start_time
-                self.display_opportunities(opportunities, scan_time)
-                
-                # Wait before next scan (like ArbiHunt's real-time updates)
-                await asyncio.sleep(2)  # 2 second updates
-                
-        except KeyboardInterrupt:
-            print(f"\n{Fore.YELLOW}🛑 Stopping ArbiHunt...")
-            await self.close()
-    
-    async def close(self):
-        """Clean up connections"""
-        for exchange in self.exchanges:
-            try:
-                await exchange['instance'].close()
-            except:
-                pass
-        print(f"{Fore.GREEN}✓ Disconnected from all exchanges")
+            ),
 
-async def main():
-    """Run ArbiHunt Clone"""
-    arbihunt = ArbiHuntClone()
-    await arbihunt.continuous_scan()
+            fetchBook("Coinbase",
+                "https://api.exchange.coinbase.com/products/BTC-USD/book?level=1",
+                d => ({
+                    bid: d.bids[0][0],
+                    ask: d.asks[0][0]
+                })
+            ),
 
-if __name__ == "__main__":
-    asyncio.run(main())
+            fetchBook("Kraken",
+                "https://api.kraken.com/0/public/Depth?pair=XBTUSD",
+                d => {
+                    const pair = Object.keys(d.result)[0];
+                    return {
+                        bid: d.result[pair].bids[0][0],
+                        ask: d.result[pair].asks[0][0]
+                    };
+                }
+            )
+        ]);
+
+        const valid = books.filter(b => b);
+
+        if (valid.length < 2) {
+            return res.json({ status: "loading market data..." });
+        }
+
+        // =============================
+        // BEST EXECUTABLE BUY/SELL
+        // =============================
+        const bestBuy = valid.reduce((a, b) => a.ask < b.ask ? a : b);
+        const bestSell = valid.reduce((a, b) => a.bid > b.bid ? a : b);
+
+        const spread = ((bestSell.bid - bestBuy.ask) / bestBuy.ask) * 100;
+
+        // fees estimate (realistic average)
+        const fee = 0.2; // 0.2%
+
+        const net = spread - fee;
+
+        res.json({
+            coin: "BTC/USDT",
+            buyExchange: bestBuy.ex,
+            sellExchange: bestSell.ex,
+            buyPrice: bestBuy.ask,
+            sellPrice: bestSell.bid,
+            grossSpread: spread.toFixed(3),
+            netProfit: net.toFixed(3),
+            exchangesActive: valid.length,
+            signal: net > 0.3 ? "🔥 TRADE OPPORTUNITY" : "NO TRADE"
+        });
+
+    } catch (e) {
+        res.status(500).json({ error: "scan failed" });
+    }
+});
+
+// =============================
+// FRONTEND (SIMPLE UI)
+// =============================
+app.get("/", (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<title>ARB PRO</title>
+<style>
+body{background:#0a0a1a;color:white;font-family:sans-serif;text-align:center}
+.card{background:#121521;margin:20px;padding:20px;border-radius:12px}
+button{padding:15px;width:80%;background:#FFD700;border:none;font-weight:bold}
+.green{color:#00ff88}
+.red{color:#ff4d4d}
+</style>
+</head>
+<body>
+
+<h2>⚡ ARBITRAGE ENGINE PRO</h2>
+<button onclick="scan()">START SCAN</button>
+
+<div id="out"></div>
+
+<script>
+async function scan(){
+    const r = await fetch('/api/scan');
+    const d = await r.json();
+
+    document.getElementById('out').innerHTML = \`
+        <div class="card">
+            <h3>\${d.coin}</h3>
+            <p>BUY: \${d.buyExchange} @ \${d.buyPrice}</p>
+            <p>SELL: \${d.sellExchange} @ \${d.sellPrice}</p>
+            <h2 class="\${d.netProfit > 0 ? 'green':'red'}">
+                Net: \${d.netProfit}%
+            </h2>
+            <p>\${d.signal}</p>
+            <small>Active Exchanges: \${d.exchangesActive}</small>
+        </div>
+    \`;
+}
+</script>
+
+</body>
+</html>
+    `);
+});
+
+// =============================
+app.listen(process.env.PORT || 3000, () =>
+    console.log("ARBITRAGE ENGINE RUNNING")
+);
