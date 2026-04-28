@@ -1,312 +1,235 @@
 #!/usr/bin/env python3
 """
-Crypto Arbitrage Scanner - Full Working Code
-Scans ALL coins across 15+ exchanges for arbitrage opportunities
+ArbiHunt Clone - Real-time Crypto Arbitrage Scanner
+Shows BUY/SELL opportunities with liquidity and profit percentages
 """
 
 import asyncio
 import ccxt.async_support as ccxt_async
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+import time
+from colorama import init, Fore, Back, Style
 import json
-import os
-from colorama import init, Fore, Style, Back
 
-# Initialize colorama for colored output
+# Initialize colorama
 init(autoreset=True)
 
-class FullArbitrageScanner:
-    def __init__(self, min_profit_percent: float = 0.5, min_volume_usd: float = 10000):
-        """
-        Initialize the arbitrage scanner
-        
-        Args:
-            min_profit_percent: Minimum profit percentage to show (default 0.5%)
-            min_volume_usd: Minimum trading volume in USD to filter (default $10k)
-        """
-        self.min_profit_percent = min_profit_percent
-        self.min_volume_usd = min_volume_usd
+class ArbiHuntClone:
+    def __init__(self):
         self.exchanges = []
-        self.total_coins_scanned = 0
-        self.opportunities_found = 0
+        self.opportunities = []
+        self.scan_count = 0
         
-    def setup_exchanges(self) -> None:
-        """Setup all 15+ exchanges"""
-        exchange_ids = [
-            'binance', 'coinbase', 'kraken', 'kucoin', 'bybit',
-            'okx', 'gateio', 'bitfinex', 'crypto.com', 'bitstamp',
-            'gemini', 'mexc', 'phemex', 'woo', 'huobi'
+    def setup_exchanges(self):
+        """Setup all exchanges (matching ArbiHunt's style)"""
+        exchange_list = [
+            'binance', 'gateio', 'kucoin', 'mexc', 'bitmart',
+            'ascendex', 'digifinex', 'bybit', 'okx', 'huobi'
         ]
         
-        print(f"\n{Fore.CYAN}{'='*60}")
-        print(f"{Fore.CYAN}🚀 INITIALIZING ARBITRAGE SCANNER")
-        print(f"{Fore.CYAN}{'='*60}\n")
+        print(f"{Fore.CYAN}{'='*70}")
+        print(f"{Fore.YELLOW}🎯 ArbiHunt Clone - Live Arbitrage Scanner")
+        print(f"{Fore.CYAN}{'='*70}\n")
         
-        for exchange_id in exchange_ids:
+        for exchange_id in exchange_list:
             try:
                 exchange_class = getattr(ccxt_async, exchange_id)
-                exchange_instance = exchange_class({
+                exchange = exchange_class({
                     'enableRateLimit': True,
                     'rateLimit': 1000,
                     'timeout': 30000,
-                    'options': {
-                        'defaultType': 'spot',
-                    }
                 })
                 self.exchanges.append({
                     'id': exchange_id,
                     'name': exchange_id.upper(),
-                    'instance': exchange_instance,
-                    'status': 'active'
+                    'instance': exchange
                 })
-                print(f"{Fore.GREEN}✓ {exchange_id.upper():12} - Loaded successfully")
+                print(f"{Fore.GREEN}✓ Connected to {exchange_id.upper()}")
             except Exception as e:
-                print(f"{Fore.RED}✗ {exchange_id.upper():12} - Failed: {str(e)[:40]}")
-                continue
+                print(f"{Fore.RED}✗ Failed {exchange_id.upper()}")
+                
+        print(f"\n{Fore.GREEN}✓ Ready with {len(self.exchanges)} exchanges\n")
         
-        print(f"\n{Fore.YELLOW}📊 Status: {len(self.exchanges)}/15 exchanges active")
-        print(f"{Fore.CYAN}{'='*60}\n")
-    
-    async def fetch_exchange_tickers(self, exchange: Dict) -> Tuple[str, Dict]:
-        """
-        Fetch all tickers from a single exchange
-        
-        Returns:
-            Tuple of (exchange_id, tickers_dict)
-        """
+    async def get_ticker_data(self, exchange):
+        """Get all tickers from an exchange"""
         try:
             tickers = await exchange['instance'].fetch_tickers()
+            usdt_pairs = {}
             
-            # Filter for USDT pairs and ensure bid/ask exist
-            filtered_tickers = {}
             for symbol, data in tickers.items():
                 if symbol.endswith('/USDT'):
                     if data.get('bid') and data.get('ask') and data.get('volume'):
-                        # Calculate volume in USD
-                        volume_usd = data['volume'] * data['last'] if data.get('last') else 0
+                        # Calculate liquidity in USD
+                        liquidity = data['volume'] * data['last'] if data.get('last') else 0
                         
-                        if volume_usd >= self.min_volume_usd:
-                            filtered_tickers[symbol] = {
-                                'bid': data['bid'],
-                                'ask': data['ask'],
-                                'last': data.get('last', 0),
-                                'volume_usd': volume_usd,
-                                'exchange': exchange['id']
-                            }
+                        usdt_pairs[symbol] = {
+                            'bid': data['bid'],
+                            'ask': data['ask'],
+                            'last': data.get('last', 0),
+                            'volume': data.get('volume', 0),
+                            'liquidity': liquidity,
+                            'exchange': exchange['id']
+                        }
             
-            self.total_coins_scanned += len(filtered_tickers)
-            return exchange['id'], filtered_tickers
-            
+            return exchange['id'], usdt_pairs
         except Exception as e:
-            print(f"{Fore.YELLOW}⚠️  {exchange['id'].upper()} scan error: {str(e)[:50]}")
             return exchange['id'], {}
     
-    async def scan_all_exchanges_parallel(self) -> Dict:
-        """
-        Scan all exchanges in parallel for maximum speed
-        """
-        print(f"{Fore.CYAN}🔍 Scanning {len(self.exchanges)} exchanges in parallel...\n")
-        
-        # Create tasks for all exchanges
-        tasks = [self.fetch_exchange_tickers(ex) for ex in self.exchanges]
-        
-        # Execute all tasks concurrently
+    async def scan_all_exchanges(self):
+        """Parallel scan all exchanges"""
+        tasks = [self.get_ticker_data(ex) for ex in self.exchanges]
         results = await asyncio.gather(*tasks)
-        
-        # Convert to dictionary
-        all_tickers = dict(results)
-        
-        return all_tickers
+        return dict(results)
     
-    def find_arbitrage_opportunities(self, all_tickers: Dict) -> List[Dict]:
-        """
-        Find arbitrage opportunities across all exchanges
-        """
+    def find_opportunities(self, all_data: Dict) -> List[Dict]:
+        """Find arbitrage opportunities exactly like ArbiHunt"""
         opportunities = []
         
-        # Get all unique coins across exchanges
+        # Get all unique coins
         all_coins = set()
-        for tickers in all_tickers.values():
-            all_coins.update(tickers.keys())
-        
-        print(f"{Fore.MAGENTA}📈 Analyzing {len(all_coins)} unique coins across exchanges...")
+        for exchange_data in all_data.values():
+            all_coins.update(exchange_data.keys())
         
         for coin in all_coins:
-            lowest_ask = float('inf')
-            highest_bid = 0
-            buy_exchange = None
-            sell_exchange = None
-            buy_volume = 0
-            sell_volume = 0
+            buy_opportunities = []  # Low ask prices
+            sell_opportunities = []  # High bid prices
             
-            # Find best buy (lowest ask) and best sell (highest bid) across exchanges
-            for exchange_id, tickers in all_tickers.items():
-                if coin in tickers:
-                    coin_data = tickers[coin]
-                    
-                    # Check for buying opportunity (lowest ask)
-                    if coin_data['ask'] < lowest_ask:
-                        lowest_ask = coin_data['ask']
-                        buy_exchange = exchange_id
-                        buy_volume = coin_data['volume_usd']
-                    
-                    # Check for selling opportunity (highest bid)
-                    if coin_data['bid'] > highest_bid:
-                        highest_bid = coin_data['bid']
-                        sell_exchange = exchange_id
-                        sell_volume = coin_data['volume_usd']
-            
-            # Calculate arbitrage opportunity
-            if (buy_exchange and sell_exchange and 
-                buy_exchange != sell_exchange and 
-                lowest_ask > 0 and highest_bid > 0):
-                
-                # Calculate profit percentage
-                profit_percent = ((highest_bid - lowest_ask) / lowest_ask) * 100
-                
-                # Apply exchange fee estimate (0.1% per trade = 0.2% total)
-                fee_percent = 0.2
-                net_profit_percent = profit_percent - fee_percent
-                
-                if net_profit_percent >= self.min_profit_percent:
-                    opportunities.append({
-                        'coin': coin,
-                        'buy_exchange': buy_exchange.upper(),
-                        'sell_exchange': sell_exchange.upper(),
-                        'buy_price': lowest_ask,
-                        'sell_price': highest_bid,
-                        'gross_profit_percent': profit_percent,
-                        'net_profit_percent': net_profit_percent,
-                        'buy_volume_usd': buy_volume,
-                        'sell_volume_usd': sell_volume,
-                        'profit_usd_1000': (net_profit_percent / 100) * 1000,
-                        'timestamp': datetime.now()
+            # Collect all buy/sell prices for this coin
+            for exchange_id, exchange_data in all_data.items():
+                if coin in exchange_data:
+                    data = exchange_data[coin]
+                    # For buying (lowest ask)
+                    buy_opportunities.append({
+                        'exchange': exchange_id,
+                        'price': data['ask'],
+                        'liquidity': data['liquidity']
                     })
-        
-        # Sort by highest profit
-        opportunities.sort(key=lambda x: x['net_profit_percent'], reverse=True)
-        return opportunities
-    
-    def display_opportunities(self, opportunities: List[Dict], scan_time: float) -> None:
-        """
-        Display found opportunities in a nice format
-        """
-        self.opportunities_found = len(opportunities)
-        
-        print(f"\n{Fore.CYAN}{'='*80}")
-        print(f"{Fore.CYAN}⏱️  Scan completed in {scan_time:.2f} seconds")
-        print(f"{Fore.CYAN}📊 Total coins scanned: {self.total_coins_scanned}")
-        print(f"{Fore.CYAN}{'='*80}\n")
-        
-        if opportunities:
-            print(f"{Fore.GREEN}{'🎯 ' * 10}")
-            print(f"{Fore.GREEN}🎉 OPPORTUNITIES FOUND! 🎉")
-            print(f"{Fore.GREEN}{'🎯 ' * 10}\n")
+                    # For selling (highest bid)
+                    sell_opportunities.append({
+                        'exchange': exchange_id,
+                        'price': data['bid'],
+                        'liquidity': data['liquidity']
+                    })
             
-            for i, opp in enumerate(opportunities[:10], 1):
-                print(f"{Fore.YELLOW}{'─'*80}")
-                print(f"{Fore.WHITE}📈 OPPORTUNITY #{i}: {opp['coin']}")
-                print(f"{Fore.YELLOW}{'─'*80}")
-                print(f"{Fore.GREEN}  📥 BUY on {opp['buy_exchange']:<12} @ ${opp['buy_price']:.6f}")
-                print(f"{Fore.RED}    📤 SELL on {opp['sell_exchange']:<12} @ ${opp['sell_price']:.6f}")
-                print(f"{Fore.CYAN}  📊 Gross Profit: {opp['gross_profit_percent']:.2f}%")
-                print(f"{Fore.GREEN}  💰 Net Profit (after 0.2% fees): {opp['net_profit_percent']:.2f}%")
-                print(f"{Fore.YELLOW}  💵 Profit on $1000: ${opp['profit_usd_1000']:.2f}")
-                print(f"{Fore.MAGENTA}  📊 Volume: ${opp['buy_volume_usd']:,.0f} / ${opp['sell_volume_usd']:,.0f}")
-                print()
-        else:
-            print(f"{Fore.RED}❌ No opportunities found above {self.min_profit_percent}%")
-            print(f"{Fore.YELLOW}💡 Tip: Try lowering min_profit_percent or increasing scan frequency\n")
+            # Find best buy and best sell
+            if buy_opportunities and sell_opportunities:
+                best_buy = min(buy_opportunities, key=lambda x: x['price'])
+                best_sell = max(sell_opportunities, key=lambda x: x['price'])
+                
+                # Different exchanges only
+                if best_buy['exchange'] != best_sell['exchange']:
+                    # Calculate profit percentage
+                    profit_percent = ((best_sell['price'] - best_buy['price']) / best_buy['price']) * 100
+                    
+                    # Subtract fees (0.2% total)
+                    net_profit = profit_percent - 0.2
+                    
+                    # Minimum liquidity filter
+                    min_liquidity = min(best_buy['liquidity'], best_sell['liquidity'])
+                    
+                    if net_profit > 0.3 and min_liquidity > 100:  # ArbiHunt style filtering
+                        opportunities.append({
+                            'coin': coin.replace('/USDT', ''),
+                            'buy_exchange': best_buy['exchange'].upper(),
+                            'sell_exchange': best_sell['exchange'].upper(),
+                            'profit': round(net_profit, 1),
+                            'liquidity': int(min_liquidity),
+                            'buy_price': best_buy['price'],
+                            'sell_price': best_sell['price'],
+                            'gross_profit': round(profit_percent, 1),
+                            'last_verified': datetime.now()
+                        })
+        
+        # Sort by profit (highest first)
+        opportunities.sort(key=lambda x: x['profit'], reverse=True)
+        return opportunities[:10]  # Top 10 like ArbiHunt
     
-    async def continuous_scan(self, interval_seconds: int = 10, max_scans: Optional[int] = None) -> None:
-        """
-        Continuously scan for arbitrage opportunities
+    def display_opportunities(self, opportunities: List[Dict], scan_time: float):
+        """Display opportunities exactly like ArbiHunt UI"""
+        self.scan_count += 1
         
-        Args:
-            interval_seconds: Seconds between scans
-            max_scans: Maximum number of scans (None for infinite)
-        """
-        scan_count = 0
+        # Clear screen for real-time effect
+        print("\033[2J\033[H")
         
-        print(f"{Fore.MAGENTA}{'='*80}")
-        print(f"{Fore.MAGENTA}🚀 ARBITRAGE SCANNER RUNNING")
-        print(f"{Fore.MAGENTA}{'='*80}")
-        print(f"{Fore.CYAN}  📊 Active Exchanges: {len(self.exchanges)}")
-        print(f"{Fore.CYAN}  💰 Min Profit: {self.min_profit_percent}%")
-        print(f"{Fore.CYAN}  💵 Min Volume: ${self.min_volume_usd:,.0f}")
-        print(f"{Fore.CYAN}  ⏱️  Scan Interval: {interval_seconds}s")
-        print(f"{Fore.CYAN}  🔄 Press Ctrl+C to stop\n")
+        # Header
+        print(f"{Fore.CYAN}{'='*70}")
+        print(f"{Fore.YELLOW}🎯 ArbiHunt - Live Arbitrage Scanner")
+        print(f"{Fore.CYAN}{'='*70}")
+        print(f"{Fore.WHITE}EXCHANGE SIGNUP LINKS")
+        print(f"{Fore.CYAN}{'='*70}")
+        
+        # PRO upgrade banner
+        print(f"{Fore.MAGENTA}💎 Upgrade to PRO to Discover Profit Opportunities Above 2%")
+        print(f"{Fore.YELLOW}🔒 GO PRO")
+        print(f"{Fore.CYAN}{'='*70}\n")
+        
+        if not opportunities:
+            print(f"{Fore.YELLOW}🔍 Scanning for opportunities...")
+            print(f"{Fore.BLUE}⏳ Last scan: {scan_time:.1f} seconds\n")
+        else:
+            # Display each opportunity
+            for i, opp in enumerate(opportunities, 1):
+                # Color based on profit
+                if opp['profit'] >= 1.5:
+                    profit_color = Fore.GREEN
+                elif opp['profit'] >= 0.8:
+                    profit_color = Fore.YELLOW
+                else:
+                    profit_color = Fore.WHITE
+                
+                print(f"{Fore.GREEN}BUY {opp['buy_exchange']:<12} {Fore.RED}SELL {opp['sell_exchange']}")
+                print(f"{Fore.WHITE}{opp['coin']}/USDT")
+                print(f"{Fore.BLUE}Liquidity: ${opp['liquidity']:,}")
+                print(f"{Fore.MAGENTA}Last Verified {int(time.time() - opp['last_verified'].timestamp())} seconds ago")
+                print(f"{profit_color}{opp['profit']}%")
+                print(f"{Fore.CYAN}{'-'*50}")
+        
+        # Footer
+        print(f"{Fore.BLUE}🔄 Scan #{self.scan_count} completed in {scan_time:.1f}s")
+        print(f"{Fore.CYAN}{'='*70}")
+        print(f"{Fore.MAGENTA}💡 Press Ctrl+C to stop scanning")
+    
+    async def continuous_scan(self):
+        """Main scanning loop"""
+        self.setup_exchanges()
+        
+        print(f"{Fore.GREEN}🚀 Starting continuous scan...\n")
         
         try:
-            while max_scans is None or scan_count < max_scans:
-                scan_count += 1
-                self.total_coins_scanned = 0
-                
-                scan_start = datetime.now()
+            while True:
+                start_time = time.time()
                 
                 # Scan all exchanges
-                all_tickers = await self.scan_all_exchanges_parallel()
+                all_data = await self.scan_all_exchanges()
                 
                 # Find opportunities
-                opportunities = self.find_arbitrage_opportunities(all_tickers)
+                opportunities = self.find_opportunities(all_data)
                 
                 # Display results
-                scan_time = (datetime.now() - scan_start).total_seconds()
+                scan_time = time.time() - start_time
                 self.display_opportunities(opportunities, scan_time)
                 
-                if max_scans and scan_count >= max_scans:
-                    print(f"{Fore.CYAN}✅ Completed {max_scans} scans. Stopping...")
-                    break
+                # Wait before next scan (like ArbiHunt's real-time updates)
+                await asyncio.sleep(2)  # 2 second updates
                 
-                if interval_seconds > 0:
-                    await asyncio.sleep(interval_seconds)
-                    
         except KeyboardInterrupt:
-            print(f"\n{Fore.YELLOW}🛑 Scanner stopped by user")
-        finally:
+            print(f"\n{Fore.YELLOW}🛑 Stopping ArbiHunt...")
             await self.close()
     
-    async def close(self) -> None:
-        """Close all exchange connections"""
-        print(f"\n{Fore.CYAN}🔒 Closing exchange connections...")
+    async def close(self):
+        """Clean up connections"""
         for exchange in self.exchanges:
             try:
                 await exchange['instance'].close()
             except:
                 pass
-        print(f"{Fore.GREEN}✓ All connections closed")
-        print(f"{Fore.MAGENTA}📊 Final Stats: {self.total_coins_scanned} coins scanned, {self.opportunities_found} opportunities found")
+        print(f"{Fore.GREEN}✓ Disconnected from all exchanges")
 
 async def main():
-    """Main entry point"""
-    
-    # Configuration - Adjust these as needed
-    CONFIG = {
-        'min_profit_percent': 0.3,  # Minimum 0.3% profit after fees
-        'min_volume_usd': 5000,     # Minimum $5k volume per pair
-        'scan_interval_seconds': 10, # Scan every 10 seconds
-        'max_scans': None,           # Run indefinitely (None) or set number
-    }
-    
-    # Create and run scanner
-    scanner = FullArbitrageScanner(
-        min_profit_percent=CONFIG['min_profit_percent'],
-        min_volume_usd=CONFIG['min_volume_usd']
-    )
-    
-    # Setup exchanges
-    scanner.setup_exchanges()
-    
-    if not scanner.exchanges:
-        print(f"{Fore.RED}❌ No exchanges loaded. Exiting...")
-        return
-    
-    # Start continuous scanning
-    await scanner.continuous_scan(
-        interval_seconds=CONFIG['scan_interval_seconds'],
-        max_scans=CONFIG['max_scans']
-    )
+    """Run ArbiHunt Clone"""
+    arbihunt = ArbiHuntClone()
+    await arbihunt.continuous_scan()
 
 if __name__ == "__main__":
-    # Run the async main function
     asyncio.run(main())
