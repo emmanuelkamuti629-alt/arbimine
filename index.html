@@ -7,66 +7,74 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: white; }
-      .login-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a3a 0%, #0f0c29 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-      .login-card { background: rgba(30, 30, 60, 0.7); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; width: 100%; max-width: 420px; border: 1px solid rgba(120, 120, 200, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; }
-      .logo-section h1 { font-size: 38px; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 5px; }
-      .tagline { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 1px; margin-bottom: 35px; }
-      .welcome-section h2 { font-size: 26px; font-weight: 600; color: white; margin-bottom: 8px; }
-      .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 30px; }
-      .input-group input { width: 100%; padding: 14px 20px; background: rgba(20, 20, 40, 0.8); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 50px; color: white; font-size: 14px; margin-bottom: 16px; }
-      .input-group input::placeholder { color: rgba(255, 255, 255, 0.3); }
-      .input-group input:focus { outline: none; border-color: #667eea; }
-      .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #6a5af9, #d66efd); border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px; }
-      .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
-      .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
-      .footer-copyright { margin-top: 35px; font-size: 10px; color: rgba(255, 255, 255, 0.3); }
-      .error-msg { background: rgba(239, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
-      .dashboard { display: none; min-height: 100vh; background: #0a0a1a; }
-      .header { background: #FFD700; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: bold; }
-      .header-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; }
-      .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; }
-      .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; }
-      .upgrade-banner { background: #FFD700; margin: 15px; padding: 12px; border-radius: 15px; text-align: center; color: #000; font-weight: bold; }
-      .go-pro-btn { background: #000; color: #FFD700; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-      .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; }
-      .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; text-align: center; }
-      .stat-label { font-size: 10px; color: #888; text-align: center; }
-      .live-indicator { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite; }
+       .login-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a3a 0%, #0f0c29 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+       .login-card { background: rgba(30, 30, 60, 0.7); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; width: 100%; max-width: 420px; border: 1px solid rgba(120, 120, 200, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; }
+       .logo-section h1 { font-size: 38px; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 5px; }
+       .tagline { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 1px; margin-bottom: 35px; }
+       .welcome-section h2 { font-size: 26px; font-weight: 600; color: white; margin-bottom: 8px; }
+       .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 30px; }
+       .input-group input { width: 100%; padding: 14px 20px; background: rgba(20, 20, 40, 0.8); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 50px; color: white; font-size: 14px; margin-bottom: 16px; }
+       .input-group input::placeholder { color: rgba(255, 255, 255, 0.3); }
+       .input-group input:focus { outline: none; border-color: #667eea; }
+       .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #6a5af9, #d66efd); border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px; }
+       .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
+       .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
+       .footer-copyright { margin-top: 35px; font-size: 10px; color: rgba(255, 255, 255, 0.3); }
+       .error-msg { background: rgba(239, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
+       .dashboard { display: none; min-height: 100vh; background: #0a0a1a; }
+       .header { background: #FFD700; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: bold; }
+       .header-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; }
+       .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; }
+       .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; cursor: pointer; }
+       .upgrade-banner { background: #FFD700; margin: 15px; padding: 12px; border-radius: 15px; text-align: center; color: #000; font-weight: bold; }
+       .go-pro-btn { background: #000; color: #FFD700; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+       .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; }
+       .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; text-align: center; }
+       .stat-label { font-size: 10px; color: #888; text-align: center; }
+       .live-indicator { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-      .opportunities-list { padding: 0 15px 80px; }
-      .card { background: #121521; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; margin-bottom: 12px; cursor: pointer; }
-      .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-      .buy-sell { display: flex; gap: 8px; }
-      .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-      .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-      .coin-name { font-size: 16px; font-weight: bold; }
-      .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
-      .card-details { font-size: 11px; color: #888; display: flex; justify-content: space-between; margin-top: 5px; }
-      .last-verified { color: #FFD700; }
-      .detail-page { display: none; padding: 0; }
-      .detail-header { background: #FFD700; color: #000; padding: 15px; text-align: center; }
-      .detail-spread { font-size: 32px; font-weight: bold; }
-      .detail-coin { font-size: 20px; margin: 5px 0; }
-      .detail-section { background: #121521; margin: 15px; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; }
-      .detail-row { display: flex; justify-content: space-between; padding: 8px 0; }
-      .detail-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
-      .detail-btn.secondary { background: #2a2a4a; color: white; }
-      .warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 12px; padding: 12px; margin: 15px; font-size: 11px; }
-      .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFD700; padding: 10px 20px; display: flex; justify-content: space-around; z-index: 100; }
-      .footer-nav a { color: #000; text-decoration: none; font-size: 13px; text-align: center; flex: 1; cursor: pointer; font-weight: bold; }
-      .footer-nav a.active { color: #000; }
-      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-      .modal-card { background: #1a1a2e; border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 100%; border: 1px solid #FFD700; position: relative; color: white; }
-      .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
-      .modal-card input,.modal-card select { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 25px; color: white; }
-      .pricing-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
-      .price-option { background: #0a0a1a; border: 2px solid #FFD700; border-radius: 15px; padding: 15px; text-align: center; }
-      .price-amount { font-size: 28px; font-weight: bold; color: #FFD700; }
-      .price-duration { font-size: 12px; color: #888; }
-      .modal-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 30px; color: #000; font-weight: bold; margin-top: 15px; cursor: pointer; }
-      .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
-      .blur { filter: blur(4px); pointer-events: none; }
-      .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
+       .opportunities-list { padding: 0 15px 80px; }
+       .card { background: #121521; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; margin-bottom: 12px; cursor: pointer; }
+       .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+       .buy-sell { display: flex; gap: 8px; }
+       .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
+       .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
+       .coin-name { font-size: 16px; font-weight: bold; }
+       .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
+       .card-details { font-size: 11px; color: #888; display: flex; justify-content: space-between; margin-top: 5px; }
+       .last-verified { color: #FFD700; }
+       .detail-page { display: none; padding: 0; }
+       .detail-header { background: #FFD700; color: #000; padding: 15px; text-align: center; }
+       .detail-spread { font-size: 32px; font-weight: bold; }
+       .detail-coin { font-size: 20px; margin: 5px 0; }
+       .detail-section { background: #121521; margin: 15px; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; }
+       .detail-row { display: flex; justify-content: space-between; padding: 8px 0; }
+       .detail-label { color: #888; font-size: 12px; }
+       .detail-value { color: white; font-weight: 500; font-size: 14px; }
+       .detail-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+       .detail-btn.secondary { background: #000; color: white; border: 1px solid #FFD700; }
+       .network-box { background: #0a0c14; padding: 8px; border-radius: 8px; margin-top: 8px; font-size: 11px; }
+       .network-active { color: #10b981; text-align: center; margin-top: 4px; }
+       .warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 12px; padding: 12px; margin: 15px; font-size: 11px; display: flex; gap: 10px; }
+       .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFD700; padding: 10px 20px; display: flex; justify-content: space-around; z-index: 100; }
+       .footer-nav a { color: #000; text-decoration: none; font-size: 11px; text-align: center; flex: 1; cursor: pointer; font-weight: bold; }
+       .footer-nav a.active { color: #000; }
+       .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+       .modal-card { background: #1a1a2e; border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 100%; border: 1px solid #FFD700; position: relative; color: white; }
+       .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
+       .modal-card input,.modal-card select { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 25px; color: white; }
+       .pricing-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
+       .price-option { background: #0a0a1a; border: 2px solid #FFD700; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; }
+       .price-option.selected { background: #FFD700; color: #000; }
+       .price-amount { font-size: 28px; font-weight: bold; color: #FFD700; }
+       .price-option.selected .price-amount { color: #000; }
+       .price-duration { font-size: 12px; color: #888; }
+       .price-option.selected .price-duration { color: #000; }
+       .modal-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 30px; color: #000; font-weight: bold; margin-top: 15px; cursor: pointer; }
+       .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+       .blur { filter: blur(4px); pointer-events: none; }
+       .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
+       .back-btn { color: #000; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -74,7 +82,7 @@
         <div class="login-card">
             <div class="logo-section">
                 <h1>ARBIMINE</h1>
-                <div class="tagline">FIND.ANALYZE.PROFIT.</div>
+                <div class="tagline">FIND. ANALYZE. PROFIT.</div>
             </div>
             <h2 style="margin: 30px 0 8px; font-size: 26px;">Welcome Back!</h2>
             <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-bottom:30px;">Log in to continue to your account</p>
@@ -86,7 +94,7 @@
                 <a id="showSignupLink">Create Account</a>
                 <a id="showForgotLink">Forgot Password?</a>
             </div>
-            <div class="footer-copyright">© 2025 ARBIMINE. All rights reserved</div>
+            <div class="footer-copyright">© 2025 ARBIMINE. All rights reserved.</div>
         </div>
     </div>
     <div id="signupModal" class="modal">
@@ -121,19 +129,15 @@
                 <p>👥 Instant Access to Referral Program</p>
             </div>
             <div class="pricing-grid">
-                <div class="price-option">
+                <div class="price-option" data-plan="weekly">
                     <div class="price-duration">1 week</div>
                     <div class="price-amount">Ksh 200.00</div>
                 </div>
-                <div class="price-option">
+                <div class="price-option selected" data-plan="monthly">
                     <div class="price-duration">1 month</div>
                     <div class="price-amount">Ksh 700.00</div>
                 </div>
             </div>
-            <select id="planSelect">
-                <option value="weekly">1 week - Ksh 200.00</option>
-                <option value="monthly">1 month - Ksh 700.00</option>
-            </select>
             <div style="margin: 15px 0; text-align: center; font-size:13px;">
                 <p>📱 Send payment to Pochi: <strong style="color:#FFD700">0728308602</strong></p>
                 <p>📝 Reference: <strong id="paymentPhoneRef"></strong></p>
@@ -145,11 +149,11 @@
     <div id="dashboard" class="dashboard">
         <div class="header">
             <div class="header-logo">🚀 ArbiHunt</div>
-            <div>⚙️ ⋮</div>
+            <div><span id="expiryBadge" style="background:#000;color:#FFD700;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:bold;">🆓 FREE</span> ⚙️</div>
         </div>
         <div class="exchange-strip" id="exchangeStrip"></div>
         <div id="homePage">
-            <div class="upgrade-banner">
+            <div class="upgrade-banner" id="upgradeBanner">
                 <div>🚀 Upgrade to PRO to Discover Profit Opportunities Above 2% 🚀</div>
                 <button class="go-pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
             </div>
@@ -163,9 +167,15 @@
         </div>
         <div id="detailPage" class="detail-page">
             <div class="detail-header">
-                <div class="detail-spread" id="detailSpread">2% SPREAD</div>
-                <div class="detail-coin" id="detailCoin">ITHACA-USDT</div>
-                <div style="font-size:11px;" id="detailLiq">Liquidity: $50 | Profit: [UPGRADE TO PRO]</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="back-btn" onclick="showHome()">←</span>
+                    <div style="flex:1;">
+                        <div class="detail-spread" id="detailSpread">2% SPREAD</div>
+                        <div class="detail-coin" id="detailCoin">ITHACA-USDT</div>
+                        <div style="font-size:11px;" id="detailLiq">Liquidity: $50 | Profit: [UPGRADE TO PRO]</div>
+                    </div>
+                    <div style="width:24px;"></div>
+                </div>
             </div>
             <div class="detail-section">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -173,251 +183,11 @@
                     <div style="text-align:right;"><div style="font-size:12px;color:#888;">Lowest Ask:</div><div style="font-size:18px;font-weight:bold;" id="detailBuyPrice">$0.0025766</div><div style="font-size:11px;color:#888;" id="detailBuyVol">Volume: $44,165</div></div>
                 </div>
                 <div style="font-size:11px;color:#888;margin-top:8px;" id="detailBuyLiq">Buy Liquidity: $50</div>
-                <div style="background:#0a0c14;padding:8px;border-radius:8px;margin-top:8px;font-size:11px;">Active Withdrawal Network(s) and Fees:<div style="color:#10b981;text-align:center;margin-top:4px;">BSC ($0.32)</div></div>
+                <div class="network-box">Active Withdrawal Network(s) and Fees:<div class="network-active">BSC ($0.32)</div></div>
                 <button class="detail-btn" id="detailBuyBtn">👁️ CHECK ON KUCOIN</button>
                 <button class="detail-btn secondary"><> FETCH CONTRACTS</button>
             </div>
             <div class="detail-section">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div><div style="font-size:12px;color:#888;">2. Sell on</div><div style="font-size:18px;font-weight:bold;" id="detailSellEx">MEXC</div></div>
-                    <div style="text-align:right;"><div style="font-size:12px;color:#888;">Highest Bid:</div><div style="font-size:18px;font-weight:bold;" id="detailSellPrice">$0.002627</div><div style="font-size:11px;color:#888;" id="detailSellVol">Volume: $27,374</div></div>
-                </div>
-                <div style="font-size:11px;color:#888;margin-top:8px;" id="detailSellLiq">Sell Liquidity: $913</div>
-                <div style="background:#0a0c14;padding:8px;border-radius:8px;margin-top:8px;font-size:11px;">Currently Active Deposit Network(s):<div style="color:#10b981;text-align:center;margin-top:4px;">BSC</div></div>
-                <button class="detail-btn" id="detailSellBtn">👁️ CHECK ON MEXC</button>
-            </div>
-            <div class="warning-box">
-                ⚠️ Double check coin's contract and name on both exchanges before initiating the trade.
-            </div>
-            <div class="warning-box">
-                🏃 Act Fast! Arbitrage opportunities are time-sensitive and typically last for no more than 10-15 minutes.
-            </div>
-        </div>
-        <div class="footer-nav">
-            <a id="navHome" class="active">🏠<br>Home</a>
-            <a id="navGoPro">⭐<br>Go PRO</a>
-            <a>💬<br>Chat Room</a>
-            <a id="navProfile">👤<br>Profile</a>
-        </div>
-    </div>
-    <script>
-        const BACKEND_URL = 'https://arbimine-api.onrender.com'; // CHANGE THIS TO YOUR RENDER URL
-        let currentUser = null;
-        let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-        let currentOpportunities = [];
-        let ws = null;
-        let currentDetailIndex = null;
-        const exchanges = ['Binance', 'Bybit', 'OKX', 'KuCoin', 'MEXC', 'Gate.io'];
-
-        function initExchangeStrip() {
-            document.getElementById('exchangeStrip').innerHTML = exchanges.map(ex => `<span class="exchange-badge">${ex}</span>`).join('');
-        }
-
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-
-        function connectWebSocket() {
-            const wsUrl = BACKEND_URL.replace('https', 'wss').replace('http', 'ws');
-            ws = new WebSocket(wsUrl);
-            ws.onopen = () => document.getElementById('scanStatus').innerHTML = '<span class="live-indicator"></span>LIVE - Updates every 1s';
-            ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                if (msg.type === 'arbs') {
-                    currentOpportunities = msg.data;
-                    document.getElementById('statOpportunities').innerText = currentOpportunities.length;
-                    renderOpportunities();
-                }
-            };
-            ws.onclose = () => setTimeout(connectWebSocket, 3000);
-        }
-
-        function renderOpportunities() {
-            const container = document.getElementById('opportunitiesList');
-            const user = users[currentUser] || { tier: 'free' };
-            const tier = user.tier || 'free';
-            let html = ''; let shownCount = 0;
-            
-            for (let i = 0; i < currentOpportunities.length; i++) {
-                const opp = currentOpportunities[i];
-                let show = false;
-                if (tier === 'pro' || tier === 'vip') show = true;
-                else if (tier === 'free' && opp.tier === 'free') show = true;
-                
-                if (!show) continue;
-                shownCount++;
-                const ago = Math.floor((Date.now() - opp.ts) / 1000);
-                html += `<div class="card" onclick='showDetail(${i})'>
-                    <div class="card-header">
-                        <div class="buy-sell">
-                            <span class="buy-badge">BUY ${opp.buyEx}</span>
-                            <span class="sell-badge">SELL ${opp.sellEx}</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                        <div>
-                            <div class="coin-name">${opp.coin}/USDT</div>
-                            <div style="font-size:11px;color:#888;">Liquidity: $${opp.liquidity}</div>
-                        </div>
-                        <div class="profit-value">${opp.profit}%</div>
-                    </div>
-                    <div class="card-details">
-                        <span></span>
-                        <span class="last-verified">Last Verified ${ago} seconds ago</span>
-                    </div>
-                </div>`;
-            }
-            
-            if (shownCount === 0 && currentOpportunities.length > 0 && tier === 'free') {
-                const proCount = currentOpportunities.filter(o=>o.tier==='pro').length;
-                html = `<div class="upgrade-banner" style="margin:0;"><div>🚀 ${proCount} PRO opportunities found above 2%!</div><button class="go-pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
-            } else if (shownCount === 0) {
-                html = '<div style="text-align:center;padding:40px;color:#888;">⚡ Scanning live markets...</div>';
-            }
-            container.innerHTML = html;
-        }
-
-        function showDetail(index) {
-            const opp = currentOpportunities[index];
-            const user = users[currentUser] || { tier: 'free' };
-            if (opp.tier === 'pro' && user.tier === 'free') {
-                showModal('upgradeModal');
-                return;
-            }
-            currentDetailIndex = index;
-            document.getElementById('homePage').style.display = 'none';
-            document.getElementById('detailPage').style.display = 'block';
-            document.getElementById('detailSpread').innerText = `${opp.profit}% SPREAD`;
-            document.getElementById('detailCoin').innerText = `${opp.coin}-USDT`;
-            document.getElementById('detailLiq').innerText = `Liquidity: $${opp.liquidity} | Profit: ${user.tier === 'free' && opp.tier === 'pro'? '[UPGRADE TO PRO]' : opp.profit + '%'}`;
-            document.getElementById('detailBuyEx').innerText = opp.buyEx;
-            document.getElementById('detailBuyPrice').innerText = `$${opp.buyPrice}`;
-            document.getElementById('detailBuyVol').innerText = `Volume: ${opp.buyVol}`;
-            document.getElementById('detailBuyLiq').innerText = `Buy Liquidity: $${(opp.buyVol * opp.buyPrice).toFixed(0)}`;
-            document.getElementById('detailSellEx').innerText = opp.sellEx;
-            document.getElementById('detailSellPrice').innerText = `$${opp.sellPrice}`;
-            document.getElementById('detailSellVol').innerText = `Volume: ${opp.sellVol}`;
-            document.getElementById('detailSellLiq').innerText = `Sell Liquidity: $${(opp.sellVol * opp.sellPrice).toFixed(0)}`;
-            document.getElementById('detailBuyBtn').onclick = () => window.open(`https://www.${opp.buyEx.toLowerCase().replace(/\./g, '').replace(/ /g, '')}.com`, '_blank');
-            document.getElementById('detailSellBtn').onclick = () => window.open(`https://www.${opp.sellEx.toLowerCase().replace(/\./g, '').replace(/ /g, '')}.com`, '_blank');
-        }
-
-        function login() {
-            const phone = document.getElementById('loginPhone').value;
-            const pass = document.getElementById('loginPassword').value;
-            const errorDiv = document.getElementById('loginErrorMsg');
-            if (!users[phone] || users[phone].password!== pass) {
-                errorDiv.innerText = 'Invalid phone number or password';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            errorDiv.style.display = 'none';
-            currentUser = phone;
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('paymentPhoneRef').innerText = phone;
-            updateExpiry();
-            initExchangeStrip();
-            connectWebSocket();
-        }
-
-        function createAccount() {
-            const phone = document.getElementById('signupPhone').value;
-            const pass = document.getElementById('signupPass').value;
-            const confirm = document.getElementById('signupConfirm').value;
-            const name = document.getElementById('fullName').value;
-            if (!phone ||!pass || pass!== confirm || pass.length < 6) {
-                alert('Check your details. Password must be 6+ chars and match.');
-                return;
-            }
-            if (users[phone]) {
-                alert('Account already exists');
-                return;
-            }
-            users[phone] = { name, password: pass, tier: 'free', createdAt: new Date().toISOString(), expiry: null };
-            localStorage.setItem('arbimine_users', JSON.stringify(users));
-            alert('Account created! Please log in.');
-            closeModal('signupModal');
-            document.getElementById('loginPhone').value = phone;
-        }
-
-        function processPayment() {
-            const plan = document.getElementById('planSelect').value;
-            const user = users[currentUser];
-            const now = new Date();
-            if (plan === 'weekly') {
-                user.tier = 'pro';
-                user.expiry = new Date(now.getTime() + 7*24*60*60*1000).toISOString();
-            } else if (plan === 'monthly') {
-                user.tier = 'pro';
-                user.expiry = new Date(now.getTime() + 30*24*60*60*1000).toISOString();
-            }
-            localStorage.setItem('arbimine_users', JSON.stringify(users));
-            updateExpiry();
-            closeModal('upgradeModal');
-            alert('Payment confirmed! Access upgraded.');
-            renderOpportunities();
-        }
-
-        function updateExpiry() {
-            const user = users[currentUser];
-            if (!user) return;
-            const badge = document.querySelector('.header.expiry-badge');
-            if (!badge) {
-                const userInfo = document.querySelector('.header');
-                const newBadge = document.createElement('span');
-                newBadge.className = 'expiry-badge';
-                newBadge.id = 'expiryBadge';
-                userInfo.appendChild(newBadge);
-            }
-            const expiryBadge = document.getElementById('expiryBadge');
-            if (user.expiry && new Date(user.expiry) > new Date()) {
-                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
-                expiryBadge.innerHTML = `${user.tier.toUpperCase()} - ${daysLeft}d left`;
-            } else {
-                expiryBadge.innerHTML = '🆓 FREE';
-                user.tier = 'free';
-            }
-        }
-
-        function resetPassword() {
-            const phone = document.getElementById('resetPhone').value;
-            if (!users[phone]) {
-                alert('Phone number not found');
-                return;
-            }
-            alert(`Password reset code sent to ${phone}. Check SMS.`);
-            closeModal('forgotModal');
-        }
-
-        function logout() {
-            if (ws) ws.close();
-            currentUser = null;
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'flex';
-        }
-
-        function showHome() {
-            document.getElementById('homePage').style.display = 'block';
-            document.getElementById('detailPage').style.display = 'none';
-            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            document.getElementById('navHome').classList.add('active');
-        }
-
-        document.getElementById('loginBtn').onclick = login;
-        document.getElementById('createAccountBtn').onclick = createAccount;
-        document.getElementById('processPaymentBtn').onclick = processPayment;
-        document.getElementById('resetPasswordBtn').onclick = resetPassword;
-        document.getElementById('showSignupLink').onclick = () => showModal('signupModal');
-        document.getElementById('showForgotLink').onclick = () => showModal('forgotModal');
-        document.getElementById('upgradeBannerBtn').onclick = () => showModal('upgradeModal');
-        document.getElementById('navGoPro').onclick = () => showModal('upgradeModal');
-        document.getElementById('navHome').onclick = showHome;
-
-        // Auto-login if user exists
-        const lastUser = localStorage.getItem('arbimine_lastuser');
-        if (lastUser && users[lastUser]) {
-            document.getElementById('loginPhone').value = lastUser;
-        }
-    </script>
-</body>
-</html>
+                    <div style="text-align:right;"><div style="font-size:12px;color:#888;">Highest Bid:</div><div style="font-size:18px;font-weight:bold;" id="detailSellPrice">$0.002627</div><div style="font-size:
