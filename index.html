@@ -2,402 +2,668 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – 15 Exchange Arbitrage Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ArbiMine • ArbiHunt | Find. Analyze. Profit.</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Arial;background:linear-gradient(135deg,#0f0c29,#1a1a3a,#24243e);min-height:100vh;color:white}
-        .login-page{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0f0c29,#1a1a3a,#24243e);display:flex;justify-content:center;align-items:center;z-index:1000}
-        .login-card{background:rgba(20,20,45,0.85);backdrop-filter:blur(20px);border-radius:40px;padding:50px45px;width:100%;max-width:480px;border:1px solid rgba(255,215,0,0.3);text-align:center}
-        .logo-icon{font-size:55px;margin-bottom:8px}
-        .logo-section h1{font-size:42px;font-weight:800;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;background-clip:text;color:transparent}
-        .tagline{font-size:11px;color:#aaa;letter-spacing:2px;margin-top:6px}
-        .welcome-section h2{font-size:28px;margin-bottom:6px}
-        .welcome-section p{color:#aaa;font-size:14px;margin-bottom:30px}
-        .input-group{margin-bottom:18px}
-        .input-group input{width:100%;padding:15px20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:50px;color:white;font-size:15px}
-        .login-btn{width:100%;padding:15px;background:linear-gradient(95deg,#667eea,#764ba2);border:none;border-radius:50px;color:white;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px}
-        .auth-links{display:flex;justify-content:center;gap:25px;margin-top:25px}
-        .auth-links a{color:#FFD700;font-size:13px;cursor:pointer}
-        .footer-copyright{margin-top:35px;font-size:10px;color:#666}
-        .bottom-logo h3{font-size:14px;color:#FFD700}
-        .bottom-logo p{font-size:9px;color:#666}
-        .dashboard{display:none;min-height:100vh;background:#0a0a1a}
-        .dashboard-header{background:rgba(0,0,0,0.9);padding:15px20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid #2a2a4a;position:sticky;top:0;z-index:100}
-        .logo-small{font-size:22px;font-weight:bold;color:#FFD700}
-        .user-info{display:flex;align-items:center;gap:15px}
-        .logout-btn{background:#ef4444;border:none;padding:6px16px;border-radius:30px;color:white;cursor:pointer}
-        .exchange-strip{background:#0a0c14;padding:12px15px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid #2a2d3e}
-        .exchange-badge{background:#121521;border:1px solid #2a2d3e;padding:5px12px;border-radius:30px;font-size:10px;color:#FFD700;cursor:pointer}
-        .exchange-badge:hover{background:#FFD700;color:#000}
-        .upgrade-banner{background:linear-gradient(135deg,#1a1a2e,#121521);margin:15px;padding:18px;border-radius:15px;text-align:center;border:1px solid #f5576c}
-        .upgrade-banner h3{color:#FFD700;font-size:15px}
-        .pro-btn{background:linear-gradient(135deg,#f093fb,#f5576c);border:none;padding:10px25px;border-radius:25px;color:white;font-weight:bold;cursor:pointer}
-        .search-bar{padding:12px15px;background:#0a0c14;border-bottom:1px solid #2a2d3e}
-        .search-input{width:100%;padding:10px18px;background:#121521;border:1px solid #2a2d3e;border-radius:30px;color:white;font-size:14px}
-        .action-buttons{display:flex;gap:10px;justify-content:center;padding:10px}
-        .action-btn{background:linear-gradient(135deg,#667eea,#764ba2);border:none;padding:8px20px;border-radius:30px;color:white;font-weight:bold;cursor:pointer}
-        .stats-row{display:flex;justify-content:space-around;padding:10px;background:#0a0c14;margin:10px;border-radius:15px;flex-wrap:wrap}
-        .stat{text-align:center}
-        .stat-number{font-size:20px;font-weight:bold;color:#FFD700}
-        .stat-label{font-size:10px;color:#888}
-        .fee-info-row{display:flex;justify-content:center;gap:15px;padding:8px;background:#0a0c14;margin:5px10px;border-radius:12px;flex-wrap:wrap;font-size:10px;color:#888}
-        .pricing-row{display:flex;justify-content:center;gap:10px;margin:10px;flex-wrap:wrap}
-        .price-card{background:#121521;border:1px solid #f5576c;border-radius:15px;padding:10px15px;text-align:center;min-width:120px}
-        .price-card.premium{border-color:#f093fb}
-        .price-card.vip{border-color:#FFD700}
-        .price-title{font-size:12px;font-weight:bold}
-        .price-amount{font-size:18px;font-weight:bold;color:#FFD700}
-        .price-duration{font-size:9px;color:#888}
-        .opportunities-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px;padding:15px;margin-bottom:70px}
-        .card{background:#121521;border-radius:14px;padding:14px;border:1px solid #2a2d3e;transition:0.3s;cursor:pointer}
-        .card:hover{border-color:#FFD700;transform:translateX(4px)}
-        .card-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-        .buy-badge{background:#10b981;padding:3px10px;border-radius:20px;font-size:10px;font-weight:bold}
-        .sell-badge{background:#ef4444;padding:3px10px;border-radius:20px;font-size:10px;font-weight:bold}
-        .profit-value{font-size:20px;font-weight:bold;color:#10b981}
-        .live-badge{background:#10b981;font-size:8px;padding:2px6px;border-radius:10px;margin-left:5px}
-        .fee-breakdown{margin-top:8px;padding-top:8px;border-top:1px solid #2a2d3e;font-size:9px;color:#888;display:flex;justify-content:space-between;flex-wrap:wrap}
-        .detail-view{padding:20px;margin-bottom:70px}
-        .detail-profit{font-size:28px;font-weight:bold;color:#10b981}
-        .detail-section{background:#121521;border-radius:18px;padding:18px;margin-bottom:18px;border:1px solid #2a2d3e}
-        .detail-section h4{color:#FFD700;margin-bottom:12px}
-        .detail-row{display:flex;justify-content:space-between;padding:8px0;border-bottom:1px solid #2a2d3e}
-        .detail-label{color:#888}
-        .detail-value{color:white}
-        .fee-detail{background:#0a0c14;padding:8px;border-radius:10px;margin-top:10px;font-size:11px}
-        .warning-text{color:#f59e0b;font-size:11px;margin-top:15px;padding:10px;background:rgba(245,158,11,0.1);border-radius:12px}
-        .detail-buttons{display:flex;gap:12px;margin-top:15px;flex-wrap:wrap}
-        .detail-btn{flex:1;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:25px;color:white;font-weight:bold;cursor:pointer;text-align:center;text-decoration:none}
-        .back-btn{background:rgba(255,255,255,0.1);border:none;padding:8px18px;border-radius:25px;color:white;cursor:pointer;margin-bottom:15px}
-        .profile-container{max-width:480px;margin:20px auto;background:#121521;border-radius:25px;padding:20px;border:1px solid #2a2d3e;margin-bottom:80px}
-        .profile-field{display:flex;justify-content:space-between;padding:10px0;border-bottom:1px solid #2a2d3e}
-        .profile-label{color:#888}
-        .profile-value{color:#FFD700}
-        .referral-box{background:#0a0c14;padding:10px;border-radius:12px;margin-top:15px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-        .copy-btn{background:#667eea;border:none;padding:6px12px;border-radius:20px;color:white;cursor:pointer}
-        .footer-nav{position:fixed;bottom:0;left:0;right:0;background:#0a0c14;padding:10px20px;display:flex;justify-content:space-around;border-top:1px solid #2a2d3e;z-index:100}
-        .footer-nav a{color:white;text-decoration:none;font-size:13px;padding:8px0;text-align:center;flex:1;cursor:pointer}
-        .footer-nav a.active{color:#FFD700}
-        .loading{text-align:center;padding:40px;color:#888}
-        .toast{position:fixed;top:20px;right:20px;background:#1a1a2e;border-left:4px solid #10b981;padding:12px20px;border-radius:10px;color:white;z-index:3000;transform:translateX(120%);transition:transform 0.3s}
-        .toast.show{transform:translateX(0)}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.98);z-index:2000;justify-content:center;align-items:center}
-        .modal-card{background:linear-gradient(145deg,#1a1a2e,#12122c);border-radius:30px;padding:30px25px;max-width:420px;width:90%;border:1px solid #FFD700;position:relative}
-        .modal-card h3{color:#FFD700;font-size:24px;text-align:center;margin-bottom:20px}
-        .modal-card input,.modal-card select{width:100%;padding:12px16px;margin:8px0;background:#0a0a1a;border:1px solid #2a2a4a;border-radius:25px;color:white}
-        .modal-btn{width:100%;padding:12px;background:#10b981;border:none;border-radius:30px;color:white;font-weight:bold;margin-top:15px;cursor:pointer}
-        .close-modal{position:absolute;top:15px;right:20px;font-size:24px;cursor:pointer;color:#aaa}
-        @media(max-width:550px){.login-card{padding:35px25px}.card-header{flex-direction:column;align-items:flex-start}.profit-value{align-self:flex-end}.opportunities-grid{grid-template-columns:1fr}.pricing-row{flex-direction:column;align-items:center}}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0A0C12;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #EFF3F8;
+            line-height: 1.4;
+            padding: 0 0 20px 0;
+        }
+
+        /* containers and layout */
+        .app-container {
+            max-width: 550px;
+            margin: 0 auto;
+            background: #0A0C12;
+            min-height: 100vh;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.03);
+        }
+
+        /* screens */
+        .screen {
+            display: none;
+            padding: 20px 18px 30px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* login screen */
+        .logo-center {
+            text-align: center;
+            margin-top: 60px;
+            margin-bottom: 40px;
+        }
+        .logo-center h1 {
+            font-size: 2rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #F0B90B, #FFD966);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+        .logo-center p {
+            color: #9CA3AF;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            margin-top: 6px;
+        }
+        .login-card {
+            background: #13161F;
+            border-radius: 32px;
+            padding: 28px 24px;
+            border: 1px solid #232732;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+        }
+        .login-card h2 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .login-card p {
+            color: #9CA3AF;
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            width: 100%;
+            background: #1E212B;
+            border: 1px solid #2D313E;
+            padding: 16px 18px;
+            border-radius: 24px;
+            font-size: 1rem;
+            color: white;
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #F0B90B;
+        }
+        .login-btn {
+            width: 100%;
+            background: #F0B90B;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0A0C12;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .login-btn:hover {
+            background: #D4A108;
+        }
+        .links-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+        .links-row a {
+            color: #F0B90B;
+            text-decoration: none;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 0.7rem;
+            color: #5E667A;
+        }
+        
+        /* bottom navigation (ArbiHunt style) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 550px;
+            margin: 0 auto;
+            background: #0F1119E6;
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 20px 22px;
+            border-top: 1px solid #232732;
+            z-index: 20;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: #7E859B;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item.active {
+            color: #F0B90B;
+        }
+        .nav-icon {
+            font-size: 1.5rem;
+        }
+
+        /* dashboard cards */
+        .upgrade-banner-header {
+            background: linear-gradient(95deg, #2A2416, #1E1A10);
+            border-radius: 24px;
+            padding: 16px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border: 1px solid #F0B90B30;
+        }
+        .upgrade-banner-header span {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        .go-pro-btn-sm {
+            background: #F0B90B;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .opportunity-card {
+            background: #13161F;
+            border-radius: 28px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            border: 1px solid #262B38;
+            transition: 0.1s;
+        }
+        .exchange-row {
+            font-size: 0.75rem;
+            color: #F0B90B;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+        .coin-row {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 8px 0 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .profit-badge {
+            background: #1E3A2E;
+            color: #2ECC71;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .profit-badge.locked {
+            background: #2D2320;
+            color: #E67E22;
+        }
+        .liquidity-meta {
+            font-size: 0.7rem;
+            color: #8F98B0;
+            margin: 6px 0;
+        }
+        .locked-overlay {
+            background: #1A1C26;
+            border-radius: 28px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #F0B90B;
+            font-weight: 500;
+        }
+        
+        /* Pro upgrade screen */
+        .pro-card {
+            background: #13161F;
+            border-radius: 32px;
+            padding: 28px 20px;
+            margin-top: 20px;
+        }
+        .feature-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .feature-list li {
+            margin: 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .pricing-grid {
+            display: flex;
+            gap: 12px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+        .plan-card {
+            background: #1E212B;
+            flex: 1;
+            border-radius: 20px;
+            padding: 16px 8px;
+            text-align: center;
+            border: 1px solid #2F3545;
+        }
+        .plan-period {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #F0B90B;
+            margin: 8px 0;
+        }
+        .sub-price {
+            font-size: 0.7rem;
+            color: #8F98B0;
+        }
+        .continue-btn {
+            width: 100%;
+            background: #F0B90B;
+            border: none;
+            padding: 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1rem;
+            margin: 12px 0;
+            cursor: pointer;
+        }
+        .restore-link {
+            text-align: center;
+            color: #7E859B;
+            font-size: 0.75rem;
+            margin-top: 16px;
+        }
+        
+        /* detail screen (Ithaca 2% spread) */
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #F0B90B;
+            cursor: pointer;
+        }
+        .spread-badge {
+            background: #2C3A2A;
+            color: #2ECC71;
+            padding: 6px 16px;
+            border-radius: 60px;
+        }
+        .trade-card {
+            background: #13161F;
+            border-radius: 28px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #2A1F1A;
+            padding: 14px;
+            border-radius: 20px;
+            margin: 20px 0;
+            font-size: 0.75rem;
+            border-left: 4px solid #E67E22;
+        }
+        .exchange-action {
+            display: flex;
+            justify-content: space-between;
+            margin: 16px 0;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #F0B90B;
+            padding: 8px 20px;
+            border-radius: 36px;
+            color: #F0B90B;
+            cursor: pointer;
+        }
+        
+        /* hide nav on login & upgrade? but upgrade screen needs back nav, but we manage */
+        .no-nav .bottom-nav {
+            display: none;
+        }
+        .with-nav-padding {
+            padding-bottom: 85px;
+        }
+        button {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <div id="toastContainer"></div>
-
-    <div id="loginPage" class="login-page">
+<div class="app-container" id="appContainer">
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="screen active">
+        <div class="logo-center">
+            <h1>ARBIMINE</h1>
+            <p>FIND. ANALYZE. PROFIT.</p>
+        </div>
         <div class="login-card">
-            <div class="logo-section"><div class="logo-icon">⚡</div><h1>ARBIMINE</h1><div class="tagline">FIND. ANALYZE. PROFIT.</div></div>
-            <div class="welcome-section"><h2>Welcome Back!</h2><p>Log in to continue to your account</p></div>
-            <div id="loginErrorMsg" style="color:#ef4444;margin-bottom:15px;display:none"></div>
-            <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number"></div>
-            <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
-            <button class="login-btn" id="loginBtn">LOG IN</button>
-            <div class="auth-links"><a id="showSignupLink">Create Account</a><a id="showForgotLink">Forgot Password?</a></div>
-            <div class="footer-copyright">© 2025 Arbimine, All rights reserved.</div>
-            <div class="bottom-logo"><h3>ARBIMINE</h3><p>FIND. ANALYZE. PROFIT.</p></div>
+            <h2>Welcome Back!</h2>
+            <p>Log in to continue to your account</p>
+            <div class="input-group">
+                <input type="tel" id="phoneInput" placeholder="Phone Number" value="254740778336">
+            </div>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Password" value="demo123">
+            </div>
+            <button class="login-btn" id="doLoginBtn">LOG IN</button>
+            <div class="links-row">
+                <a href="#" id="createAccountLink">Create Account</a>
+                <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+            </div>
         </div>
+        <footer>© 2025 ARBIMINE. All rights reserved.</footer>
     </div>
 
-    <div id="signupModal" class="modal"><div class="modal-card"><span class="close-modal" onclick="closeModal('signupModal')">&times;</span><h3>Create Account</h3><input type="text" id="fullName" placeholder="Full Name"><input type="tel" id="signupPhone" placeholder="Phone (254XXXXXXXXX)"><input type="password" id="signupPass" placeholder="Password (min 6 chars)"><input type="password" id="signupConfirm" placeholder="Confirm Password"><button class="modal-btn" id="createAccountBtn">CREATE ACCOUNT</button></div></div>
-    
-    <div id="forgotModal" class="modal"><div class="modal-card"><span class="close-modal" onclick="closeModal('forgotModal')">&times;</span><h3>Reset Password</h3><input type="tel" id="resetPhone" placeholder="Phone Number"><button class="modal-btn" id="resetPasswordBtn">RESET PASSWORD</button></div></div>
-    
-    <div id="upgradeModal" class="modal"><div class="modal-card"><span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span><h3>⭐ UPGRADE YOUR PLAN</h3><select id="planSelect"><option value="premium_weekly">⭐ PREMIUM WEEKLY - KES 200 (7 days)</option><option value="premium_monthly">⭐ PREMIUM MONTHLY - KES 700 (30 days)</option><option value="vip_weekly">👑 VIP WEEKLY - KES 400 (7 days)</option><option value="vip_monthly">👑 VIP MONTHLY - KES 1,000 (30 days)</option></select>
-    <div class="pricing-row"><div class="price-card premium"><div class="price-title">⭐ PREMIUM WEEKLY</div><div class="price-amount">KES 200</div><div class="price-duration">7 days</div></div><div class="price-card premium"><div class="price-title">⭐ PREMIUM MONTHLY</div><div class="price-amount">KES 700</div><div class="price-duration">30 days</div></div><div class="price-card vip"><div class="price-title">👑 VIP WEEKLY</div><div class="price-amount">KES 400</div><div class="price-duration">7 days</div></div><div class="price-card vip"><div class="price-title">👑 VIP MONTHLY</div><div class="price-amount">KES 1,000</div><div class="price-duration">30 days</div></div></div>
-    <div style="margin:15px0;text-align:center"><p>📱 Send payment to: <strong style="color:#FFD700">0728 308602</strong></p><p>📝 Reference: <strong id="paymentPhoneRef"></strong></p></div>
-    <button class="modal-btn" id="processPaymentBtn">💳 CONFIRM PAYMENT</button></div></div>
-
-    <div id="dashboard" class="dashboard">
-        <div class="dashboard-header"><div class="logo-small">⚡ ARBIMINE PRO</div><div class="user-info"><span id="userPhoneLabel"></span><span id="expiryTimer" style="background:#f59e0b;padding:4px12px;border-radius:20px;font-size:11px">🆓 FREE</span><button id="logoutBtn" class="logout-btn">Logout</button></div></div>
-
-        <div class="exchange-strip" id="exchangeStrip"></div>
-
-        <div class="fee-info-row"><span>📊 Profit calculated AFTER:</span><span>🔸 Buy Fee (0.1-0.6%)</span><span>🔸 Sell Fee (0.1-0.6%)</span><span>🔸 Withdrawal Fee (~$0.50)</span><span>🔸 Slippage (0.05%)</span></div>
-
-        <div class="stats-row"><div class="stat"><div class="stat-number" id="statExchanges">15</div><div class="stat-label">EXCHANGES</div></div><div class="stat"><div class="stat-number" id="statCoins">200+</div><div class="stat-label">COINS</div></div><div class="stat"><div class="stat-number" id="statOpportunities">0</div><div class="stat-label">OPPORTUNITIES</div></div></div>
-
-        <div class="search-bar"><input type="text" id="searchInput" class="search-input" placeholder="🔍 Search coin... (BTC, ETH, SOL)"></div>
-        <div class="action-buttons"><button class="action-btn" id="refreshBtn">🔄 Scan Now</button></div>
-
-        <div id="homeSection">
-            <div class="upgrade-banner"><h3>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</h3><button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button></div>
-            <div class="pricing-row"><div class="price-card premium"><div class="price-title">⭐ PREMIUM WEEKLY</div><div class="price-amount">KES 200</div><div class="price-duration">7 days</div></div><div class="price-card premium"><div class="price-title">⭐ PREMIUM MONTHLY</div><div class="price-amount">KES 700</div><div class="price-duration">30 days</div></div><div class="price-card vip"><div class="price-title">👑 VIP WEEKLY</div><div class="price-amount">KES 400</div><div class="price-duration">7 days</div></div><div class="price-card vip"><div class="price-title">👑 VIP MONTHLY</div><div class="price-amount">KES 1,000</div><div class="price-duration">30 days</div></div></div>
-            <div id="opportunitiesList" class="opportunities-grid"><div class="loading">⚡ Click 'Scan Now' to find opportunities (after all fees)</div></div>
+    <!-- DASHBOARD SCREEN (opportunities) -->
+    <div id="dashboardScreen" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+            <h1 style="font-size: 1.8rem;">ArbiHunt</h1>
         </div>
-
-        <div id="detailView" style="display:none;"><div class="detail-view"><button class="back-btn" id="backToListBtn">← Back to Opportunities</button><div id="detailContent"></div></div></div>
-
-        <div id="profileSection" style="display:none;"><div class="profile-container"><div class="profile-field"><span class="profile-label">📱 Phone</span><span class="profile-value" id="profilePhone"></span></div><div class="profile-field"><span class="profile-label">⭐ Tier</span><span class="profile-value" id="profileTier"></span></div><div class="profile-field"><span class="profile-label">📅 Expiry</span><span class="profile-value" id="profileExpiry"></span></div><div class="profile-field"><span class="profile-label">📆 Member Since</span><span class="profile-value" id="profileSince"></span></div><div class="referral-box"><span class="referral-link" id="referralLink">Loading...</span><button class="copy-btn" id="copyReferralBtn">📋 Copy</button></div></div></div>
-
-        <div class="footer-nav"><a id="navHome" class="active">🏠 Home</a><a id="navGoPro">⭐ GO PRO</a><a id="navChat">💬 Chat Room</a><a id="navProfile">👤 Profile</a></div>
+        <div class="upgrade-banner-header" id="upgradeBanner">
+            <span>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</span>
+            <button class="go-pro-btn-sm" id="goProFromBanner">GO PRO</button>
+        </div>
+        <div id="opportunitiesList">
+            <!-- dynamic cards will be injected -->
+        </div>
+        <div style="height: 80px;"></div>
     </div>
 
-    <script>
-        localStorage.removeItem('arbimine_current_user');
-        let currentUser = null;
-        
-        const exchangeFees = {'Binance':0.001,'KuCoin':0.001,'Bybit':0.001,'OKX':0.0008,'Gate.io':0.002,'MEXC':0.001,'Bitget':0.001,'BingX':0.001,'Coinbase':0.006,'Kraken':0.0025,'Huobi':0.002,'Bitfinex':0.001,'Crypto.com':0.004,'Phemex':0.001,'WhiteBIT':0.001};
-        const exchanges = ['Binance','KuCoin','Bybit','OKX','Gate.io','MEXC','Bitget','BingX','Coinbase','Kraken','Huobi','Bitfinex','Crypto.com','Phemex','WhiteBIT'];
-        const coinList = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT','DOTUSDT','LINKUSDT','MATICUSDT','UNIUSDT','ATOMUSDT','LTCUSDT'];
-        
-        let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-        let currentOpportunities = [];
-        let isScanning = false;
+    <!-- UPGRADE SCREEN (PRO) -->
+    <div id="upgradeScreen" class="screen">
+        <div style="margin-top: 10px;">
+            <h1 style="font-size: 1.8rem;">UPGRADE TO PRO</h1>
+            <p style="color:#CED4E2;">Get your PRO Membership Today!</p>
+        </div>
+        <div class="pro-card">
+            <ul class="feature-list">
+                <li>🚀 Unlock >2% Profit Opportunities</li>
+                <li>📊 Advanced Filtering, Profit/Trade Calculation</li>
+                <li>🌐 Browser App Access on arbihunt.com</li>
+                <li>📜 View Coin Contracts</li>
+                <li>🤝 Instant Access to Referral Program</li>
+            </ul>
+            <div class="pricing-grid">
+                <div class="plan-card"><div class="plan-period">week</div><div class="price">Ksh 1,300.00</div><div class="sub-price">Ksh 5200/month</div></div>
+                <div class="plan-card"><div class="plan-period">month</div><div class="price">Ksh 3,000.00</div><div class="sub-price">Ksh 3000/month</div></div>
+                <div class="plan-card"><div class="plan-period">year</div><div class="price">Ksh 19,000.00</div><div class="sub-price">Ksh 1583.33/month</div></div>
+            </div>
+            <p style="font-size: 0.75rem; color:#9AA2BB; margin: 12px 0;">Recurring billing. Cancel anytime.<br>Your subscription will auto-renew until you cancel from the Play Store.</p>
+            <button class="continue-btn" id="continueUpgradeBtn">CONTINUE</button>
+            <div class="restore-link">Restore purchases</div>
+        </div>
+        <footer style="margin-top: 40px;">© 2025 ArbiMine</footer>
+    </div>
 
-        function initExchangeStrip(){
-            const strip=document.getElementById('exchangeStrip');
-            if(!strip) return;
-            strip.innerHTML='';
-            exchanges.forEach(ex=>{
-                const badge=document.createElement('span');
-                badge.className='exchange-badge';
-                badge.textContent=ex;
-                badge.onclick=()=>{window.open(`https://www.${ex.toLowerCase().replace('.','').replace(' ','')}.com`,'_blank');};
-                strip.appendChild(badge);
-            });
-            document.getElementById('statExchanges').innerText=exchanges.length;
-            document.getElementById('statCoins').innerText=coinList.length;
+    <!-- DETAIL SCREEN (2% spread example ITHACA) -->
+    <div id="detailScreen" class="screen">
+        <div class="detail-header">
+            <button class="back-btn" id="backFromDetailBtn">←</button>
+            <h2>ArbiHunt</h2>
+            <div class="spread-badge">2% SPREAD</div>
+        </div>
+        <div class="trade-card">
+            <h3 style="font-size: 1.6rem;">ITHACA-USDT</h3>
+            <p>Liquidity: $50 | Profit: <strong id="detailProfitLabel">[UPGRADE TO PRO]</strong></p>
+            <hr style="margin: 16px 0; border-color:#2A2F3E;">
+            <div>
+                <div><strong>1. Buy at KuCoin</strong></div>
+                <div>Lowest Ask: $0.0025766 &nbsp; Volume: $44,165</div>
+                <div>Buy Liquidity: $50</div>
+                <div>Active Withdrawal Network(s) and Fees: BSC ($0.32)</div>
+                <div style="display: flex; gap: 12px; margin: 12px 0;">
+                    <button class="btn-outline" id="checkKuCoinBtn">CHECK ON KUCOIN</button>
+                    <button class="btn-outline" id="fetchContractsBtn">FETCH CONTRACTS</button>
+                </div>
+            </div>
+            <div style="margin-top: 18px;">
+                <div><strong>2. Sell on MEXC</strong></div>
+                <div>Highest Bid: $0.002627 &nbsp; Volume: $27,374</div>
+                <div>Sell Liquidity: $913</div>
+                <div>Currently Active Deposit Network(s): BSC</div>
+                <button class="btn-outline" style="margin-top: 10px;">CHECK ON MEXC</button>
+            </div>
+            <div class="warning">
+                ⚠️ Double check coin's contract and name on both exchanges before initiating the trade.<br>
+                ⚠️ Act Fast! Arbitrage opportunities are time-sensitive and typically last for no more than 10-15 minutes.
+            </div>
+        </div>
+        <footer style="text-align:center; margin-top: 20px;">Double-check always ✅</footer>
+    </div>
+
+    <!-- BOTTOM NAVIGATION (only for dashboard) -->
+    <div class="bottom-nav" id="bottomNav">
+        <button class="nav-item" data-nav="dashboard"><span class="nav-icon">🏠</span><span>Home</span></button>
+        <button class="nav-item" data-nav="upgrade"><span class="nav-icon">⭐</span><span>Go PRO</span></button>
+        <button class="nav-item" data-nav="chat"><span class="nav-icon">💬</span><span>Chat Room</span></button>
+        <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span><span>Profile</span></button>
+    </div>
+</div>
+
+<script>
+    // ----- STATE -----
+    let isPro = false;   // user not pro initially (simulate after "CONTINUE" upgrade)
+    let opportunities = [
+        { id: 1, buyEx: "KuCoin", sellEx: "MEXC", pair: "ITHACA/USDT", liquidity: "$50", profit: 2.0, lastVerified: "16 seconds ago", locked: false, showDetail: true },
+        { id: 2, buyEx: "BingX", sellEx: "Gate.io", pair: "FAR/USDT", liquidity: "$350", profit: 1.4, lastVerified: "15 seconds ago", locked: false },
+        { id: 3, buyEx: "MEXC", sellEx: "KuCoin", pair: "CWEB/USDT", liquidity: "$251", profit: 1.2, lastVerified: "13 seconds ago", locked: false },
+        { id: 4, buyEx: "MEXC", sellEx: "Gate.io", pair: "AIDOGE/USDT", liquidity: "$91", profit: 1.0, lastVerified: "12 seconds ago", locked: false },
+        { id: 5, buyEx: "BitMart", sellEx: "MEXC", pair: "COCA/USDT", liquidity: "$796", profit: 0.9, lastVerified: "12 seconds ago", locked: false },
+        { id: 6, buyEx: "MEXC", sellEx: "Gate.io", pair: "ROAM/USDT", liquidity: "$768", profit: 1.4, lastVerified: "13 seconds ago", locked: false },
+        { id: 7, buyEx: "Gate.io", sellEx: "Ascendex", pair: "OMI/USDT", liquidity: "$236", profit: 1.4, lastVerified: "13 seconds ago", locked: false },
+        { id: 8, buyEx: "BitMart", sellEx: "MEXC", pair: "COCA/USDT", liquidity: "$1104", profit: 1.3, lastVerified: "13 seconds ago", locked: false },
+        { id: 9, buyEx: "KuCoin", sellEx: "DigiFinex", pair: "NAKA/USDT", liquidity: "$552", profit: 0.7, lastVerified: "10 seconds ago", locked: false }
+    ];
+    // mark first (ITHACA) as locked but can be unlocked by PRO -> actually profit 2% requires pro
+    // we'll adjust rendering based on isPro
+    
+    // Helper: render opportunities list
+    function renderOpportunities() {
+        const container = document.getElementById('opportunitiesList');
+        if (!container) return;
+        let html = '';
+        for (let opp of opportunities) {
+            const showProfitLock = (!isPro && opp.profit >= 2.0);
+            const profitDisplay = showProfitLock ? '🔒 [UPGRADE TO PRO]' : `${opp.profit}%`;
+            const profitClass = (showProfitLock || (!isPro && opp.profit>=2.0)) ? 'locked' : '';
+            let extraLockStyle = '';
+            if (showProfitLock) {
+                extraLockStyle = 'opacity:0.9';
+            }
+            html += `
+                <div class="opportunity-card" data-id="${opp.id}" data-pair="${opp.pair}" data-profit="${opp.profit}" data-buy="${opp.buyEx}" data-sell="${opp.sellEx}" data-liq="${opp.liquidity}">
+                    <div class="exchange-row">BUY ${opp.buyEx} / SELL ${opp.sellEx}</div>
+                    <div class="coin-row">
+                        ${opp.pair}
+                        <span class="profit-badge ${profitClass}">${profitDisplay}</span>
+                    </div>
+                    <div class="liquidity-meta">Liquidity: ${opp.liquidity} · Last Verified ${opp.lastVerified}</div>
+                    ${ (showProfitLock && opp.profit>=2.0) ? '<div class="locked-overlay">🔓 Upgrade to PRO to see exact profit & action</div>' : '' }
+                </div>
+            `;
         }
-
-        function showToast(msg,type='info'){
-            const c=document.getElementById('toastContainer');
-            const t=document.createElement('div');
-            t.className=`toast ${type}`;
-            t.innerHTML=msg;
-            c.appendChild(t);
-            setTimeout(()=>t.classList.add('show'),10);
-            setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
-        }
-
-        function closeModal(id){const modal=document.getElementById(id);if(modal)modal.style.display='none';}
-        function showModal(id){const modal=document.getElementById(id);if(modal)modal.style.display='flex';}
-
-        async function fetchPrice(symbol){
-            try{
-                const r=await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-                const d=await r.json();
-                return d.price?parseFloat(d.price):null;
-            }catch(e){return null;}
-        }
-
-        function calculateNetProfit(buyEx,sellEx,buyPrice,sellPrice,amountUSD=1000){
-            const buyFeeRate=exchangeFees[buyEx]||0.0015;
-            const sellFeeRate=exchangeFees[sellEx]||0.0015;
-            const quantity=(amountUSD*(1-buyFeeRate))/buyPrice;
-            const afterSellFee=(quantity*sellPrice)*(1-sellFeeRate);
-            const withdrawalFee=0.50;
-            const finalAmount=afterSellFee-withdrawalFee;
-            const netProfitPercent=((finalAmount-amountUSD)/amountUSD)*100;
-            return{netProfit:netProfitPercent,buyFeePercent:(buyFeeRate*100).toFixed(2),sellFeePercent:(sellFeeRate*100).toFixed(2),withdrawalFee:withdrawalFee};
-        }
-
-        async function scanAllExchanges(){
-            if(isScanning){showToast('Scan already in progress...','warning');return;}
-            isScanning=true;
-            const container=document.getElementById('opportunitiesList');
-            if(container)container.innerHTML='<div class="loading">🔍 Calculating arbitrage opportunities after all fees...</div>';
-            const user=users[currentUser]||{tier:'free'};
-            const isPremium=user.tier==='premium'||user.tier==='vip';
-            const opportunities=[];
-            const realPrices={};
-            for(const s of coinList.slice(0,5)){const p=await fetchPrice(s);if(p)realPrices[s]=p;}
-            const basePrices={'BTCUSDT':realPrices['BTCUSDT']||65000,'ETHUSDT':realPrices['ETHUSDT']||3500,'SOLUSDT':realPrices['SOLUSDT']||180,'BNBUSDT':600,'XRPUSDT':0.62,'ADAUSDT':0.45,'DOGEUSDT':0.15};
-            for(const symbol of coinList){
-                const basePrice=basePrices[symbol]||10;
-                const buyEx=exchanges[Math.floor(Math.random()*exchanges.length)];
-                let sellEx=exchanges[Math.floor(Math.random()*exchanges.length)];
-                while(sellEx===buyEx)sellEx=exchanges[Math.floor(Math.random()*exchanges.length)];
-                const buyPrice=basePrice*(0.99+Math.random()*0.02);
-                const sellPrice=buyPrice*(1+Math.random()*0.04);
-                const grossProfit=((sellPrice-buyPrice)/buyPrice)*100;
-                const feeResult=calculateNetProfit(buyEx,sellEx,buyPrice,sellPrice,1000);
-                const netProfit=feeResult.netProfit;
-                if(netProfit>0.3){
-                    opportunities.push({coin:symbol.replace('USDT',''),buyEx:buyEx,sellEx:sellEx,profit:netProfit.toFixed(2),grossProfit:grossProfit.toFixed(2),buyPrice:buyPrice.toFixed(4),sellPrice:sellPrice.toFixed(4),buyFee:feeResult.buyFeePercent,sellFee:feeResult.sellFeePercent,withdrawFee:feeResult.withdrawalFee,isPremiumOnly:netProfit>2});
+        container.innerHTML = html;
+        // attach click listeners to opportunity cards
+        document.querySelectorAll('.opportunity-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const pair = card.getAttribute('data-pair');
+                const profitVal = parseFloat(card.getAttribute('data-profit'));
+                // if profit >=2 and not Pro -> block detail and show upgrade prompt or redirect to upgrade
+                if (!isPro && profitVal >= 2.0) {
+                    // show upgrade banner first maybe redirect to upgrade page
+                    showUpgradeScreen();
+                    return;
                 }
-            }
-            opportunities.sort((a,b)=>parseFloat(b.profit)-parseFloat(a.profit));
-            currentOpportunities=opportunities;
-            document.getElementById('statOpportunities').innerText=opportunities.length;
-            renderOpportunities();
-            isScanning=false;
-            showToast(`Scan complete! Found ${opportunities.length} opportunities (after all fees)`,'success');
-        }
-
-        function renderOpportunities(){
-            const container=document.getElementById('opportunitiesList');
-            if(!container)return;
-            const user=users[currentUser]||{tier:'free'};
-            const isPremium=user.tier==='premium'||user.tier==='vip';
-            const searchTerm=document.getElementById('searchInput')?.value.toLowerCase()||'';
-            let filtered=currentOpportunities;
-            if(searchTerm)filtered=currentOpportunities.filter(o=>o.coin.toLowerCase().includes(searchTerm));
-            let html='',count=0;
-            for(let opp of filtered){
-                let show=true;
-                if(opp.isPremiumOnly&&!isPremium)show=false;
-                if(!show)continue;
-                count++;
-                html+=`<div class="card" onclick="showDetailView(${currentOpportunities.indexOf(opp)})"><div class="card-header"><div><span class="buy-badge">BUY ${opp.buyEx}</span> ➡️ <span class="sell-badge">SELL ${opp.sellEx}</span></div><div class="profit-value">${opp.profit}% <span class="live-badge">AFTER FEES</span></div></div><div>💰 ${opp.coin}/USDT</div><div style="font-size:11px;margin-top:5px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div><div class="fee-breakdown"><span>📊 Gross: ${opp.grossProfit}%</span><span>🔸 Net: ${opp.profit}%</span><span>💸 Fees: Buy ${opp.buyFee}% / Sell ${opp.sellFee}%</span></div></div>`;
-            }
-            if(count===0&&currentOpportunities.length>0){
-                html=`<div class="upgrade-banner" style="margin:0;"><h3>🔒 ${currentOpportunities.length} opportunities found above 2%! Upgrade to see them 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
-            }else if(count===0){
-                html='<div class="loading">⏳ No arbitrage opportunities found after fees. Click "Scan Now" to check live prices.</div>';
-            }
-            container.innerHTML=html;
-        }
-
-        window.showDetailView=function(index){
-            const opp=currentOpportunities[index];
-            if(!opp)return;
-            const user=users[currentUser]||{tier:'free'};
-            const isPremium=user.tier==='premium'||user.tier==='vip';
-            if(parseFloat(opp.profit)>2&&!isPremium){showToast('Upgrade to PRO to view details!','error');showModal('upgradeModal');return;}
-            const buyUrl=`https://www.${opp.buyEx.toLowerCase().replace('.','').replace(' ','')}.com`;
-            const sellUrl=`https://www.${opp.sellEx.toLowerCase().replace('.','').replace(' ','')}.com`;
-            const detailHtml=`<div class="detail-header"><div class="detail-profit">${opp.profit}% NET PROFIT</div><div style="font-size:22px;font-weight:bold;">${opp.coin}-USDT</div><div style="color:#888;font-size:11px;">After all fees (trading + withdrawal)</div></div>
-            <div class="detail-section"><h4>1. Buy at ${opp.buyEx}</h4><div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.buyPrice}</span></div><div class="detail-row"><span class="detail-label">Taker Fee:</span><span class="detail-value">${opp.buyFee}%</span></div><div class="detail-buttons"><a href="${buyUrl}" target="_blank" class="detail-btn">BUY ON ${opp.buyEx.toUpperCase()}</a></div></div>
-            <div class="detail-section"><h4>2. Sell on ${opp.sellEx}</h4><div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.sellPrice}</span></div><div class="detail-row"><span class="detail-label">Taker Fee:</span><span class="detail-value">${opp.sellFee}%</span></div><div class="detail-buttons"><a href="${sellUrl}" target="_blank" class="detail-btn">SELL ON ${opp.sellEx.toUpperCase()}</a></div></div>
-            <div class="fee-detail"><strong>💰 Fee Breakdown (on $1,000 trade):</strong><br>📥 Buy Fee: ${opp.buyFee}% ($${(1000*parseFloat(opp.buyFee)/100).toFixed(2)})<br>📤 Sell Fee: ${opp.sellFee}% ($${(1000*parseFloat(opp.sellFee)/100).toFixed(2)})<br>💸 Network Fee: $${opp.withdrawFee}<br>📊 Gross Profit: ${opp.grossProfit}%<br>✅ NET PROFIT: ${opp.profit}%</div>
-            <div class="warning-text">⚠️ All profits shown are AFTER trading fees, withdrawal fees, and 0.05% slippage.<br>Act Fast! Opportunities last 10-15 minutes.</div>`;
-            document.getElementById('detailContent').innerHTML=detailHtml;
-            document.getElementById('homeSection').style.display='none';
-            document.getElementById('detailView').style.display='block';
-            document.getElementById('profileSection').style.display='none';
-        };
-
-        function backToList(){
-            document.getElementById('homeSection').style.display='block';
-            document.getElementById('detailView').style.display='none';
-            document.getElementById('profileSection').style.display='none';
-            document.querySelectorAll('.footer-nav a').forEach(a=>a.classList.remove('active'));
-            document.getElementById('navHome').classList.add('active');
-        }
-
-        function updateProfileDisplay(){
-            const user=users[currentUser];
-            if(!user)return;
-            document.getElementById('profilePhone').innerText=currentUser;
-            document.getElementById('profileSince').innerText=user.createdAt?new Date(user.createdAt).toLocaleDateString():'2025-01-01';
-            document.getElementById('referralLink').innerText=`https://arbimine.com/ref/${currentUser}`;
-            document.getElementById('paymentPhoneRef').innerText=currentUser;
-            document.getElementById('profileTier').innerHTML=user.tier==='premium'?'⭐ PREMIUM':(user.tier==='vip'?'👑 VIP':'🆓 FREE');
-            const expirySpan=document.getElementById('expiryTimer');
-            if(user.expiry&&new Date(user.expiry)>new Date()){
-                const daysLeft=Math.ceil((new Date(user.expiry)-new Date())/(1000*60*60*24));
-                expirySpan.innerHTML=`⭐ Expires in ${daysLeft} days`;
-            }else{expirySpan.innerHTML='🆓 FREE';}
-        }
-
-        function handleLogin(){
-            const phone=document.getElementById('loginPhone').value.trim();
-            const pwd=document.getElementById('loginPassword').value;
-            if(users[phone]&&users[phone].password===pwd){
-                currentUser=phone;
-                localStorage.setItem('arbimine_current_user',phone);
-                document.getElementById('loginPage').style.display='none';
-                document.getElementById('dashboard').style.display='block';
-                document.getElementById('userPhoneLabel').innerText=phone;
-                updateProfileDisplay();
-                showToast(`Welcome back!`,'success');
-            }else{
-                const err=document.getElementById('loginErrorMsg');
-                err.style.display='block';
-                err.innerText='Invalid phone number or password';
-                setTimeout(()=>err.style.display='none',3000);
+                // open detail screen (specifically for ITHACA spread) 
+                // we'll hardcode for our main ITHACA pair but generic mapping could be extended
+                if (pair === "ITHACA/USDT") {
+                    showDetailScreen();
+                } else {
+                    alert(`🔍 Detailed view for ${pair}\nProfit: ${profitVal}% \nUpgrade to PRO for advanced arbitrage insights and instant execution.`);
+                }
+            });
+        });
+        // update upgrade banner text if pro
+        const bannerDiv = document.getElementById('upgradeBanner');
+        if (bannerDiv) {
+            if (isPro) {
+                bannerDiv.innerHTML = `<span>✨ PRO ACTIVE • Discover profits up to 2%+ ✨</span>
+                                        <button class="go-pro-btn-sm" id="goProFromBanner" style="background:#2ECC71;">MANAGE</button>`;
+                const newBtn = document.getElementById('goProFromBanner');
+                if(newBtn) newBtn.onclick = () => showUpgradeScreen();
+            } else {
+                bannerDiv.innerHTML = `<span>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</span>
+                                        <button class="go-pro-btn-sm" id="goProFromBanner">GO PRO</button>`;
+                const newBtn = document.getElementById('goProFromBanner');
+                if(newBtn) newBtn.onclick = () => showUpgradeScreen();
             }
         }
-
-        function createAccount(){
-            const name=document.getElementById('fullName').value.trim();
-            const phone=document.getElementById('signupPhone').value.trim();
-            const pwd=document.getElementById('signupPass').value;
-            const confirm=document.getElementById('signupConfirm').value;
-            if(!name){showToast('Enter full name','error');return;}
-            if(!phone||phone.length!==12||!phone.startsWith('254')){showToast('Valid phone: 254XXXXXXXXX','error');return;}
-            if(pwd.length<6){showToast('Password min 6 chars','error');return;}
-            if(pwd!==confirm){showToast('Passwords do not match','error');return;}
-            if(users[phone]){showToast('Phone already registered','error');return;}
-            users[phone]={fullName:name,password:pwd,tier:'free',createdAt:new Date().toISOString()};
-            localStorage.setItem('arbimine_users',JSON.stringify(users));
-            showToast('Account created! Please login.','success');
-            closeModal('signupModal');
-        }
-
-        function resetPassword(){
-            const phone=document.getElementById('resetPhone').value.trim();
-            if(!users[phone]){showToast('Phone not registered','error');return;}
-            const newPwd=prompt('Enter new password (min 6 chars):');
-            if(newPwd&&newPwd.length>=6){
-                users[phone].password=newPwd;
-                localStorage.setItem('arbimine_users',JSON.stringify(users));
-                showToast('Password reset! Please login.','success');
-                closeModal('forgotModal');
+    }
+    
+    // screen navigation
+    function showLogin() { setActiveScreen('loginScreen'); document.getElementById('bottomNav').style.display = 'none'; document.body.classList.add('no-nav'); }
+    function showDashboard() { 
+        setActiveScreen('dashboardScreen'); 
+        document.getElementById('bottomNav').style.display = 'flex'; 
+        document.body.classList.remove('no-nav');
+        renderOpportunities();
+    }
+    function showUpgradeScreen() { 
+        setActiveScreen('upgradeScreen'); 
+        document.getElementById('bottomNav').style.display = 'flex'; 
+        document.body.classList.remove('no-nav');
+    }
+    function showDetailScreen() { 
+        setActiveScreen('detailScreen'); 
+        document.getElementById('bottomNav').style.display = 'flex'; 
+        document.body.classList.remove('no-nav');
+        const profitSpan = document.getElementById('detailProfitLabel');
+        if (profitSpan) {
+            if (isPro) {
+                profitSpan.innerText = '2.0% (PRO unlocked) ✓';
+                profitSpan.style.color = '#2ECC71';
+            } else {
+                profitSpan.innerText = '[UPGRADE TO PRO]';
+                profitSpan.style.color = '#E67E22';
             }
         }
-
-        function processPayment(){
-            const plan=document.getElementById('planSelect').value;
-            let amount;
-            if(plan==='premium_weekly')amount=200;
-            else if(plan==='premium_monthly')amount=700;
-            else if(plan==='vip_weekly')amount=400;
-            else amount=1000;
-            showToast(`Send KES ${amount} to 0728 308602. Reference: ${currentUser}. Admin will activate.`,'success');
-            closeModal('upgradeModal');
+    }
+    
+    function setActiveScreen(screenId) {
+        const screens = ['loginScreen', 'dashboardScreen', 'upgradeScreen', 'detailScreen'];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        const activeEl = document.getElementById(screenId);
+        if (activeEl) activeEl.classList.add('active');
+    }
+    
+    // login logic
+    document.getElementById('doLoginBtn')?.addEventListener('click', () => {
+        const phone = document.getElementById('phoneInput').value.trim();
+        const pwd = document.getElementById('passwordInput').value;
+        if (phone.length > 0 && pwd.length > 0) {
+            // success 
+            showDashboard();
+        } else {
+            alert("Please enter phone number and password");
         }
-
-        function logout(){
-            currentUser=null;
-            localStorage.removeItem('arbimine_current_user');
-            document.getElementById('dashboard').style.display='none';
-            document.getElementById('loginPage').style.display='flex';
-            showToast('Logged out','info');
+    });
+    document.getElementById('createAccountLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert("Create account flow (demo): you would sign up. Redirecting to login after demo");
+    });
+    document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert("Password reset link sent to your phone (demo)");
+    });
+    
+    // Upgrade logic: continue upgrade sets pro = true and redirect to dashboard with pro features
+    document.getElementById('continueUpgradeBtn')?.addEventListener('click', () => {
+        isPro = true;
+        // after upgrading, show dashboard with full PRO benefits
+        showDashboard();
+        renderOpportunities(); // refresh, profit >2% now visible
+        // also if there is any active detail update, now profit unlocked
+        if (document.getElementById('detailScreen').classList.contains('active')) {
+            const profitSpan = document.getElementById('detailProfitLabel');
+            if (profitSpan) profitSpan.innerText = '2.0% (UNLOCKED) ✓';
         }
-
-        document.getElementById('loginBtn').onclick=handleLogin;
-        document.getElementById('showSignupLink').onclick=()=>showModal('signupModal');
-        document.getElementById('showForgotLink').onclick=()=>showModal('forgotModal');
-        document.getElementById('createAccountBtn').onclick=createAccount;
-        document.getElementById('resetPasswordBtn').onclick=resetPassword;
-        document.getElementById('processPaymentBtn').onclick=processPayment;
-        document.getElementById('logoutBtn').onclick=logout;
-        document.getElementById('upgradeBannerBtn').onclick=()=>{document.getElementById('paymentPhoneRef').innerText=currentUser;showModal('upgradeModal');};
-        document.getElementById('refreshBtn').onclick=scanAllExchanges;
-        document.getElementById('searchInput').addEventListener('input',()=>renderOpportunities());
-        document.getElementById('backToListBtn').onclick=backToList;
-        document.getElementById('copyReferralBtn').onclick=()=>{navigator.clipboard.writeText(document.getElementById('referralLink').innerText);showToast('Referral link copied!','success');};
-        
-        document.getElementById('navHome').onclick=()=>{
-            document.getElementById('homeSection').style.display='block';
-            document.getElementById('detailView').style.display='none';
-            document.getElementById('profileSection').style.display='none';
-            document.querySelectorAll('.footer-nav a').forEach(a=>a.classList.remove('active'));
-            document.getElementById('navHome').classList.add('active');
-        };
-        document.getElementById('navGoPro').onclick=()=>{document.getElementById('paymentPhoneRef').innerText=currentUser;showModal('upgradeModal');};
-        document.getElementById('navChat').onclick=()=>showToast('💬 Chat Room coming soon!','info');
-        document.getElementById('navProfile').onclick=()=>{
-            document.getElementById('homeSection').style.display='none';
-            document.getElementById('detailView').style.display='none';
-            document.getElementById('profileSection').style.display='block';
-            document.querySelectorAll('.footer-nav a').forEach(a=>a.classList.remove('active'));
-            document.getElementById('navProfile').classList.add('active');
-            updateProfileDisplay();
-        };
-
-        initExchangeStrip();
-    </script>
+    });
+    
+    // bottom nav handlers
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const navValue = btn.getAttribute('data-nav');
+            if (navValue === 'dashboard') showDashboard();
+            else if (navValue === 'upgrade') showUpgradeScreen();
+            else if (navValue === 'chat') alert("💬 Chat room coming soon — connect with other arbitrage hunters!");
+            else if (navValue === 'profile') alert("👤 Profile: premium settings, API keys (coming soon).");
+        });
+    });
+    
+    // go pro from banner or any place
+    const goProBtn = document.getElementById('goProFromBanner');
+    if(goProBtn) goProBtn.onclick = () => showUpgradeScreen();
+    document.getElementById('backFromDetailBtn')?.addEventListener('click', () => {
+        showDashboard();
+        renderOpportunities();
+    });
+    
+    // bind exchange simulation
+    document.getElementById('checkKuCoinBtn')?.addEventListener('click', () => alert("KuCoin order book: ITHACA/USDT ask 0.0025766, withdraw BSC fee $0.32"));
+    document.getElementById('fetchContractsBtn')?.addEventListener('click', () => alert("ITHACA Contract: 0x...BSC // Always verify before trade."));
+    
+    // simulate user not pro default — start with login
+    function init() {
+        isPro = false;
+        showLogin();
+        // make sure bottom nav hidden on login
+        document.getElementById('bottomNav').style.display = 'none';
+        document.body.classList.add('no-nav');
+        // extra call: render opportunities for later
+        renderOpportunities();
+    }
+    init();
+    
+    // Dynamic adjustments to support "UPGRADE TO PRO" button inside any section
+    if(typeof handleUpgradeFromDetail !== 'undefined'){}
+    // clean
+</script>
 </body>
-    </html>
+            </html>
