@@ -1,399 +1,385 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARBIMINE – 15 Exchange Arbitrage Scanner</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3a 50%, #24243e 100%);
-            min-height: 100vh; color: white;
-        }
-       .login-page {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3a 50%, #24243e 100%);
-            display: flex; justify-content: center; align-items: center; z-index: 1000;
-        }
-       .login-card {
-            background: rgba(20, 20, 45, 0.85); backdrop-filter: blur(20px);
-            border-radius: 40px; padding: 50px 45px; width: 100%; max-width: 480px;
-            border: 1px solid rgba(255, 215, 0, 0.3); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-       .logo-section { margin-bottom: 35px; }
-       .logo-icon { font-size: 55px; margin-bottom: 8px; }
-       .logo-section h1 {
-            font-size: 42px; font-weight: 800; letter-spacing: 2px;
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            -webkit-background-clip: text; background-clip: text; color: transparent;
-        }
-       .tagline { font-size: 11px; color: rgba(255, 255, 255, 0.5); letter-spacing: 2px; margin-top: 6px; }
-       .welcome-section { margin-bottom: 30px; }
-       .welcome-section h2 { font-size: 28px; font-weight: 600; color: white; margin-bottom: 6px; }
-       .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; }
-       .input-group { margin-bottom: 18px; text-align: left; }
-       .input-group input {
-            width: 100%; padding: 15px 20px; background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50px; color: white; font-size: 15px;
-        }
-       .input-group input:focus { outline: none; border-color: #FFD700; }
-       .login-btn {
-            width: 100%; padding: 15px; background: linear-gradient(95deg, #667eea, #764ba2);
-            border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 8px;
-        }
-       .login-btn:hover { transform: scale(1.02); }
-       .auth-links { display: flex; justify-content: center; gap: 25px; margin-top: 25px; flex-wrap: wrap; }
-       .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
-       .footer-copyright { text-align: center; margin-top: 35px; font-size: 10px; color: rgba(255, 255, 255, 0.3); }
-       .bottom-logo { text-align: center; margin-top: 20px; }
-       .bottom-logo h3 { font-size: 14px; color: #FFD700; letter-spacing: 1px; }
-       .bottom-logo p { font-size: 9px; color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; margin-top: 4px; }
-       .error-msg { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; }
-       .dashboard { display: none; min-height: 100vh; background: #0a0a1a; }
-       .dashboard-header {
-            background: rgba(0,0,0,0.9); padding: 15px 20px; display: flex; justify-content: space-between;
-            align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #2a2a4a; position: sticky; top: 0; z-index: 100;
-        }
-       .logo-small { font-size: 22px; font-weight: bold; color: #FFD700; }
-       .user-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-       .expiry-badge { background: #f59e0b; color: #000; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-       .logout-btn { background: #ef4444; border: none; padding: 6px 16px; border-radius: 30px; color: white; cursor: pointer; }
-       .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; max-height: 120px; overflow-y: auto; }
-       .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; cursor: pointer; white-space: nowrap; }
-       .exchange-badge:hover { background: #FFD700; color: #000; }
-       .upgrade-banner { background: linear-gradient(135deg, #1a1a2e, #121521); margin: 15px; padding: 18px; border-radius: 15px; text-align: center; border: 1px solid #f5576c; }
-       .upgrade-banner h3 { color: #FFD700; font-size: 15px; margin-bottom: 8px; }
-       .pro-btn { background: linear-gradient(135deg, #f093fb, #f5576c); border: none; padding: 10px 25px; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; }
-       .search-bar { padding: 12px 15px; background: #0a0c14; border-bottom: 1px solid #2a2d3e; }
-       .search-input { width: 100%; padding: 10px 18px; background: #121521; border: 1px solid #2a2d3e; border-radius: 30px; color: white; font-size: 14px; }
-       .action-buttons { display: flex; gap: 10px; justify-content: center; padding: 10px; flex-wrap: wrap; }
-       .action-btn { background: linear-gradient(135deg, #667eea, #764ba2); border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; }
-       .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-       .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; flex-wrap: wrap; }
-       .stat { text-align: center; }
-       .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; }
-       .stat-label { font-size: 10px; color: #888; }
-       .pricing-row { display: flex; justify-content: center; gap: 15px; margin: 10px; flex-wrap: wrap; }
-       .price-card { background: #121521; border: 1px solid #f5576c; border-radius: 15px; padding: 12px 20px; text-align: center; min-width: 140px; }
-       .price-card.premium { border-color: #f093fb; }
-       .price-card.vip { border-color: #FFD700; }
-       .price-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-       .price-amount { font-size: 20px; font-weight: bold; color: #FFD700; }
-       .price-duration { font-size: 10px; color: #888; }
-       .opportunities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; padding: 15px; margin-bottom: 70px; }
-       .card { background: #121521; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; transition: 0.3s; cursor: pointer; }
-       .card:hover { border-color: #FFD700; transform: translateX(4px); }
-       .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-       .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-       .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-       .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
-       .live-badge { background: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
-       .card-details { margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2d3e; font-size: 11px; color: #888; display: flex; justify-content: space-between; flex-wrap: wrap; }
-       .detail-view { padding: 20px; margin-bottom: 70px; }
-       .detail-header { margin-bottom: 20px; }
-       .detail-profit { font-size: 28px; font-weight: bold; color: #10b981; }
-       .detail-section { background: #121521; border-radius: 18px; padding: 18px; margin-bottom: 18px; border: 1px solid #2a2d3e; }
-       .detail-section h4 { color: #FFD700; margin-bottom: 12px; font-size: 16px; }
-       .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2d3e; }
-       .detail-label { color: #888; }
-       .detail-value { color: white; font-weight: 500; }
-       .warning-text { color: #f59e0b; font-size: 11px; margin-top: 15px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 12px; }
-       .detail-buttons { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
-       .detail-btn { flex: 1; padding: 10px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
-       .back-btn { background: rgba(255,255,255,0.1); border: none; padding: 8px 18px; border-radius: 25px; color: white; cursor: pointer; margin-bottom: 15px; }
-       .profile-container { max-width: 480px; margin: 20px auto; background: #121521; border-radius: 25px; padding: 20px; border: 1px solid #2a2d3e; margin-bottom: 80px; }
-       .profile-field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2a2d3e; }
-       .profile-label { color: #888; }
-       .profile-value { color: #FFD700; font-weight: 500; }
-       .referral-box { background: #0a0c14; padding: 10px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-       .copy-btn { background: #667eea; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; }
-       .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0a0c14; padding: 10px 20px; display: flex; justify-content: space-around; border-top: 1px solid #2a2d3e; z-index: 100; }
-       .footer-nav a { color: white; text-decoration: none; font-size: 13px; padding: 8px 0; text-align: center; flex: 1; cursor: pointer; }
-       .footer-nav a.active { color: #FFD700; }
-       .loading { text-align: center; padding: 40px; color: #888; }
-       .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
-       .toast { position: fixed; top: 20px; right: 20px; background: #1a1a2e; border-left: 4px solid #10b981; padding: 12px 20px; border-radius: 10px; color: white; z-index: 3000; transform: translateX(120%); transition: transform 0.3s; }
-       .toast.show { transform: translateX(0); }
-       .toast.error { border-left-color: #ef4444; }
-       .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 2000; justify-content: center; align-items: center; }
-       .modal-card { background: linear-gradient(145deg, #1a1a2e, #12122c); border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 90%; border: 1px solid #FFD700; position: relative; }
-       .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
-       .modal-card input,.modal-card select { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 25px; color: white; }
-       .modal-btn { width: 100%; padding: 12px; background: #10b981; border: none; border-radius: 30px; color: white; font-weight: bold; margin-top: 15px; cursor: pointer; }
-       .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
-        @media (max-width: 550px) {
-           .login-card { padding: 35px 25px; }
-           .card-header { flex-direction: column; align-items: flex-start; }
-           .profit-value { align-self: flex-end; }
-           .opportunities-grid { grid-template-columns: 1fr; }
-           .pricing-row { flex-direction: column; align-items: center; }
-           .exchange-strip { max-height: 80px; }
-        }
-    </style>
-</head>
-<body>
-    <div id="toastContainer"></div>
-    <div id="loginPage" class="login-page">
-        <div class="login-card">
-            <div class="logo-section">
-                <div class="logo-icon">⚡</div>
-                <h1>ARBIMINE</h1>
-                <div class="tagline">FIND. ANALYZE. PROFIT.</div>
-            </div>
-            <div class="welcome-section">
-                <h2>Welcome Back!</h2>
-                <p>Log in to continue to your account</p>
-            </div>
-            <div id="loginErrorMsg" class="error-msg" style="display: none;"></div>
-            <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number"></div>
-            <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
-            <button class="login-btn" id="loginBtn">LOG IN</button>
-            <div class="auth-links">
-                <a id="showSignupLink">Create Account</a>
-                <a id="showForgotLink">Forgot Password?</a>
-            </div>
-            <div class="footer-copyright">© 2025 Arbimine, All rights reserved.</div>
-            <div class="bottom-logo"><h3>ARBIMINE</h3><p>FIND. ANALYZE. PROFIT.</p></div>
-        </div>
-    </div>
-    <div id="signupModal" class="modal">
-        <div class="modal-card">
-            <span class="close-modal" onclick="closeModal('signupModal')">&times;</span>
-            <h3>Create Account</h3>
-            <input type="text" id="fullName" placeholder="Full Name">
-            <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
-            <input type="password" id="signupPass" placeholder="Password (min 6 chars)">
-            <input type="password" id="signupConfirm" placeholder="Confirm Password">
-            <button class="modal-btn" id="createAccountBtn">CREATE ACCOUNT</button>
-        </div>
-    <div id="forgotModal" class="modal">
-        <div class="modal-card">
-            <span class="close-modal" onclick="closeModal('forgotModal')">&times;</span>
-            <h3>Reset Password</h3>
-            <input type="tel" id="resetPhone" placeholder="Phone Number">
-            <button class="modal-btn" id="resetPasswordBtn">RESET PASSWORD</button>
-        </div>
-    </div>
-    <div id="upgradeModal" class="modal">
-        <div class="modal-card">
-            <span class="close-modal" onclick="closeModal('upgradeModal')">&times;</span>
-            <h3>⭐ UPGRADE YOUR PLAN</h3>
-            <select id="planSelect">
-                <option value="premium_monthly">⭐ PREMIUM MONTHLY - KES 700 (30 days)</option>
-                <option value="vip_weekly">👑 VIP WEEKLY - KES 400 (7 days)</option>
-                <option value="vip_monthly">👑 VIP MONTHLY - KES 1,400 (30 days)</option>
-            </select>
-            <div class="pricing-row" style="margin: 15px 0;">
-                <div class="price-card premium"><div class="price-title">⭐ PREMIUM</div><div class="price-amount">KES 700</div><div class="price-duration">per month (30 days)</div></div>
-                <div class="price-card vip"><div class="price-title">👑 VIP WEEKLY</div><div class="price-amount">KES 400</div><div class="price-duration">per week (7 days)</div></div>
-                <div class="price-card vip"><div class="price-title">👑 VIP MONTHLY</div><div class="price-amount">KES 1,400</div><div class="price-duration">per month (30 days)</div></div>
-            </div>
-            <div style="margin: 15px 0; text-align: center;">
-                <p>📱 Send payment to: <strong style="color:#FFD700">0728 308602</strong></p>
-                <p>📝 Reference: <strong id="paymentPhoneRef"></strong></p>
-            </div>
-            <button class="modal-btn" id="processPaymentBtn">💳 CONFIRM PAYMENT</button>
-        </div>
-    </div>
-    <div id="dashboard" class="dashboard">
-        <div class="dashboard-header">
-            <div class="logo-small">⚡ ARBIMINE PRO</div>
-            <div class="user-info">
-                <span id="userPhoneLabel"></span>
-                <span id="expiryTimer" class="expiry-badge">🆓 FREE</span>
-                <button id="logoutBtn" class="logout-btn">Logout</button>
-            </div>
-        <div class="exchange-strip" id="exchangeStrip"></div>
-        <div class="stats-row">
-            <div class="stat"><div class="stat-number" id="statExchanges">15</div><div class="stat-label">EXCHANGES</div></div>
-            <div class="stat"><div class="stat-number" id="statCoins">20</div><div class="stat-label">COINS</div></div>
-            <div class="stat"><div class="stat-number" id="statOpportunities">0</div><div class="stat-label">OPPORTUNITIES</div></div>
-        </div>
-        <div class="search-bar"><input type="text" id="searchInput" class="search-input" placeholder="🔍 Search coin... (BTC, ETH, SOL)"></div>
-        <div class="action-buttons"><button class="action-btn" id="refreshBtn">🔄 Scan Now</button></div>
-        <div class="scan-status" id="scanStatus">⚡ Click 'Scan Now' to find arbitrage opportunities</div>
-        <div id="homeSection">
-            <div class="upgrade-banner">
-                <h3>🔒 Upgrade to PRO to Discover Profit Opportunities Above 2% 🔒</h3>
-                <button class="pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button>
-            </div>
-            <div class="pricing-row">
-                <div class="price-card premium"><div class="price-title">⭐ PREMIUM</div><div class="price-amount">KES 700</div><div class="price-duration">per month (30 days)</div></div>
-                <div class="price-card vip"><div class="price-title">👑 VIP WEEKLY</div><div class="price-amount">KES 400</div><div class="price-duration">per week (7 days)</div></div>
-                <div class="price-card vip"><div class="price-title">👑 VIP MONTHLY</div><div class="price-amount">KES 1,400</div><div class="price-duration">per month (30 days)</div></div>
-            </div>
-            <div id="opportunitiesList" class="opportunities-grid"><div class="loading">⚡ Click 'Scan Now' to scan 15 exchanges</div></div>
-        </div>
-        <div id="detailView" style="display:none;">
-            <div class="detail-view">
-                <button class="back-btn" id="backToListBtn">← Back to Opportunities</button>
-                <div id="detailContent"></div>
-            </div>
-        </div>
-        <div id="profileSection" style="display:none;">
-            <div class="profile-container">
-                <div class="profile-field"><span class="profile-label">📱 Phone</span><span class="profile-value" id="profilePhone"></span></div>
-                <div class="profile-field"><span class="profile-label">⭐ Tier</span><span class="profile-value" id="profileTier"></span></div>
-                <div class="profile-field"><span class="profile-label">📅 Expiry</span><span class="profile-value" id="profileExpiry"></span></div>
-                <div class="profile-field"><span class="profile-label">📆 Member Since</span><span class="profile-value" id="profileSince"></span></div>
-                <div class="referral-box">
-                    <span class="referral-link" id="referralLink">Loading...</span>
-                    <button class="copy-btn" id="copyReferralBtn">📋 Copy</button>
-                </div>
-            </div>
-        <div class="footer-nav">
-            <a id="navHome" class="active">🏠 Home</a>
-            <a id="navGoPro">⭐ GO PRO</a>
-            <a id="navChat">💬 Chat Room</a>
-            <a id="navProfile">👤 Profile</a>
-        </div>
-    </div>
-    <script>
-        const BACKEND_URL = 'https://arbimine-api.onrender.com'; // CHANGE THIS AFTER DEPLOYING BACKEND
-        let currentUser = null;
-        const exchanges = ['Binance', 'KuCoin', 'Bybit', 'OKX', 'Gate.io', 'MEXC', 'Bitget', 'BingX', 'Kraken', 'Huobi', 'Bitfinex', 'Crypto.com', 'WhiteBIT', 'Poloniex', 'Bitstamp'];
-        let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-        let currentOpportunities = [];
-        let currentSearchTerm = '';
-        let isScanning = false;
-        let lastScanTime = 0;
+// server.js
 
-        function initExchangeStrip() {
-            const strip = document.getElementById('exchangeStrip');
-            if (!strip) return;
-            strip.innerHTML = '';
-            exchanges.forEach(ex => {
-                const badge = document.createElement('span');
-                badge.className = 'exchange-badge';
-                badge.textContent = ex;
-                badge.onclick = () => {
-                    const url = `https://www.${ex.toLowerCase().replace(/\./g, '').replace(/ /g, '')}.com`;
-                    window.open(url, '_blank');
-                };
-                strip.appendChild(badge);
-            });
-            document.getElementById('statExchanges').innerText = exchanges.length;
+const express = require("express");
+const axios = require("axios");
+
+const app = express();
+app.use(express.json());
+app.use((req, res, next) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
+
+const PORT = 3000;
+
+// === 1. Exchange list (15 exchanges) ===
+const EXCHANGES = [
+  { id: "binance", name: "Binance", baseUrl: "https://api.binance.com" },
+  { id: "kucoin", name: "KuCoin", baseUrl: "https://api.kucoin.com" },
+  { id: "bybit", name: "Bybit", baseUrl: "https://api.bybit.com" },
+  { id: "okx", name: "OKX", baseUrl: "https://www.okx.com" },
+  { id: "gate", name: "Gate.io", baseUrl: "https://api.gateio.ws" },
+  { id: "mexc", name: "MEXC", baseUrl: "https://api.mexc.com" },
+  { id: "bitfinex", name: "Bitfinex", baseUrl: "https://api-pub.bitfinex.com" },
+  { id: "kraken", name: "Kraken", baseUrl: "https://api.kraken.com" },
+  { id: "crypto_com", name: "Crypto.com", baseUrl: "https://api.crypto.com" },
+  { id: "whitebit", name: "WhiteBIT", baseUrl: "https://api.whitebit.com" },
+  { id: "poloniex", name: "Poloniex", baseUrl: "https://api.poloniex.com" },
+  { id: "bitstamp", name: "Bitstamp", baseUrl: "https://www.bitstamp.net" },
+  { id: "huobi", name: "HTX", baseUrl: "https://api.huobi.pro" },
+  { id: "bitget", name: "Bitget", baseUrl: "https://api.bitget.com" },
+  { id: "bingx", name: "BingX", baseUrl: "https://openapi.bingx.com" },
+];
+
+// === 2. Normalize coin pair (e.g., BTC‑USDT) ===
+function normalizePair(base, quote = "USDT") {
+  base = base.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  quote = quote.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return `${base}-${quote}`;
+}
+
+function parsePair(symbol) {
+  symbol = symbol.toUpperCase();
+  const pairs = [{ regex: /USDT$/, quote: "USDT" }];
+  for (const p of pairs) {
+    const m = symbol.match(p.regex);
+    if (m) {
+      const pre = symbol.slice(0, m.index);
+      const base = pre.replace(/USDT|USDC|USD/, "").replace(/[^A-Z0-9]/g, "");
+      const quote = p.quote;
+      return { base: base || "BTC", quote };
+    }
+  }
+  return { base: "BTC", quote: "USDT" };
+}
+
+// === 3. Get all spot pairs across all 15 exchanges ===
+async function getAllSpotPairs() {
+  const allPairs = new Set();
+  const batchSize = 5;
+  const batch = [];
+
+  for (const ex of EXCHANGES) {
+    batch.push(async () => {
+      try {
+        let res;
+
+        if (ex.id === "binance") {
+          res = await axios.get(`${ex.baseUrl}/api/v3/exchangeInfo`);
+          res.data.symbols.forEach((s) => {
+            const raw = s.symbol; // e.g. "BTCUSDT"
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "kucoin") {
+          res = await axios.get(`${ex.baseUrl}/api/v2/symbols`);
+          res.data.data.forEach((s) => {
+            const raw = s.symbol;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "bybit") {
+          res = await axios.get(`${ex.baseUrl}/v5/market/tickers?category=spot`);
+          res.data.result.data.forEach((t) => {
+            const raw = t.symbol;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "okx") {
+          res = await axios.get(`${ex.baseUrl}/api/v5/market/tickers?instType=SPOT`);
+          res.data.data.forEach((t) => {
+            const raw = t.instId; // BTC-USDT
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "gate") {
+          res = await axios.get(`${ex.baseUrl}/api/v4/spot/tickers`);
+          res.data.forEach((t) => {
+            const raw = t.currency_pair;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "mexc") {
+          res = await axios.get(`${ex.baseUrl}/api/v3/ticker/24hr`);
+          res.data.forEach((t) => {
+            const raw = t.symbol;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "bitfinex") {
+          res = await axios.get(`${ex.baseUrl}/v2/tickers?symbols=ALL`);
+          res.data.forEach((t) => {
+            const sym = t[0] || "";
+            const raw = sym.replace("t", "").replace("fUSD", "");
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "kraken") {
+          res = await axios.get(`${ex.baseUrl}/0/public/AssetPairs`);
+          Object.keys(res.data.result).forEach((pair) => {
+            const { base, quote } = parsePair(pair);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "crypto_com") {
+          res = await axios.get(`${ex.baseUrl}/v2/public/get-ticker`);
+          res.data.result.forEach((m) => {
+            const raw = m.instrument_name;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "whitebit") {
+          res = await axios.get(`${ex.baseUrl}/v2/public/ticker`);
+          Object.keys(res.data).forEach((pair) => {
+            const { base, quote } = parsePair(pair);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "poloniex") {
+          res = await axios.get(`${ex.baseUrl}/public?command=returnTicker`);
+          Object.keys(res.data).forEach((pair) => {
+            const p = res.data[pair];
+            if (!p.last || parseFloat(p.last) === 0) return;
+            const { base, quote } = parsePair(pair);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "bitstamp") {
+          res = await axios.get(`${ex.baseUrl}/api/v2/ticker`);
+          const p = res.data;
+          if (p.last && parseFloat(p.last) !== 0) {
+            const raw = "BTCUSD";
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          }
+        } else if (ex.id === "huobi") {
+          res = await axios.get(`${ex.baseUrl}/v2/settings/common/symbols`);
+          res.data.data.forEach((s) => {
+            const raw = s.baseCurrency + s.quoteCurrency;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "bitget") {
+          res = await axios.get(`${ex.baseUrl}/api/v2/spot/market/tickers`);
+          res.data.data.forEach((t) => {
+            const raw = t.symbol;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
+        } else if (ex.id === "bingx") {
+          res = await axios.get(`${ex.baseUrl}/openApi/spot/v1/ticker/24hr`);
+          res.data.data.forEach((t) => {
+            const raw = t.symbol;
+            const { base, quote } = parsePair(raw);
+            const n = normalizePair(base, quote);
+            allPairs.add(n);
+          });
         }
+      } catch (e) {
+        console.warn(`[${ex.name}] getAllSpotPairs failed`, e.message);
+      }
+    });
+  }
 
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+  // Run in small batches to avoid rate‑limit spikes
+  for (let i = 0; i < batch.length; i += batchSize) {
+    const slice = batch.slice(i, i + batchSize);
+    await Promise.all(slice.map((fn) => fn()));
+  }
+
+  return Array.from(allPairs);
+}
+
+// === 4. Get real prices for a list of coins (BTC‑USDT, ETH‑USDT, etc.) ===
+async function getPricesForCoins(coins) {
+  const feeRate = 0.002; // 0.2% per trade
+  const priceByExchange = {};
+  const batchSize = 5;
+  const batch = [];
+
+  EXCHANGES.forEach((ex) => {
+    priceByExchange[ex.id] = {};
+  });
+
+  for (const coin of coins) {
+    const base = coin.split("-")[0];
+    const quote = coin.split("-")[1];
+
+    batch.push(async () => {
+      const et = {}; // ex_id → price
+
+      for (const ex of EXCHANGES) {
+        let url, p;
+
+        try {
+          if (ex.id === "binance") {
+            url = `${ex.baseUrl}/api/v3/ticker/price?symbol=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.price);
+          } else if (ex.id === "kucoin") {
+            url = `${ex.baseUrl}/api/v2/ticker/price?symbol=${base}-${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.data.price);
+          } else if (ex.id === "bybit") {
+            url = `${ex.baseUrl}/v5/market/tickers?category=spot&symbol=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.result.data[0].lastPrice);
+          } else if (ex.id === "okx") {
+            url = `${ex.baseUrl}/api/v5/market/ticker?instId=${base}-${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.data[0].last);
+          } else if (ex.id === "gate") {
+            url = `${ex.baseUrl}/api/v4/spot/ticker?currency_pair=${base}_${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.last);
+          } else if (ex.id === "mexc") {
+            url = `${ex.baseUrl}/api/v3/ticker/price?symbol=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.price);
+          } else if (ex.id === "bitfinex") {
+            const sym = `t${base}${quote}`;
+            url = `${ex.baseUrl}/v2/tickers?symbols=${sym}`;
+            const res = await axios.get(url);
+            const row = res.data[0];
+            p = parseFloat(row[7]); // last price
+          } else if (ex.id === "kraken") {
+            const pair = `${base}${quote}`;
+            url = `${ex.baseUrl}/0/public/Ticker?pair=${pair}`;
+            const res = await axios.get(url);
+            const key = Object.keys(res.data.result)[0];
+            const c = res.data.result[key].c;
+            p = parseFloat(c[0]);
+          } else if (ex.id === "crypto_com") {
+            url = `${ex.baseUrl}/v2/public/get-ticker?instrument_name=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.result.data[0].last);
+          } else if (ex.id === "whitebit") {
+            url = `${ex.baseUrl}/v2/public/ticker/${base}_${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.last);
+          } else if (ex.id === "poloniex") {
+            url = `${ex.baseUrl}/public?command=returnTicker`;
+            const res = await axios.get(url);
+            const pair = `${base}_${quote}`;
+            const t = res.data[pair];
+            if (t && t.last) p = parseFloat(t.last);
+          } else if (ex.id === "bitstamp") {
+            url = `${ex.baseUrl}/api/v2/ticker/${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.last);
+          } else if (ex.id === "huobi") {
+            const sym = `${base}${quote}`;
+            url = `${ex.baseUrl}/market/detail/merged?symbol=${sym}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.tick.close);
+          } else if (ex.id === "bitget") {
+            url = `${ex.baseUrl}/api/v2/spot/market/ticker?symbol=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.data[0].last);
+          } else if (ex.id === "bingx") {
+            url = `${ex.baseUrl}/openApi/spot/v1/ticker/price?symbol=${base}${quote}`;
+            const res = await axios.get(url);
+            p = parseFloat(res.data.data[0].price);
+          }
+
+          if (!isNaN(p) && p > 0) {
+            et[ex.id] = p;
+          }
+        } catch (e) {
+          console.warn(`[${ex.name}] price ${coin} failed`, e.message);
         }
+      }
 
-        function closeModal(id) { const modal = document.getElementById(id); if (modal) modal.style.display = 'none'; }
-        function showModal(id) { const modal = document.getElementById(id); if (modal) modal.style.display = 'flex'; }
+      // For each coin, store prices per exchange
+      et.coin = coin;
+      priceByExchange.coin = et;
+    });
+  }
 
-        async function scanAllExchanges() {
-            if (isScanning) return;
-            if (Date.now() - lastScanTime < 10000) {
-                showToast('Please wait 10s between scans', 'warning');
-                return;
-            }
-            isScanning = true;
-            lastScanTime = Date.now();
-            const refreshBtn = document.getElementById('refreshBtn');
-            const scanStatus = document.getElementById('scanStatus');
-            const container = document.getElementById('opportunitiesList');
-            if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerText = '⏳ Scanning...'; }
-            if (container) container.innerHTML = '<div class="loading">🔍 Scanning 15 exchanges...</div>';
-            if (scanStatus) scanStatus.innerHTML = '⏳ Scanning...';
-            try {
-                const res = await fetch(`${BACKEND_URL}/scan`);
-                if (!res.ok) throw new Error('Backend error');
-                const result = await res.json();
-                currentOpportunities = result.data;
-                document.getElementById('statOpportunities').innerText = currentOpportunities.length;
-                if (scanStatus) scanStatus.innerHTML = `✅ Found ${currentOpportunities.length} opportunities in ${result.scanTime}ms`;
-                renderOpportunities();
-            } catch (e) {
-                showToast('Backend waking up. Try again in 30s', 'error');
-                if (scanStatus) scanStatus.innerHTML = '❌ Scan failed. Backend may be sleeping';
-            }
-            isScanning = false;
-            if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.innerText = '🔄 Scan Now'; }
-        }
+  // Run in small batches
+  for (let i = 0; i < batch.length; i += batchSize) {
+    const slice = batch.slice(i, i + batchSize);
+    await Promise.all(slice.map((fn) => fn()));
+  }
 
-        function renderOpportunities() {
-            const container = document.getElementById('opportunitiesList');
-            if (!container) return;
-            const user = users[currentUser] || { tier: 'free' };
-            const isPremium = user.tier === 'premium' || user.tier === 'vip';
-            let filtered = currentOpportunities;
-            if (currentSearchTerm) filtered = currentOpportunities.filter(opp => opp.coin.toLowerCase().includes(currentSearchTerm.toLowerCase()));
-            let html = ''; let count = 0;
-            for (let opp of filtered) {
-                if (opp.isPremiumOnly &&!isPremium) continue;
-                count++;
-                html += `<div class="card" onclick='showDetailView(${currentOpportunities.indexOf(opp)})'>
-                    <div class="card-header"><div><span class="buy-badge">BUY ${opp.buyEx}</span><span> → </span><span class="sell-badge">SELL ${opp.sellEx}</span></div>
-                    <div class="profit-value">${opp.profit}% <span class="live-badge">LIVE</span></div></div>
-                    <div>💰 ${opp.coin}/USDT</div>
-                    <div style="font-size:11px; margin-top:5px;">💡 Buy @ $${opp.buyPrice} → Sell @ $${opp.sellPrice}</div>
-                    <div class="card-details"><span>📊 Gross: ${opp.grossProfit}%</span><span>🔸 After 0.2% fees: ${opp.profit}%</span></div>
-                </div>`;
-            }
-            if (count === 0 && currentOpportunities.length > 0) {
-                html = `<div class="upgrade-banner" style="margin:0;"><h3>🔒 ${currentOpportunities.length} opportunities found above 2%! Upgrade to see them 🔒</h3><button class="pro-btn" onclick="showModal('upgradeModal')">⭐ GO PRO</button></div>`;
-            } else if (count === 0) {
-                html = '<div class="loading">⏳ No arbitrage opportunities found. Click "Scan Now" to check live prices.</div>';
-            }
-            container.innerHTML = html;
-        }
+  return priceByExchange;
+}
 
-        window.showDetailView = function(index) {
-            const opp = currentOpportunities[index];
-            if (!opp) return;
-            const user = users[currentUser] || { tier: 'free' };
-            const isPremium = user.tier === 'premium' || user.tier === 'vip';
-            if (parseFloat(opp.profit) > 2 &&!isPremium) {
-                showToast('Upgrade to PRO to view details!', 'error');
-                showModal('upgradeModal');
-                return;
-            }
-            const buyUrl = `https://www.${opp.buyEx.toLowerCase().replace(/\./g, '').replace(/ /g, '')}.com`;
-            const sellUrl = `https://www.${opp.sellEx.toLowerCase().replace(/\./g, '').replace(/ /g, '')}.com`;
-            const detailHtml = `<div class="detail-header"><div class="detail-profit">${opp.profit}% SPREAD</div>
-                <div style="font-size: 22px; font-weight: bold;">${opp.coin}-USDT</div>
-                <div style="color: #888; font-size: 11px;">Real-time spot price | After 0.2% fees</div></div>
-                <div class="detail-section"><h4>1. Buy at ${opp.buyEx}</h4>
-                <div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.buyPrice}</span></div>
-                <div class="detail-buttons"><a href="${buyUrl}" target="_blank" class="detail-btn">BUY ON ${opp.buyEx.toUpperCase()}</a></div></div>
-                <div class="detail-section"><h4>2. Sell on ${opp.sellEx}</h4>
-                <div class="detail-row"><span class="detail-label">Price:</span><span class="detail-value">$${opp.sellPrice}</span></div>
-                <div class="detail-buttons"><a href="${sellUrl}" target="_blank" class="detail-btn">SELL ON ${opp.sellEx.toUpperCase()}</a></div></div>
-                <div class="warning-text">⚠️ Spot trading arbitrage. Profit shown is after estimated 0.2% fees.<br>Act Fast: Opportunities last 10 to 15 minutes. Check withdrawal times and fees before trading.</div>`;
-            document.getElementById('detailContent').innerHTML = detailHtml;
-            document.getElementById('homeSection').style.display = 'none';
-            document.getElementById('detailView').style.display = 'block';
-            document.getElementById('profileSection').style.display = 'none';
-        };
+// === 5. Find arbitrage opportunities (15 exchanges, all coins) ===
+function findArbitrageOpportunities(prices) {
+  const opportunities = [];
+  const feeRate = 0.002; // 0.2% per trade
 
-        function backToList() {
-            document.getElementById('homeSection').style.display = 'block';
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'none';
-            document.querySelectorAll('.footer-nav a').forEach(a => a.classList.remove('active'));
-            document.getElementById('navHome').classList.add('active');
-        }
+  Object.keys(prices).forEach((coin) => {
+    const ps = prices[coin];
+    const exIds = Object.keys(ps).filter((k) => k !== "coin");
 
-        function updateProfileDisplay() {
-            const user = users[currentUser];
-            if (!user) return;
-            document.getElementById('profilePhone').innerText = currentUser;
-            document.getElementById('profileSince').innerText = user.createdAt? new Date(user.createdAt).toLocaleDateString() : '2025-01-01';
-            document.getElementById('referralLink').innerText = `https://arbimine.com/ref/${currentUser}`;
-            document.getElementById('paymentPhoneRef').innerText = currentUser;
-            const tierText = user.tier === 'premium'? '⭐ PREMIUM' : (user.tier === 'vip'? '👑 VIP' : '🆓 FREE');
-            document.getElementById('profileTier').innerHTML = tierText;
-            const expirySpan = document.getElementById('expiryTimer');
-            if (user.expiry && new Date(user.expiry) > new Date()) {
-                const daysLeft = Math.ceil((new Date(user.expiry) - new Date()) / (1000*60*60*24));
-                expirySpan.innerHTML = `⭐ Expires in ${daysLeft} days`;
-                document.getElementById
+    if (exIds.length < 2) return;
+
+    const exList = exIds.map((id) => ({ id, price: ps[id], name: EXCHANGES.find((e) => e.id === id)?.name || id }));
+
+    exList.sort((a, b) => a.price - b.price);
+
+    const buy = exList[0];
+    const sell = exList[exList.length - 1];
+
+    const gross = (sell.price - buy.price) / buy.price;
+    const net = gross - feeRate * 2; // 0.2% fee buy + 0.2% fee sell
+
+    if (net <= 0) return;
+
+    opportunities.push({
+      coin: coin.split("-")[0],
+      buyEx: buy.name,
+      sellEx: sell.name,
+      buyPrice: buy.price,
+      sellPrice: sell.price,
+      grossProfit: parseFloat((gross * 100).toFixed(3)),
+      profit: parseFloat((net * 100).toFixed(3)),
+      isPremiumOnly: net * 100 > 2, // Hide >2% from free tier
+    });
+  });
+
+  return opportunities.sort((a, b) => b.profit - a.profit);
+}
+
+// === 6. API route: /scan ===
+app.get("/scan", async (req, res) => {
+  try {
+    const start = Date.now();
+
+    // 1. Get all spot pairs (no auth needed)
+    const allCoins = await getAllSpotPairs();
+
+    // 2. Get live prices for all coins (filter to avoid insane rate limits)
+    const limitedCoins = allCoins.slice(0, 50); // tweak for your rate limits
+    const prices = await getPricesForCoins(limitedCoins);
+
+    // 3. Compute spreads
+    const opportunities = findArbitrageOpportunities(prices);
+
+    const elapsed = Date.now() - start;
+    res.json({
+      data: opportunities,
+      scanTime: elapsed,
+    });
+  } catch (e) {
+    console.error("scan error", e);
+    res.status(500).json({ data: [], scanTime: 0 });
+  }
+});
+
+// === 7. Start server ===
+app.listen(PORT
