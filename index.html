@@ -7,80 +7,81 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: white; }
-    .login-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a3a 0%, #0f0c29 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-    .login-card { background: rgba(30, 30, 60, 0.7); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; width: 100%; max-width: 420px; border: 1px solid rgba(120, 120, 200, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; }
-    .logo-section h1 { font-size: 38px; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 5px; }
-    .tagline { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 1px; margin-bottom: 35px; }
-    .welcome-section h2 { font-size: 26px; font-weight: 600; color: white; margin-bottom: 8px; }
-    .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 30px; }
-    .input-group input { width: 100%; padding: 14px 20px; background: rgba(20, 20, 40, 0.8); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 50px; color: white; font-size: 14px; margin-bottom: 16px; }
-    .input-group input::placeholder { color: rgba(255, 255, 255, 0.3); }
-    .input-group input:focus { outline: none; border-color: #667eea; }
-    .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #6a5af9, #d66efd); border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px; }
-    .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
-    .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
-    .footer-copyright { margin-top: 35px; font-size: 10px; color: rgba(255, 255, 255, 0.3); }
-    .error-msg { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
-    .dashboard { display: none; min-height: 100vh; background: #0a0a1a; }
-    .header { background: #FFD700; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: bold; position: sticky; top: 0; z-index: 100; }
-    .header-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    .expiry-badge { background: #000; color: #FFD700; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-    .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; }
-    .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; cursor: pointer; }
-    .upgrade-banner { background: #FFD700; margin: 15px; padding: 12px; border-radius: 15px; text-align: center; color: #000; font-weight: bold; }
-    .go-pro-btn { background: #000; color: #FFD700; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-    .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; }
-    .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; text-align: center; }
-    .stat-label { font-size: 10px; color: #888; text-align: center; }
-    .live-indicator { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite; }
+  .login-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a3a 0%, #0f0c29 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+  .login-card { background: rgba(30, 30, 60, 0.7); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; width: 100%; max-width: 420px; border: 1px solid rgba(120, 120, 200, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; }
+  .logo-section h1 { font-size: 38px; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 5px; }
+  .tagline { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 1px; margin-bottom: 35px; }
+  .welcome-section h2 { font-size: 26px; font-weight: 600; color: white; margin-bottom: 8px; }
+  .welcome-section p { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-bottom: 30px; }
+  .input-group input { width: 100%; padding: 14px 20px; background: rgba(20, 20, 40, 0.8); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 50px; color: white; font-size: 14px; margin-bottom: 16px; }
+  .input-group input::placeholder { color: rgba(255, 255, 255, 0.3); }
+  .input-group input:focus { outline: none; border-color: #667eea; }
+  .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #6a5af9, #d66efd); border: none; border-radius: 50px; color: white; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px; }
+  .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
+  .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; }
+  .footer-copyright { margin-top: 35px; font-size: 10px; color: rgba(255, 255, 0.3); }
+  .error-msg { background: rgba(239, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
+  .success-msg { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
+  .dashboard { display: none; min-height: 100vh; background: #0a0a1a; }
+  .header { background: #FFD700; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: bold; position: sticky; top: 0; z-index: 100; }
+  .header-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .expiry-badge { background: #000; color: #FFD700; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+  .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; }
+  .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; cursor: pointer; }
+  .upgrade-banner { background: #FFD700; margin: 15px; padding: 12px; border-radius: 15px; text-align: center; color: #000; font-weight: bold; }
+  .go-pro-btn { background: #000; color: #FFD700; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+  .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; }
+  .stat-number { font-size: 20px; font-weight: bold; color: #FFD700; text-align: center; }
+  .stat-label { font-size: 10px; color: #888; text-align: center; }
+  .live-indicator { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .opportunities-list { padding: 0 15px 80px; }
-    .card { background: #121521; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; margin-bottom: 12px; cursor: pointer; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .buy-sell { display: flex; gap: 8px; }
-    .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
-    .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
-    .coin-name { font-size: 16px; font-weight: bold; }
-    .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
-    .card-details { font-size: 11px; color: #888; display: flex; justify-content: space-between; margin-top: 5px; }
-    .last-verified { color: #FFD700; }
-    .detail-page { display: none; padding: 0; }
-    .detail-header { background: #FFD700; color: #000; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 50; }
-    .detail-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .back-btn { color: #000; font-size: 24px; cursor: pointer; font-weight: bold; }
-    .detail-spread { font-size: 32px; font-weight: bold; }
-    .detail-coin { font-size: 20px; margin: 5px 0; }
-    .detail-section { background: #121521; margin: 15px; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; }
-    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; }
-    .detail-label { color: #888; font-size: 12px; }
-    .detail-value { color: white; font-weight: 500; font-size: 14px; }
-    .detail-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-    .detail-btn.secondary { background: #000; color: white; border: 1px solid #FFD700; }
-    .network-box { background: #0a0c14; padding: 8px; border-radius: 8px; margin-top: 8px; font-size: 11px; }
-    .network-active { color: #10b981; text-align: center; margin-top: 4px; }
-    .warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 12px; padding: 12px; margin: 15px; font-size: 11px; display: flex; gap: 10px; }
-    .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFD700; padding: 10px 20px; display: flex; justify-content: space-around; z-index: 100; }
-    .footer-nav a { color: #000; text-decoration: none; font-size: 11px; text-align: center; flex: 1; cursor: pointer; font-weight: bold; }
-    .footer-nav a.active { color: #000; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-    .modal-card { background: #1a1a2e; border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 100%; border: 1px solid #FFD700; position: relative; color: white; max-height: 90vh; overflow-y: auto; }
-    .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
-    .modal-card input,.modal-card select { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 25px; color: white; }
-    .pricing-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
-    .price-option { background: #0a0a1a; border: 2px solid #FFD700; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; }
-    .price-option.selected { background: #FFD700; color: #000; }
-    .price-amount { font-size: 28px; font-weight: bold; color: #FFD700; }
-    .price-option.selected.price-amount { color: #000; }
-    .price-duration { font-size: 12px; color: #888; }
-    .price-option.selected.price-duration { color: #000; }
-    .modal-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 30px; color: #000; font-weight: bold; margin-top: 15px; cursor: pointer; }
-    .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
-    .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
-    .profile-page { display: none; padding: 15px 15px 80px; }
-    .profile-card { background: #121521; border-radius: 14px; padding: 20px; border: 1px solid #2a2d3e; margin-bottom: 15px; }
-    .profile-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2a2d3e; }
-    .profile-row:last-child { border-bottom: none; }
+  .opportunities-list { padding: 0 15px 80px; }
+  .card { background: #121521; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; margin-bottom: 12px; cursor: pointer; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .buy-sell { display: flex; gap: 8px; }
+  .buy-badge { background: #10b981; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
+  .sell-badge { background: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
+  .coin-name { font-size: 16px; font-weight: bold; }
+  .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
+  .card-details { font-size: 11px; color: #888; display: flex; justify-content: space-between; margin-top: 5px; }
+  .last-verified { color: #FFD700; }
+  .detail-page { display: none; padding: 0; }
+  .detail-header { background: #FFD700; color: #000; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 50; }
+  .detail-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .back-btn { color: #000; font-size: 24px; cursor: pointer; font-weight: bold; }
+  .detail-spread { font-size: 32px; font-weight: bold; }
+  .detail-coin { font-size: 20px; margin: 5px 0; }
+  .detail-section { background: #121521; margin: 15px; border-radius: 14px; padding: 14px; border: 1px solid #2a2d3e; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; }
+  .detail-label { color: #888; font-size: 12px; }
+  .detail-value { color: white; font-weight: 500; font-size: 14px; }
+  .detail-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .detail-btn.secondary { background: #000; color: white; border: 1px solid #FFD700; }
+  .network-box { background: #0a0c14; padding: 8px; border-radius: 8px; margin-top: 8px; font-size: 11px; }
+  .network-active { color: #10b981; text-align: center; margin-top: 4px; }
+  .warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 12px; padding: 12px; margin: 15px; font-size: 11px; display: flex; gap: 10px; }
+  .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFD700; padding: 10px 20px; display: flex; justify-content: space-around; z-index: 100; }
+  .footer-nav a { color: #000; text-decoration: none; font-size: 11px; text-align: center; flex: 1; cursor: pointer; font-weight: bold; }
+  .footer-nav a.active { color: #000; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+  .modal-card { background: #1a1a2e; border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 100%; border: 1px solid #FFD700; position: relative; color: white; max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
+  .modal-card input,.modal-card select { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 25px; color: white; }
+  .pricing-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
+  .price-option { background: #0a0a1a; border: 2px solid #FFD700; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; }
+  .price-option.selected { background: #FFD700; color: #000; }
+  .price-amount { font-size: 28px; font-weight: bold; color: #FFD700; }
+  .price-option.selected.price-amount { color: #000; }
+  .price-duration { font-size: 12px; color: #888; }
+  .price-option.selected.price-duration { color: #000; }
+  .modal-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 30px; color: #000; font-weight: bold; margin-top: 15px; cursor: pointer; }
+  .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+  .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 5px; }
+  .profile-page { display: none; padding: 15px 80px; }
+  .profile-card { background: #121521; border-radius: 14px; padding: 20px; border: 1px solid #2a2d3e; margin-bottom: 15px; }
+  .profile-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2a2d3e; }
+  .profile-row:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -93,6 +94,7 @@
             <h2 style="margin: 30px 0 8px; font-size: 26px;">Welcome Back!</h2>
             <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-bottom:30px;">Log in to continue to your account</p>
             <div id="loginErrorMsg" class="error-msg"></div>
+            <div id="loginSuccessMsg" class="success-msg"></div>
             <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)"></div>
             <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
             <button class="login-btn" id="loginBtn">LOG IN</button>
@@ -106,6 +108,7 @@
         <div class="modal-card">
             <span class="close-modal" data-close="signupModal">&times;</span>
             <h3>Create Account</h3>
+            <div id="signupErrorMsg" class="error-msg"></div>
             <input type="text" id="fullName" placeholder="Full Name">
             <input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)">
             <input type="password" id="signupPass" placeholder="Password (min 6 chars)">
@@ -117,6 +120,8 @@
         <div class="modal-card">
             <span class="close-modal" data-close="forgotModal">&times;</span>
             <h3>Reset Password</h3>
+            <div id="forgotErrorMsg" class="error-msg"></div>
+            <div id="forgotSuccessMsg" class="success-msg"></div>
             <input type="tel" id="resetPhone" placeholder="Phone Number (254XXXXXXXXX)">
             <button class="modal-btn" id="resetPasswordBtn">SEND RESET CODE</button>
         </div>
@@ -225,7 +230,6 @@
             <a id="navChat">💬<br>Chat Room</a>
             <a id="navProfile">👤<br>Profile</a>
         </div>
-    </div>
     <script>
         const BACKEND_URL = 'https://arbimine-api.onrender.com'; // CHANGE THIS TO YOUR RENDER URL
         let currentUser = null;
@@ -236,7 +240,7 @@
         let selectedPlan = 'monthly';
         const exchanges = ['Binance', 'Bybit', 'OKX', 'KuCoin', 'MEXC', 'Gate.io'];
 
-        // Wait for DOM
+        // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', () => {
             initExchangeStrip();
             attachEventListeners();
@@ -396,12 +400,21 @@
             const phone = document.getElementById('loginPhone').value;
             const pass = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginErrorMsg');
-            if (!users[phone] || users[phone].password!== pass) {
-                errorDiv.innerText = 'Invalid phone number or password';
+            const successDiv = document.getElementById('loginSuccessMsg');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (!users[phone]) {
+                errorDiv.innerText = 'Account not found. Please create an account.';
                 errorDiv.style.display = 'block';
                 return;
             }
-            errorDiv.style.display = 'none';
+            if (users[phone].password!== pass) {
+                errorDiv.innerText = 'Invalid password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
             currentUser = phone;
             localStorage.setItem('arbimine_lastuser', phone);
             document.getElementById('loginPage').style.display = 'none';
@@ -413,46 +426,40 @@
         }
 
         function createAccount() {
-            const phone = document.getElementById('signupPhone').value;
+            const phone = document.getElementById('signupPhone').value.trim();
             const pass = document.getElementById('signupPass').value;
             const confirm = document.getElementById('signupConfirm').value;
-            const name = document.getElementById('fullName').value;
-            if (!phone ||!pass || pass!== confirm || pass.length < 6) {
-                alert('Check your details. Password must be 6+ chars and match.');
+            const name = document.getElementById('fullName').value.trim();
+            const errorDiv = document.getElementById('signupErrorMsg');
+
+            if (errorDiv) errorDiv.style.display = 'none';
+
+            if (!phone ||!pass ||!name) {
+                alert('Please fill all fields');
+                return;
+            }
+            if (pass!== confirm) {
+                alert('Passwords do not match');
+                return;
+            }
+            if (pass.length < 6) {
+                alert('Password must be 6+ characters');
                 return;
             }
             if (users[phone]) {
-                alert('Account already exists');
+                alert('Account already exists with this phone number');
                 return;
             }
-            users[phone] = { name, password: pass, tier: 'free', createdAt: new Date().toISOString(), expiry: null };
+
+            users[phone] = {
+                name: name,
+                password: pass,
+                tier: 'free',
+                createdAt: new Date().toISOString(),
+                expiry: null
+            };
             localStorage.setItem('arbimine_users', JSON.stringify(users));
-            alert('Account created! Please log in.');
+            alert('Account created successfully! Please log in.');
             closeModal('signupModal');
             document.getElementById('loginPhone').value = phone;
-        }
-
-        function processPayment() {
-            const user = users[currentUser];
-            const now = new Date();
-            if (selectedPlan === 'weekly') {
-                user.tier = 'pro';
-                user.expiry = new Date(now.getTime() + 7*24*60*60*1000).toISOString();
-            } else if (selectedPlan === 'monthly') {
-                user.tier = 'pro';
-                user.expiry = new Date(now.getTime() + 30*24*60*60*1000).toISOString();
-            }
-            localStorage.setItem('arbimine_users', JSON.stringify(users));
-            updateExpiry();
-            closeModal('upgradeModal');
-            document.getElementById('upgradeBanner').style.display = 'none';
-            alert('Payment confirmed! Access upgraded.');
-            renderOpportunities();
-        }
-
-        function updateExpiry() {
-            const user = users[currentUser];
-            if (!user) return;
-            const badge = document.getElementById('expiryBadge');
-            if (user.expiry && new Date(user.expiry) > new Date()) {
-                const daysLeft = Math.ceil((new Date
+            document.getElementById('loginPassword').value =
