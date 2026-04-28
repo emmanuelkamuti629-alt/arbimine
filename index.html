@@ -2,369 +2,199 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ARBIMINE – Live Arbitrage Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ARBIMINE PRO | All-In-One</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: white; }
-        .login-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #1a1a3a 0%, #0f0c29 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .login-card { background: rgba(30, 30, 60, 0.7); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; width: 100%; max-width: 420px; border: 1px solid rgba(120, 120, 200, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; }
-        .logo-section h1 { font-size: 38px; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 5px; }
-        .tagline { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 1px; margin-bottom: 35px; }
-        .input-group input { width: 100%; padding: 14px 20px; background: rgba(20, 20, 40, 0.8); border: 1px solid rgba(100, 100, 150, 0.3); border-radius: 50px; color: white; font-size: 14px; margin-bottom: 16px; }
-        .input-group input:focus { outline: none; border-color: #FFD700; }
-        .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #FFD700, #FFA500); border: none; border-radius: 50px; color: black; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.2s; }
-        .login-btn:hover { opacity: 0.9; transform: scale(0.98); }
-        .auth-links { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
-        .auth-links a { color: #FFD700; font-size: 13px; cursor: pointer; text-decoration: none; font-weight: 500; }
-        .auth-links a:hover { text-decoration: underline; }
-        .error-msg { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
-        .success-msg { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; padding: 10px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; }
-        .dashboard { display: none; min-height: 100vh; background: #0a0a1a; padding-bottom: 70px; }
-        .header { background: #FFD700; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: bold; position: sticky; top: 0; z-index: 100; }
-        .expiry-badge { background: #000; color: #FFD700; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .exchange-strip { background: #0a0c14; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #2a2d3e; overflow-x: auto; }
-        .exchange-badge { background: #121521; border: 1px solid #2a2d3e; padding: 5px 12px; border-radius: 30px; font-size: 10px; color: #FFD700; cursor: pointer; transition: 0.1s; white-space: nowrap; }
-        .exchange-badge:hover { background: #FFD700; color: #000; }
-        .upgrade-banner { background: #FFD700; margin: 15px; padding: 12px; border-radius: 15px; text-align: center; color: #000; font-weight: bold; }
-        .go-pro-btn { background: #000; color: #FFD700; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 14px; }
-        .go-pro-btn:hover { opacity: 0.8; }
-        .stats-row { display: flex; justify-content: space-around; padding: 10px; background: #0a0c14; margin: 10px; border-radius: 15px; }
-        .stat-number { font-size: 24px; font-weight: bold; color: #FFD700; text-align: center; }
-        .stat-label { font-size: 10px; color: #888; text-align: center; display: flex; align-items: center; gap: 4px; justify-content: center; }
-        .live-indicator { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .opportunities-list { padding: 0 15px 20px; }
-        .card { background: #121521; border-radius: 18px; padding: 14px; border: 1px solid #2a2d3e; margin-bottom: 12px; cursor: pointer; transition: 0.1s; }
-        .card:hover { transform: scale(1.01); background: #1a1e2a; }
-        .card:active { transform: scale(0.98); }
-        .buy-badge { background: #10b981; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
-        .sell-badge { background: #ef4444; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; color: white; }
-        .coin-name { font-size: 16px; font-weight: bold; }
-        .profit-value { font-size: 22px; font-weight: bold; color: #10b981; }
-        .card-details { font-size: 11px; color: #888; display: flex; justify-content: space-between; margin-top: 5px; }
-        .detail-page { display: none; padding: 0; }
-        .detail-header { background: #FFD700; color: #000; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 50; }
-        .detail-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .back-btn { font-size: 28px; cursor: pointer; font-weight: bold; width: 32px; text-align: center; }
-        .detail-section { background: #121521; margin: 15px; border-radius: 18px; padding: 14px; border: 1px solid #2a2d3e; }
-        .detail-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 40px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; display: inline-block; text-align: center; text-decoration: none; font-size: 14px; transition: 0.1s; }
-        .detail-btn:hover { opacity: 0.9; }
-        .detail-btn.secondary { background: #000; color: white; border: 1px solid #FFD700; }
-        .network-box { background: #0a0c14; padding: 8px; border-radius: 12px; margin-top: 8px; font-size: 11px; }
-        .warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 14px; padding: 12px; margin: 15px; font-size: 11px; display: flex; gap: 10px; }
-        .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFD700; padding: 8px 12px; display: flex; justify-content: space-around; z-index: 200; border-radius: 20px 20px 0 0; }
-        .footer-nav a { color: #000; text-decoration: none; font-size: 11px; text-align: center; flex: 1; cursor: pointer; font-weight: bold; padding: 6px; }
-        .footer-nav a.active { background: rgba(0,0,0,0.1); border-radius: 30px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-        .modal-card { background: #1a1a2e; border-radius: 30px; padding: 30px 25px; max-width: 420px; width: 100%; border: 1px solid #FFD700; position: relative; color: white; max-height: 90vh; overflow-y: auto; }
-        .modal-card h3 { color: #FFD700; font-size: 24px; text-align: center; margin-bottom: 20px; }
-        .modal-card input { width: 100%; padding: 12px 16px; margin: 8px 0; background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 40px; color: white; }
-        .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
-        .price-option { background: #0a0a1a; border: 2px solid #FFD700; border-radius: 20px; padding: 12px; text-align: center; cursor: pointer; transition: 0.1s; }
-        .price-option.selected { background: #FFD700; color: #000; }
-        .price-amount { font-size: 24px; font-weight: bold; color: #FFD700; }
-        .price-option.selected .price-amount, .price-option.selected .price-duration { color: #000; }
-        .price-duration { font-size: 12px; color: #888; }
-        .modal-btn { width: 100%; padding: 12px; background: #FFD700; border: none; border-radius: 40px; color: #000; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: #aaa; }
-        .profile-page { display: none; padding: 20px; }
-        .profile-card { background: #121521; border-radius: 24px; padding: 20px; border: 1px solid #2a2d3e; margin-bottom: 20px; }
-        .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2d3e; }
-        .profile-row:last-child { border-bottom: none; }
-        .scan-status { font-size: 11px; color: #FFD700; text-align: center; padding: 8px; background: #0a0c14; margin: 0 10px 10px; border-radius: 30px; }
-        button { cursor: pointer; }
+        :root { --gold: #FFD700; --bg: #0a0a1a; --card: #121521; --green: #10b981; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); color: white; overflow-x: hidden; }
+
+        /* --- AUTH PAGES --- */
+        .page { display: none; min-height: 100vh; padding: 20px; }
+        .active-page { display: flex; flex-direction: column; }
+        .auth-container { margin: auto; width: 100%; max-width: 400px; text-align: center; background: rgba(30,30,60,0.5); padding: 30px; border-radius: 30px; border: 1px solid rgba(255,215,0,0.2); }
+        h1 { font-size: 32px; color: var(--gold); margin-bottom: 10px; letter-spacing: 2px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 50px; border: 1px solid #2a2d3e; background: #050510; color: white; outline: none; }
+        input:focus { border-color: var(--gold); }
+        .btn { width: 100%; padding: 15px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-gold { background: var(--gold); color: black; }
+        .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); margin-top: 20px; }
+
+        /* --- DASHBOARD --- */
+        .header { background: var(--gold); color: black; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; font-weight: bold; }
+        .stats-bar { display: flex; justify-content: space-around; background: #050510; padding: 15px; margin: 15px; border-radius: 20px; border: 1px solid #1a1a3a; }
+        .stat-item { text-align: center; }
+        .stat-val { color: var(--gold); font-size: 20px; font-weight: bold; }
+        .stat-lbl { font-size: 10px; color: #888; }
+
+        /* --- CARDS --- */
+        .card { background: var(--card); margin: 0 15px 12px; padding: 18px; border-radius: 20px; border: 1px solid #1a1a3a; position: relative; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .profit { float: right; color: var(--green); font-size: 22px; font-weight: 900; }
+        .coin-name { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .badge { font-size: 10px; padding: 4px 10px; border-radius: 10px; font-weight: bold; }
+        .badge-buy { background: rgba(16,185,129,0.2); color: var(--green); }
+        .badge-sell { background: rgba(239,68,68,0.2); color: var(--red); }
+
+        /* --- NAV --- */
+        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #050510; border-top: 1px solid #1a1a3a; display: flex; align-items: center; }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: #555; cursor: pointer; }
+        .nav-item.active { color: var(--gold); }
+
+        /* --- MODAL --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+        .m-content { width: 85%; background: #161632; padding: 30px; border-radius: 25px; border: 1px solid var(--gold); text-align: center; }
     </style>
 </head>
 <body>
 
-<!-- LOGIN PAGE -->
-<div id="loginPage" class="login-page">
-    <div class="login-card">
-        <div class="logo-section"><h1>ARBIMINE</h1><div class="tagline">FIND. ANALYZE. PROFIT.</div></div>
-        <h2 style="margin:20px 0 8px; font-size:26px;">Welcome Back!</h2>
-        <p style="color:rgba(255,255,255,0.5);margin-bottom:30px;">Log in to continue to your account</p>
-        <div id="loginErrorMsg" class="error-msg"></div>
-        <div id="loginSuccessMsg" class="success-msg"></div>
-        <div class="input-group"><input type="tel" id="loginPhone" placeholder="Phone Number (254XXXXXXXXX)" value="254740778336"></div>
-        <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
-        <button class="login-btn" id="loginBtn">LOG IN</button>
-        <div class="auth-links"><a id="showSignupLink">Create Account</a><a id="showForgotLink">Forgot Password?</a></div>
-        <div class="footer-copyright" style="margin-top:25px;">© 2025 ARBIMINE. All rights reserved.</div>
+    <div id="page-login" class="page active-page">
+        <div class="auth-container">
+            <h1>ARBIMINE</h1>
+            <p style="font-size: 12px; color: #666; margin-bottom: 20px;">CRYPTO ARBITRAGE TERMINAL</p>
+            <input type="tel" id="l-phone" placeholder="Phone Number">
+            <input type="password" id="l-pass" placeholder="Password">
+            <button class="btn btn-gold" onclick="handleLogin()">ACCESS SYSTEM</button>
+            <button class="btn btn-outline" onclick="showPage('page-register')">CREATE NEW ACCOUNT</button>
+        </div>
     </div>
-</div>
 
-<!-- SIGNUP MODAL -->
-<div id="signupModal" class="modal"><div class="modal-card"><span class="close-modal" data-close="signupModal">&times;</span><h3>Create Account</h3><div id="signupErrorMsg" class="error-msg"></div><input type="text" id="fullName" placeholder="Full Name"><input type="tel" id="signupPhone" placeholder="Phone Number (254XXXXXXXXX)"><input type="password" id="signupPass" placeholder="Password (min 6 chars)"><input type="password" id="signupConfirm" placeholder="Confirm Password"><button class="modal-btn" id="createAccountBtn">CREATE ACCOUNT</button></div></div>
-
-<!-- FORGOT MODAL -->
-<div id="forgotModal" class="modal"><div class="modal-card"><span class="close-modal" data-close="forgotModal">&times;</span><h3>Reset Password</h3><div id="forgotErrorMsg" class="error-msg"></div><div id="forgotSuccessMsg" class="success-msg"></div><input type="tel" id="resetPhone" placeholder="Phone Number"><button class="modal-btn" id="resetPasswordBtn">SEND RESET CODE</button></div></div>
-
-<!-- UPGRADE MODAL -->
-<div id="upgradeModal" class="modal"><div class="modal-card"><span class="close-modal" data-close="upgradeModal">&times;</span><h3>🚀 UPGRADE TO PRO</h3><p style="text-align:center;">Unlock >2% profits & advanced filters</p><div class="pricing-grid"><div class="price-option" data-plan="weekly"><div class="price-duration">1 week</div><div class="price-amount">Ksh 200</div></div><div class="price-option selected" data-plan="monthly"><div class="price-duration">1 month</div><div class="price-amount">Ksh 700</div></div></div><div style="margin:15px 0; text-align:center;font-size:13px;"><p>📱 Send to Pochi: <strong>0728308602</strong></p><p>📝 Ref: <strong id="paymentPhoneRef"></strong></p></div><button class="modal-btn" id="processPaymentBtn">ACTIVATE PRO</button></div></div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="dashboard">
-    <div class="header"><div class="header-logo">💰 ARBIMINE</div><div class="header-right"><span id="expiryBadge" class="expiry-badge">🆓 FREE</span><span style="cursor:pointer; font-size:20px;" id="logoutBtn">⚙️</span></div></div>
-    <div class="exchange-strip" id="exchangeStrip"></div>
-    <div id="homePage">
-        <div class="upgrade-banner" id="upgradeBanner"><div>🚀 Upgrade to PRO to Discover Profit Opportunities Above 2% 🚀</div><button class="go-pro-btn" id="upgradeBannerBtn">⭐ GO PRO</button></div>
-        <div class="stats-row"><div><div class="stat-number">6</div><div class="stat-label">EXCHANGES</div></div><div><div class="stat-number">20+</div><div class="stat-label">COINS</div></div><div><div class="stat-number" id="statOpportunities">0</div><div class="stat-label"><span class="live-indicator"></span>OPPORTUNITIES</div></div></div>
-        <div class="scan-status" id="scanStatus">⚡ Scanning live markets...</div>
-        <div id="opportunitiesList" class="opportunities-list"></div>
+    <div id="page-register" class="page">
+        <div class="auth-container">
+            <h1>REGISTER</h1>
+            <p style="font-size: 12px; color: #666; margin-bottom: 20px;">JOIN THE NETWORK</p>
+            <input type="text" id="r-name" placeholder="Full Name">
+            <input type="tel" id="r-phone" placeholder="Phone Number">
+            <input type="password" id="r-pass" placeholder="Create Password">
+            <button class="btn btn-gold" onclick="handleRegister()">REGISTER NOW</button>
+            <button class="btn btn-outline" onclick="showPage('page-login')">ALREADY HAVE ACCOUNT</button>
+        </div>
     </div>
-    <div id="detailPage" class="detail-page">
-        <div class="detail-header"><div class="detail-header-top"><span class="back-btn" id="backBtn">←</span><div style="flex:1;"><div class="detail-spread" id="detailSpread">--%</div><div class="detail-coin" id="detailCoin">--/USDT</div><div style="font-size:10px;" id="detailLiq">Liquidity: --</div></div><div style="width:24px;"></div></div></div>
-        <div class="detail-section"><div style="display:flex;justify-content:space-between;"><div><div style="font-size:12px;color:#888;">1. Buy at</div><div style="font-size:18px;font-weight:bold;" id="detailBuyEx">--</div></div><div style="text-align:right;"><div style="font-size:12px;color:#888;">Lowest Ask:</div><div style="font-size:18px;font-weight:bold;" id="detailBuyPrice">$--</div><div style="font-size:11px;" id="detailBuyVol">Volume: --</div></div></div><div class="network-box">Withdrawal Network: BSC ($0.32)</div><a class="detail-btn" id="detailBuyBtn" target="_blank">👁️ CHECK ON EXCHANGE</a><button class="detail-btn secondary" id="fetchContractBtn"><> FETCH CONTRACT</button></div>
-        <div class="detail-section"><div style="display:flex;justify-content:space-between;"><div><div style="font-size:12px;color:#888;">2. Sell on</div><div style="font-size:18px;font-weight:bold;" id="detailSellEx">--</div></div><div style="text-align:right;"><div style="font-size:12px;color:#888;">Highest Bid:</div><div style="font-size:18px;font-weight:bold;" id="detailSellPrice">$--</div><div style="font-size:11px;" id="detailSellVol">Volume: --</div></div></div><div class="network-box">Deposit Network: BSC, ETH</div><a class="detail-btn" id="detailSellBtn" target="_blank">👁️ CHECK ON EXCHANGE</a></div>
-        <div class="warning-box">⚠️ Double check coin's contract and name on both exchanges before initiating the trade.</div>
-        <div class="warning-box">🏃 Act Fast! Arbitrage opportunities typically last 10-15 minutes.</div>
+
+    <div id="page-dash" class="page">
+        <div class="header">
+            <span>🚀 ARBIMINE</span>
+            <span id="user-tier" style="font-size: 12px; background:black; color:white; padding:4px 10px; border-radius:10px;">FREE</span>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item"><div class="stat-val">24</div><div class="stat-lbl">EXCHANGES</div></div>
+            <div class="stat-item"><div class="stat-val" id="opp-count">0</div><div class="stat-lbl">LIVE DEALS</div></div>
+            <div class="stat-item"><div class="stat-val" style="color:var(--green)">Online</div><div class="stat-lbl">STATUS</div></div>
+        </div>
+
+        <div id="feed">
+            <p style="text-align:center; padding:50px; color:#444;">Connecting to Global Markets...</p>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-item active">🏠<br>Market</div>
+            <div class="nav-item" onclick="openModal()">⭐<br>Go Pro</div>
+            <div class="nav-item" onclick="logout()">🚪<br>Logout</div>
+        </nav>
     </div>
-    <div id="profilePage" class="profile-page"><div class="profile-card"><h3 style="color:#FFD700;">My Profile</h3><div class="profile-row"><span>Phone:</span><span id="profilePhone">-</span></div><div class="profile-row"><span>Plan:</span><span id="profilePlan">FREE</span></div><div class="profile-row"><span>Expires:</span><span id="profileExpiry">-</span></div><div class="profile-row"><span>Member Since:</span><span id="profileSince">-</span></div></div><button class="detail-btn" id="profileLogoutBtn" style="background:#ef4444;color:white;">LOGOUT</button></div>
-    <div class="footer-nav"><a id="navHome" class="active">🏠<br>Home</a><a id="navGoPro">⭐<br>Go PRO</a><a id="navChat">💬<br>Chat Room</a><a id="navProfile">👤<br>Profile</a></div>
-</div>
 
-<script>
-    let users = JSON.parse(localStorage.getItem('arbimine_users') || '{}');
-    let currentUser = null;
-    let currentOpportunities = [];
-    let refreshInterval = null;
-    const exchangesList = ['Binance', 'Bybit', 'OKX', 'KuCoin', 'MEXC', 'Gate.io'];
+    <div id="payModal" class="modal">
+        <div class="m-content">
+            <h2 style="color:var(--gold)">Unlock Pro Access</h2>
+            <p style="font-size: 13px; margin: 15px 0; color: #ccc;">See spreads above 2.0% and hidden coins.</p>
+            <div style="background:#050510; padding:15px; border-radius:15px; border:1px solid #1a1a3a;">
+                <p style="font-size:10px; color:#666;">M-Pesa Pochi KES 200:</p>
+                <p style="font-size:20px; color:var(--gold); font-weight:bold;">0728 308602</p>
+            </div>
+            <button class="btn btn-gold" onclick="closeModal()">I HAVE SENT PAYMENT</button>
+        </div>
+    </div>
 
-    // Create demo account if none exists
-    if (Object.keys(users).length === 0) {
-        users['254740778336'] = {
-            name: 'Demo User',
-            password: 'demo123',
-            tier: 'free',
-            createdAt: new Date().toISOString(),
-            expiry: null
-        };
-        localStorage.setItem('arbimine_users', JSON.stringify(users));
-    }
+    <script>
+        // --- DATA STORAGE & AUTH ---
+        let users = JSON.parse(localStorage.getItem('arb_users') || '[]');
+        let currentUser = JSON.parse(localStorage.getItem('arb_session') || 'null');
 
-    function generateMockOpportunities() {
-        const coins = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'MATIC', 'ARB', 'OP', 'LINK', 'AVAX', 'DOT'];
-        const opps = [];
-        const now = Date.now();
-        for (let i = 0; i < 20; i++) {
-            const coin = coins[Math.floor(Math.random() * coins.length)];
-            const buyEx = exchangesList[Math.floor(Math.random() * exchangesList.length)];
-            let sellEx = exchangesList[Math.floor(Math.random() * exchangesList.length)];
-            while (sellEx === buyEx) sellEx = exchangesList[Math.floor(Math.random() * exchangesList.length)];
-            let rawProfit = Math.random() * 3.5;
-            const tier = rawProfit >= 2.0 ? 'pro' : 'free';
-            const profitPct = parseFloat(rawProfit).toFixed(2);
-            const basePrice = Math.random() * 2000 + 20;
-            const buyPrice = basePrice * (1 - Math.random() * 0.015);
-            const sellPrice = basePrice * (1 + rawProfit / 100);
-            const buyVol = Math.floor(Math.random() * 800000 + 10000);
-            const sellVol = Math.floor(Math.random() * 600000 + 8000);
-            const liquidity = Math.floor(buyVol * buyPrice / 100 + sellVol * sellPrice / 100);
-            opps.push({
-                id: i, coin, buyEx, sellEx, profit: profitPct, tier,
-                buyPrice: buyPrice.toFixed(6), sellPrice: sellPrice.toFixed(6),
-                buyVol: buyVol.toLocaleString(), sellVol: sellVol.toLocaleString(),
-                liquidity: liquidity, ts: now - Math.floor(Math.random() * 20000)
-            });
+        if(currentUser) { showPage('page-dash'); startScanner(); }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(id).classList.add('active-page');
         }
-        opps.sort((a,b)=> parseFloat(b.profit) - parseFloat(a.profit));
-        return opps;
-    }
 
-    function refreshOpportunities() {
-        currentOpportunities = generateMockOpportunities();
-        document.getElementById('statOpportunities').innerText = currentOpportunities.length;
-        renderOpportunities();
-        document.getElementById('scanStatus').innerHTML = '<span class="live-indicator"></span> LIVE - Updates every 3 seconds';
-    }
+        function handleRegister() {
+            const name = document.getElementById('r-name').value;
+            const phone = document.getElementById('r-phone').value;
+            const pass = document.getElementById('r-pass').value;
 
-    function renderOpportunities() {
-        const container = document.getElementById('opportunitiesList');
-        const user = users[currentUser] || { tier: 'free' };
-        const isPro = (user.tier === 'pro');
-        let visibleOpps = currentOpportunities.filter(opp => isPro ? true : opp.tier === 'free');
-        
-        if (visibleOpps.length === 0 && currentOpportunities.length > 0 && !isPro) {
-            const proCount = currentOpportunities.filter(o=>o.tier==='pro').length;
-            container.innerHTML = `<div class="upgrade-banner" style="margin:0;"><div>🚀 ${proCount} PRO opportunities found above 2%!</div><button class="go-pro-btn" id="inlineUpgradeBtn">⭐ GO PRO</button></div>`;
-            const inlineBtn = document.getElementById('inlineUpgradeBtn');
-            if(inlineBtn) inlineBtn.addEventListener('click',()=>showModal('upgradeModal'));
-            return;
+            if(!name || !phone || !pass) return alert("Fill all fields");
+            if(users.find(u => u.phone === phone)) return alert("Phone already exists");
+
+            const newUser = { name, phone, pass, tier: 'free' };
+            users.push(newUser);
+            localStorage.setItem('arb_users', JSON.stringify(users));
+            alert("Registration Successful! Please Login.");
+            showPage('page-login');
         }
-        if(visibleOpps.length === 0) { container.innerHTML='<div style="text-align:center;padding:40px;color:#888;">⚡ Scanning live markets...</div>'; return; }
-        
-        let html = '';
-        visibleOpps.forEach((opp, idx) => {
-            const secondsAgo = Math.floor((Date.now() - opp.ts)/1000);
-            html += `<div class="card" data-opp='${JSON.stringify(opp)}'>
-                <div class="card-header"><div class="buy-sell"><span class="buy-badge">BUY ${opp.buyEx}</span><span class="sell-badge">SELL ${opp.sellEx}</span></div></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="coin-name">${opp.coin}/USDT</div><div style="font-size:11px;color:#888;">Liquidity: $${opp.liquidity}</div></div><div class="profit-value">${opp.profit}%</div></div>
-                <div class="card-details"><span></span><span class="last-verified">Last Verified ${secondsAgo} seconds ago</span></div>
-            </div>`;
-        });
-        container.innerHTML = html;
-        
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('click', () => {
-                const oppData = JSON.parse(card.getAttribute('data-opp'));
-                showDetail(oppData);
-            });
-        });
-    }
 
-    function showDetail(opp) {
-        const user = users[currentUser] || { tier: 'free' };
-        if(opp.tier === 'pro' && user.tier !== 'pro') { showModal('upgradeModal'); return; }
-        document.getElementById('homePage').style.display = 'none';
-        document.getElementById('detailPage').style.display = 'block';
-        document.getElementById('detailSpread').innerText = `${opp.profit}% SPREAD`;
-        document.getElementById('detailCoin').innerText = `${opp.coin}/USDT`;
-        document.getElementById('detailLiq').innerHTML = `Liquidity: $${opp.liquidity} | Profit: ${opp.profit}%`;
-        document.getElementById('detailBuyEx').innerText = opp.buyEx;
-        document.getElementById('detailBuyPrice').innerText = `$${opp.buyPrice}`;
-        document.getElementById('detailBuyVol').innerText = `Volume: $${opp.buyVol}`;
-        document.getElementById('detailSellEx').innerText = opp.sellEx;
-        document.getElementById('detailSellPrice').innerText = `$${opp.sellPrice}`;
-        document.getElementById('detailSellVol').innerText = `Volume: $${opp.sellVol}`;
-        const buyLink = `https://www.${opp.buyEx.toLowerCase()}.com`;
-        const sellLink = `https://www.${opp.sellEx.toLowerCase()}.com`;
-        document.getElementById('detailBuyBtn').href = buyLink;
-        document.getElementById('detailSellBtn').href = sellLink;
-        document.getElementById('fetchContractBtn').onclick = () => alert(`📜 ${opp.coin} Contract Address on ${opp.buyEx}: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\n⚠️ Always verify before trading!`);
-    }
+        function handleLogin() {
+            const phone = document.getElementById('l-phone').value;
+            const pass = document.getElementById('l-pass').value;
 
-    function showHome() {
-        document.getElementById('homePage').style.display = 'block';
-        document.getElementById('detailPage').style.display = 'none';
-        document.getElementById('profilePage').style.display = 'none';
-        renderOpportunities();
-    }
-    
-    function showProfile() {
-        const user = users[currentUser];
-        if(user){
-            document.getElementById('profilePhone').innerText = currentUser;
-            document.getElementById('profilePlan').innerText = user.tier === 'pro' ? '🚀 PRO MEMBER' : 'FREE TIER';
-            document.getElementById('profileExpiry').innerText = user.expiry ? new Date(user.expiry).toLocaleDateString() : 'Never (Free)';
-            document.getElementById('profileSince').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Today';
+            const user = users.find(u => u.phone === phone && u.pass === pass);
+            if(!user) return alert("Invalid credentials");
+
+            currentUser = user;
+            localStorage.setItem('arb_session', JSON.stringify(user));
+            showPage('page-dash');
+            startScanner();
         }
-        document.getElementById('homePage').style.display = 'none';
-        document.getElementById('detailPage').style.display = 'none';
-        document.getElementById('profilePage').style.display = 'block';
-    }
-    
-    function updateExpiryBadge() {
-        const user = users[currentUser];
-        if(user && user.tier === 'pro') document.getElementById('expiryBadge').innerHTML = `💎 PRO ACTIVE`;
-        else document.getElementById('expiryBadge').innerHTML = `🆓 FREE TIER`;
-    }
 
-    function login() {
-        const phone = document.getElementById('loginPhone').value.trim();
-        const pass = document.getElementById('loginPassword').value;
-        const errorDiv = document.getElementById('loginErrorMsg');
-        errorDiv.style.display = 'none';
-        if(!users[phone]) { errorDiv.innerText = 'Account not found. Create account first.'; errorDiv.style.display='block'; return; }
-        if(users[phone].password !== pass) { errorDiv.innerText = 'Incorrect password.'; errorDiv.style.display='block'; return; }
-        currentUser = phone;
-        localStorage.setItem('arbimine_lastuser', phone);
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        document.getElementById('paymentPhoneRef').innerText = phone;
-        if(refreshInterval) clearInterval(refreshInterval);
-        refreshOpportunities();
-        refreshInterval = setInterval(refreshOpportunities, 3000);
-        updateExpiryBadge();
-        showHome();
-    }
+        function logout() {
+            localStorage.removeItem('arb_session');
+            location.reload();
+        }
 
-    function createAccount() {
-        const phone = document.getElementById('signupPhone').value.trim();
-        const pass = document.getElementById('signupPass').value;
-        const confirm = document.getElementById('signupConfirm').value;
-        const name = document.getElementById('fullName').value.trim();
-        if(!phone || !pass || !name) { alert('All fields required'); return; }
-        if(pass !== confirm) { alert('Passwords do not match'); return; }
-        if(pass.length < 6) { alert('Password must be at least 6 characters'); return; }
-        if(users[phone]) { alert('Phone number already registered'); return; }
-        users[phone] = { name, password: pass, tier: 'free', createdAt: new Date().toISOString(), expiry: null };
-        localStorage.setItem('arbimine_users', JSON.stringify(users));
-        alert('Account created successfully! Please log in.');
-        closeModal('signupModal');
-        document.getElementById('loginPhone').value = phone;
-    }
+        // --- SCANNER ENGINE ---
+        function startScanner() {
+            document.getElementById('user-tier').innerText = currentUser.tier.toUpperCase();
+            setInterval(generateDeals, 4000);
+            generateDeals();
+        }
 
-    function resetPassword() {
-        const phone = document.getElementById('resetPhone').value.trim();
-        if(!users[phone]) { document.getElementById('forgotErrorMsg').innerText='User not found'; document.getElementById('forgotErrorMsg').style.display='block'; return; }
-        users[phone].password = phone;
-        localStorage.setItem('arbimine_users', JSON.stringify(users));
-        document.getElementById('forgotSuccessMsg').innerText = `Password reset! New password: ${phone}`;
-        document.getElementById('forgotSuccessMsg').style.display = 'block';
-        setTimeout(()=> closeModal('forgotModal'), 2500);
-    }
+        function generateDeals() {
+            const coins = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'ADA/USDT', 'DOGE/USDT'];
+            const ex = ['Binance', 'KuCoin', 'Bybit', 'Gate.io', 'MEXC'];
+            const feed = document.getElementById('feed');
+            let html = '';
 
-    function processPayment() {
-        const user = users[currentUser];
-        if(!user) return;
-        const plan = document.querySelector('.price-option.selected').dataset.plan;
-        let expiryDate = new Date();
-        if(plan === 'weekly') expiryDate.setDate(expiryDate.getDate() + 7);
-        else expiryDate.setMonth(expiryDate.getMonth() + 1);
-        user.tier = 'pro';
-        user.expiry = expiryDate.toISOString();
-        users[currentUser] = user;
-        localStorage.setItem('arbimine_users', JSON.stringify(users));
-        alert(`✅ PRO Activated! You now have access to >2% profit opportunities.`);
-        closeModal('upgradeModal');
-        updateExpiryBadge();
-        renderOpportunities();
-    }
+            for(let i=0; i<4; i++) {
+                const coin = coins[Math.floor(Math.random()*coins.length)];
+                const buyEx = ex[Math.floor(Math.random()*ex.length)];
+                let sellEx = ex[Math.floor(Math.random()*ex.length)];
+                while(sellEx === buyEx) sellEx = ex[Math.floor(Math.random()*ex.length)];
+                
+                const profit = (Math.random() * 3.5).toFixed(2);
+                const isLocked = profit > 2.0 && currentUser.tier === 'free';
 
-    function logout() {
-        if(refreshInterval) clearInterval(refreshInterval);
-        currentUser = null;
-        document.getElementById('dashboard').style.display = 'none';
-        document.getElementById('loginPage').style.display = 'flex';
-        document.getElementById('loginPassword').value = '';
-    }
+                html += `
+                    <div class="card" onclick="${isLocked ? 'openModal()' : ''}">
+                        <span class="profit">${isLocked ? '🔒.🔒%' : profit + '%'}</span>
+                        <div class="coin-name">${coin}</div>
+                        <div style="margin-bottom:10px;">
+                            <span class="badge badge-buy">BUY: ${buyEx}</span>
+                            <span class="badge badge-sell">SELL: ${sellEx}</span>
+                        </div>
+                        <div style="font-size:10px; color:#444;">Last sync: ${new Date().toLocaleTimeString()}</div>
+                    </div>
+                `;
+            }
+            feed.innerHTML = html;
+            document.getElementById('opp-count').innerText = Math.floor(Math.random() * 10) + 15;
+        }
 
-    function initExchangeStrip() {
-        const strip = document.getElementById('exchangeStrip');
-        strip.innerHTML = exchangesList.map(ex => `<span class="exchange-badge">${ex}</span>`).join('');
-        document.querySelectorAll('.exchange-badge').forEach(el => {
-            el.addEventListener('click',()=> alert(`${el.innerText} - Live order books streaming`));
-        });
-    }
-
-    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { if(id) document.getElementById(id).style.display = 'none'; else document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
-
-    // Event Listeners
-    document.getElementById('loginBtn').addEventListener('click', login);
-    document.getElementById('showSignupLink').addEventListener('click', ()=>showModal('signupModal'));
-    document.getElementById('showForgotLink').addEventListener('click', ()=>showModal('forgotModal'));
-    document.getElementById('createAccountBtn').addEventListener('click', createAccount);
-    document.getElementById('resetPasswordBtn').addEventListener('click', resetPassword);
-    document.getElementById('processPaymentBtn').addEventListener('click', processPayment);
-    document.getElementById('upgradeBannerBtn').addEventListener('click', ()=>showModal('upgradeModal'));
-    document.getElementById('navHome').addEventListener('click', showHome);
-    document.getElementById('navGoPro').addEventListener('click', ()=>showModal('upgradeModal'));
-    document.getElementById('navProfile').addEventListener('click', showProfile);
-    document.getElementById('navChat').addEventListener('click', ()=>alert('💬 Chat room coming soon! Connect with other traders.'));
-    document.getElementById('backBtn').addEventListener('click', showHome);
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('profileLogoutBtn').addEventListener('click', logout);
-    document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', (e)=>closeModal(e.target.dataset.close)));
-    document.querySelectorAll('.price-option').forEach(opt => opt.addEventListener('click', function() { document.querySelectorAll('.price-option').forEach(o=>o.classList.remove('selected')); this.classList.add('selected'); }));
-    
-    initExchangeStrip();
-    
-    const lastUser = localStorage.getItem('arbimine_lastuser');
-    if(lastUser && users[lastUser]) {
-        document.getElementById('loginPhone').value = lastUser;
-    }
-</script>
+        // --- UI HELPERS ---
+        function openModal() { document.getElementById('payModal').style.display = 'flex'; }
+        function closeModal() { 
+            document.getElementById('payModal').style.display = 'none'; 
+            alert("Verification pending. Admin will approve within 30 mins.");
+        }
+    </script>
 </body>
-                                                                   </html>
+</html>
