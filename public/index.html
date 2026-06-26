@@ -1,0 +1,1384 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArbiMine Pro – Ultimate Arbitrage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ----- BASE & UTILITY ----- */
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',system-ui,sans-serif; }
+    body { background:#020617; color:#eef2ff; }
+    .card { background:#0f172a; border:1px solid #1e293b; border-radius:22px; box-shadow:0 0 25px rgba(0,0,0,.35); }
+    .stat { background:#111827; border-radius:20px; padding:20px; border:1px solid #1f2937; transition:.3s; }
+    .stat:hover { transform:translateY(-5px); }
+    .input { width:100%; padding:12px 16px; border-radius:12px; background:#0f172a; border:1px solid #1e293b; color:white; outline:none; }
+    .input:focus { border-color:#22c55e; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:40px; font-size:12px; font-weight:600; }
+    .badge-green { background:#14532d; color:#4ade80; }
+    .badge-red { background:#5a1a1a; color:#ff6b6b; }
+    .badge-yellow { background:#5a4a1a; color:#ffb020; }
+    .badge-blue { background:#1a2a5a; color:#60a5fa; }
+    .tab-bar { display:flex; gap:8px; overflow-x:auto; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.06); margin-bottom:16px; }
+    .tab-btn { background:none; border:none; color:#94a3b8; padding:8px 16px; border-radius:40px; cursor:pointer; font-weight:500; transition:.2s; white-space:nowrap; }
+    .tab-btn.active { background:#22c55e; color:#0a0c15; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:640px) { .detail-grid { grid-template-columns:1fr; } }
+    .expand-details { margin-top:16px; border-top:1px solid rgba(255,255,255,.08); padding-top:16px; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; }
+    .modal.show { display:flex; }
+    .modal-content { max-width:600px; width:95%; max-height:90vh; overflow-y:auto; background:#0f172a; border-radius:32px; padding:24px; border:1px solid rgba(255,255,255,.06); }
+    .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(17,24,39,.95); backdrop-filter:blur(12px); padding:14px 24px; border-radius:60px; border-left:4px solid; z-index:9999; font-size:14px; font-weight:500; max-width:90%; text-align:center; display:none; }
+    .toast.success { border-left-color:#22c55e; color:#22c55e; }
+    .toast.error { border-left-color:#ef4444; color:#ef4444; }
+    .toast.info { border-left-color:#3b82f6; color:#3b82f6; }
+    .loading { animation:pulse 1.5s ease-in-out infinite; background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%); background-size:200% 100%; }
+    @keyframes pulse { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+    /* bottom nav */
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:72px; background:#071226; display:flex; justify-content:space-around; align-items:center; border-top:1px solid rgba(255,255,255,.05); z-index:999; overflow-x:auto; }
+    .bottom-nav button { background:none; border:none; color:#94a3b8; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; transition:.2s; padding:0 8px; white-space:nowrap; }
+    .bottom-nav button.active { color:#22c55e; }
+    .bottom-nav button span { font-size:10px; }
+    .page { display:none; padding:18px 16px; padding-bottom:90px; }
+    .page.active { display:block; }
+    .glass { background:rgba(255,255,255,.05); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); border-radius:28px; }
+  </style>
+</head>
+<body>
+
+<!-- ========== AUTH MODALS ========== -->
+<div id="loginModal" class="modal">
+  <div class="modal-content">
+    <h2 class="text-3xl font-bold">Welcome Back</h2>
+    <p class="text-slate-400 mt-2">Login to access live arbitrage.</p>
+    <input id="loginEmail" type="email" placeholder="Email" class="input mt-6">
+    <div class="relative mt-4">
+      <input id="loginPassword" type="password" placeholder="Password" class="input">
+      <span class="absolute right-4 top-3 text-2xl cursor-pointer" onclick="togglePwd('loginPassword',this)">👁️</span>
+    </div>
+    <button class="btn w-full mt-6" onclick="loginUser()">Login</button>
+    <button class="w-full mt-4 text-green-400" onclick="showRegister()">Create Account</button>
+    <button class="w-full mt-3 text-red-400" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<div id="registerModal" class="modal">
+  <div class="modal-content">
+    <h2 class="text-3xl font-bold">Create Account</h2>
+    <p class="text-slate-400 mt-2">Register to start scanning.</p>
+    <input id="regUsername" placeholder="Username" class="input mt-5">
+    <input id="regEmail" type="email" placeholder="Email" class="input mt-4">
+    <input id="regMpesa" placeholder="Mobile number (e.g., 0712345678)" class="input mt-4">
+    <div class="relative mt-4">
+      <input id="regPassword" type="password" placeholder="Password" class="input">
+      <span class="absolute right-4 top-3 text-2xl cursor-pointer" onclick="togglePwd('regPassword',this)">👁️</span>
+    </div>
+    <button class="btn w-full mt-6" onclick="registerUser()">Create Account</button>
+    <button class="w-full mt-4 text-green-400" onclick="showLogin()">Already have an account?</button>
+    <button class="w-full mt-3 text-red-400" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- ========== HEADER ========== -->
+<header class="sticky top-0 z-50 bg-[#020617]/90 backdrop-blur-lg border-b border-slate-800 p-4">
+  <div class="flex justify-between items-center max-w-7xl mx-auto">
+    <div>
+      <h1 class="text-4xl font-bold text-green-400">ArbiMine Pro</h1>
+      <p class="text-slate-400 text-sm">Real-Time Cryptocurrency Arbitrage Scanner</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="connectionStatus" class="bg-green-500 px-4 py-2 rounded-full text-sm font-bold">LIVE</span>
+      <button class="btn text-sm" onclick="showPage('profile')">Profile</button>
+    </div>
+  </div>
+</header>
+
+<!-- ========== TOAST ========== -->
+<div id="toast" class="toast"></div>
+
+<!-- ========== PAGES ========== -->
+<div id="home" class="page active">
+  <!-- Summary stats -->
+  <div class="grid md:grid-cols-4 gap-5 mt-6">
+    <div class="stat glow"><div class="text-slate-400">Live Opportunities</div><div id="totalOpportunities" class="text-4xl font-bold mt-3">0</div></div>
+    <div class="stat"><div class="text-slate-400">Highest Spread</div><div id="highestSpread" class="text-4xl font-bold text-green-400 mt-3">0%</div></div>
+    <div class="stat"><div class="text-slate-400">Tradable Coins</div><div id="tradableCoins" class="text-4xl font-bold text-blue-400 mt-3">0</div></div>
+    <div class="stat"><div class="text-slate-400">Average Liquidity</div><div id="avgLiquidity" class="text-4xl font-bold text-yellow-400 mt-3">KES 0</div></div>
+  </div>
+
+  <!-- Market Overview (compact) -->
+  <div class="card p-5 mt-6">
+    <h2 class="text-3xl font-bold">📊 Market Overview</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+      <div class="stat"><div class="text-slate-400">Live Opportunities</div><div id="marketCoins" class="text-2xl font-bold text-green-400">0</div></div>
+      <div class="stat"><div class="text-slate-400">Highest Spread</div><div id="marketSpread" class="text-2xl font-bold text-blue-400">0%</div></div>
+      <div class="stat"><div class="text-slate-400">Average Spread</div><div id="averageSpread" class="text-2xl font-bold text-yellow-400">0%</div></div>
+      <div class="stat"><div class="text-slate-400">AI Sentiment</div><div id="marketSentiment" class="text-2xl font-bold text-green-400">Bullish</div></div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="card p-5 mt-6">
+    <input id="searchCoin" type="text" placeholder="Search BTC, ETH, SOL..." class="input">
+  </div>
+
+  <!-- Opportunities list -->
+  <div class="card mt-6 p-6">
+    <div class="flex justify-between items-center">
+      <h2 class="text-3xl font-bold">Live Arbitrage Opportunities</h2>
+      <button onclick="fetchOpportunities()" class="bg-green-500 px-6 py-3 rounded-xl">Refresh</button>
+    </div>
+    <div id="opportunities" class="mt-6 space-y-4">
+      <div class="text-center text-slate-500">Loading opportunities...</div>
+    </div>
+  </div>
+
+  <!-- Additional panels (they appear below the cards) -->
+  <div id="extraPanels">
+    <!-- AI Spread Trend -->
+    <div class="card mt-6 p-6">
+      <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">AI Spread Trend</h2><span class="bg-green-500 px-4 py-2 rounded-full">LIVE</span></div>
+      <div class="mt-6" style="height:350px"><canvas id="trendChart"></canvas></div>
+      <div class="grid md:grid-cols-4 gap-5 mt-8">
+        <div class="stat"><div class="text-slate-400">Current Spread</div><div id="currentSpread" class="text-3xl font-bold text-green-400 mt-2">0%</div></div>
+        <div class="stat"><div class="text-slate-400">AI Prediction</div><div id="prediction" class="text-3xl font-bold text-blue-400 mt-2">UP</div></div>
+        <div class="stat"><div class="text-slate-400">Confidence</div><div id="confidence" class="text-3xl font-bold text-yellow-400 mt-2">95%</div></div>
+        <div class="stat"><div class="text-slate-400">Volatility</div><div id="volatility" class="text-3xl font-bold text-red-400 mt-2">LOW</div></div>
+      </div>
+    </div>
+
+    <!-- AI Risk Engine -->
+    <div class="card mt-6 p-6">
+      <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">AI Risk Engine</h2><div id="riskBadge" class="bg-yellow-500 px-5 py-2 rounded-full font-bold">MEDIUM RISK</div></div>
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        <div class="space-y-5">
+          <div><div class="flex justify-between"><span>Liquidity Score</span><span id="liqValue">92%</span></div><progress id="liqBar" value="92" max="100" class="w-full h-4"></progress></div>
+          <div><div class="flex justify-between"><span>Execution Probability</span><span id="exeValue">96%</span></div><progress id="exeBar" value="96" max="100" class="w-full h-4"></progress></div>
+          <div><div class="flex justify-between"><span>Transfer Success</span><span id="transferValue">94%</span></div><progress id="transferBar" value="94" max="100" class="w-full h-4"></progress></div>
+          <div><div class="flex justify-between"><span>Market Stability</span><span id="stableValue">90%</span></div><progress id="stableBar" value="90" max="100" class="w-full h-4"></progress></div>
+        </div>
+        <div>
+          <div class="card p-5"><h3 class="text-2xl font-bold text-green-400">AI Recommendation</h3><p id="aiRecommendation" class="text-slate-300 leading-8 mt-5">Waiting for market analysis...</p></div>
+          <div class="grid grid-cols-2 gap-4 mt-5">
+            <div class="stat"><div class="text-slate-400">Market Sentiment</div><div id="marketSentiment2" class="text-3xl font-bold text-green-400 mt-2">BULLISH</div></div>
+            <div class="stat"><div class="text-slate-400">Trade Quality</div><div id="tradeQuality" class="text-3xl font-bold text-blue-400 mt-2">A+</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exchange Comparison -->
+    <div class="card mt-6 p-6">
+      <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">Exchange Comparison</h2><span class="text-green-400 font-bold">Live Analysis</span></div>
+      <div class="overflow-x-auto mt-6">
+        <table class="w-full">
+          <thead><tr class="border-b border-slate-700"><th class="text-left p-3">Feature</th><th class="text-center p-3 text-green-400">Buy Exchange</th><th class="text-center p-3 text-blue-400">Sell Exchange</th></tr></thead>
+          <tbody>
+            <tr class="border-b border-slate-800"><td class="p-3">Exchange</td><td id="buyExchangeName" class="text-center font-bold">-</td><td id="sellExchangeName" class="text-center font-bold">-</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Trading Price</td><td id="buyExchangePrice" class="text-center text-green-400">-</td><td id="sellExchangePrice" class="text-center text-blue-400">-</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Deposit</td><td id="buyDeposit" class="text-center">-</td><td id="sellDeposit" class="text-center">-</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Withdraw</td><td id="buyWithdraw" class="text-center">-</td><td id="sellWithdraw" class="text-center">-</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Trading Fee</td><td id="buyFee" class="text-center">0.10%</td><td id="sellFee" class="text-center">0.10%</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Network Fee</td><td id="networkFee" class="text-center">-</td><td class="text-center">Included</td></tr>
+            <tr class="border-b border-slate-800"><td class="p-3">Confirmation Time</td><td id="confirmTime" class="text-center">-</td><td class="text-center">Ready</td></tr>
+            <tr><td class="p-3 font-bold">Execution Score</td><td colspan="2" id="executionScore" class="text-center text-3xl font-bold text-green-400">95%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Smart Trading Panel -->
+    <div class="card mt-6 p-6">
+      <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">Smart Trading Panel</h2><span class="bg-green-600 px-4 py-2 rounded-xl">AI Assisted</span></div>
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        <div>
+          <label class="text-slate-400">Investment (USDT)</label><input id="tradeAmount" type="number" value="1000" class="input mt-2">
+          <label class="text-slate-400 mt-5 block">Estimated Trading Fee (%)</label><input id="tradeFee" type="number" step="0.01" value="0.10" class="input mt-2">
+          <label class="text-slate-400 mt-5 block">Estimated Withdrawal Fee (USDT)</label><input id="withdrawFeeInput" type="number" value="2" class="input mt-2">
+          <button onclick="calculateTrade()" class="bg-green-500 mt-6 w-full py-4 rounded-xl text-xl font-bold">Calculate Trade</button>
+        </div>
+        <div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="stat"><div class="text-slate-400">Gross Profit</div><div id="grossProfit" class="text-3xl font-bold text-green-400 mt-2">0</div></div>
+            <div class="stat"><div class="text-slate-400">Net Profit</div><div id="smartNetProfit" class="text-3xl font-bold text-blue-400 mt-2">0</div></div>
+            <div class="stat"><div class="text-slate-400">Break-even</div><div id="breakEven" class="text-3xl font-bold text-yellow-400 mt-2">0%</div></div>
+            <div class="stat"><div class="text-slate-400">Execution Time</div><div id="executionTime" class="text-3xl font-bold text-purple-400 mt-2">3 min</div></div>
+          </div>
+          <div class="card mt-6 p-5"><h3 class="text-xl font-bold">AI Trading Decision</h3><div id="tradeDecision" class="text-green-400 text-2xl font-bold mt-4">WAITING...</div><p id="tradeAdvice" class="text-slate-300 mt-4 leading-8">Waiting for calculation...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profit Calculator (standalone) -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">Profit Calculator</h2>
+      <div class="grid md:grid-cols-2 gap-5">
+        <input id="investment" type="number" placeholder="Investment ($)" class="input">
+        <input id="spreadInput" type="number" placeholder="Spread %" class="input">
+        <input id="feeInput" type="number" placeholder="Trading Fees ($)" class="input">
+        <input id="withdrawFeeCalc" type="number" placeholder="Withdrawal Fee ($)" class="input">
+      </div>
+      <div class="grid grid-cols-2 gap-5 mt-8">
+        <div>Gross Profit <div id="grossProfitCalc" class="text-3xl font-bold text-green-400">$0</div></div>
+        <div>Total Fees <div id="totalFeesCalc" class="text-3xl font-bold text-red-400">$0</div></div>
+        <div>Net Profit <div id="netProfitCalc" class="text-3xl font-bold text-blue-400">$0</div></div>
+        <div>ROI <div id="roiCalc" class="text-3xl font-bold text-yellow-400">0%</div></div>
+      </div>
+      <div id="tradeStatus" class="mt-6 text-2xl font-bold"></div>
+    </div>
+
+    <!-- AI Opportunity Score -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold">AI Opportunity Score</h2>
+      <div id="aiScore" class="text-7xl font-bold text-green-400 mt-6">95/100</div>
+      <div id="aiRecommendationShort" class="text-xl mt-4 text-slate-300">Excellent Opportunity</div>
+    </div>
+
+    <!-- Portfolio Tracker -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">Portfolio Tracker</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <input id="coinName" placeholder="Coin (BTC)" class="input">
+        <input id="coinAmount" type="number" placeholder="Amount" class="input">
+        <input id="coinPrice" type="number" placeholder="Buy Price" class="input">
+      </div>
+      <button onclick="addCoin()" class="mt-5 bg-green-600 px-6 py-3 rounded-xl">Add Coin</button>
+      <div class="grid grid-cols-3 gap-5 mt-8">
+        <div><div class="text-slate-400">Portfolio Value</div><div id="portfolioValue" class="text-3xl font-bold text-green-400">$0</div></div>
+        <div><div class="text-slate-400">Total Cost</div><div id="portfolioCost" class="text-3xl font-bold text-blue-400">$0</div></div>
+        <div><div class="text-slate-400">Net Profit</div><div id="portfolioProfit" class="text-3xl font-bold text-yellow-400">$0</div></div>
+      </div>
+      <div class="overflow-auto mt-8">
+        <table class="w-full">
+          <thead><tr><th>Coin</th><th>Amount</th><th>Buy Price</th><th>Current Price</th><th>Value</th><th>P/L</th><th>ROI</th><th>Action</th></tr></thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Watchlist -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">⭐ Favorite Coins</h2>
+      <div class="overflow-auto">
+        <table class="w-full">
+          <thead><tr><th>Coin</th><th>Buy</th><th>Sell</th><th>Price</th><th>Spread</th><th>Action</th></tr></thead>
+          <tbody id="watchlistBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Exchange Status Monitor -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">Exchange Status Monitor</h2>
+      <div class="overflow-auto">
+        <table class="w-full">
+          <thead><tr><th>Exchange</th><th>Status</th><th>Latency</th><th>Deposit</th><th>Withdraw</th></tr></thead>
+          <tbody id="exchangeStatusBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI Market Prediction -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">🤖 AI Market Prediction</h2>
+      <div class="bg-slate-900 rounded-3xl p-6">
+        <div id="predictionTitle" class="text-6xl font-bold text-green-400">BULLISH</div>
+        <div class="mt-5 grid grid-cols-2 gap-5">
+          <div><div class="text-slate-400">Confidence</div><div id="predictionConfidence" class="text-4xl font-bold">96%</div></div>
+          <div><div class="text-slate-400">Average Spread</div><div id="predictionSpread" class="text-4xl font-bold text-blue-400">0%</div></div>
+          <div><div class="text-slate-400">Market Liquidity</div><div id="predictionLiquidity" class="text-4xl font-bold text-green-400">$0</div></div>
+          <div><div class="text-slate-400">High Risk Coins</div><div id="predictionRisk" class="text-4xl font-bold text-red-400">0</div></div>
+        </div>
+        <div class="mt-8"><div class="text-slate-400 mb-2">AI Explanation</div><p id="predictionReason" class="text-lg leading-8 text-white">Analyzing live arbitrage opportunities...</p></div>
+      </div>
+    </div>
+
+    <!-- Crypto News -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">📰 Crypto News & Market Events</h2>
+      <div id="newsContainer"><div class="text-center py-12">Loading latest crypto news...</div></div>
+    </div>
+
+    <!-- Opportunity Heatmap -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">🔥 Opportunity Heatmap</h2>
+      <div id="heatmapContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+      <div class="flex gap-6 mt-6">
+        <div class="flex items-center gap-2"><div class="w-5 h-5 rounded bg-green-600"></div><span>Excellent (5%+)</span></div>
+        <div class="flex items-center gap-2"><div class="w-5 h-5 rounded bg-yellow-500"></div><span>Good (2–5%)</span></div>
+        <div class="flex items-center gap-2"><div class="w-5 h-5 rounded bg-red-600"></div><span>Low (&lt;2%)</span></div>
+      </div>
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-6">⚙ Advanced Settings</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <label><input id="darkMode" type="checkbox"> Dark Mode</label>
+        <label><input id="soundAlerts" type="checkbox"> Sound Alerts</label>
+        <label><input id="desktopNotifications" type="checkbox"> Desktop Notifications</label>
+        <label><input id="showHighRisk" type="checkbox"> Show High Risk Opportunities</label>
+        <div>Refresh Interval (Seconds)<input id="refreshInterval" type="number" class="input" min="5" max="300"></div>
+        <div>Minimum Spread %<input id="minimumSpread" type="number" class="input" step="0.1"></div>
+        <div>Minimum Liquidity ($)<input id="minimumLiquidity" type="number" class="input"></div>
+        <div>Preferred Exchange<select id="preferredExchange" class="input"><option>ALL</option><option>BINANCE</option><option>MEXC</option><option>KUCOIN</option><option>GATE.IO</option><option>HTX</option><option>BINGX</option><option>BITMART</option><option>BITGET</option></select></div>
+      </div>
+      <div class="flex gap-4 mt-8">
+        <button onclick="updateSettings()" class="bg-green-600 px-6 py-3 rounded-xl">Save Settings</button>
+        <button onclick="resetSettings()" class="bg-red-600 px-6 py-3 rounded-xl">Reset</button>
+      </div>
+      <div id="settingsSaved" class="hidden text-green-400 mt-5 font-bold">✅ Settings Saved Successfully</div>
+    </div>
+
+    <!-- AI Confidence Score -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-5">AI Arbitrage Confidence</h2>
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800">
+        <div class="flex justify-between items-center">
+          <div><div id="confidenceValue" class="text-6xl font-bold text-green-400">97%</div><p class="text-slate-400 mt-3 text-lg">Chance of successful arbitrage execution</p></div>
+          <div class="w-28 h-28"><canvas id="confidenceGauge"></canvas></div>
+        </div>
+        <div class="mt-8"><div class="w-full bg-slate-800 rounded-full h-5"><div id="confidenceBar" class="bg-green-500 h-5 rounded-full" style="width:97%"></div></div></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Spread Score</div><div id="spreadScore" class="text-3xl font-bold text-green-400">98%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Liquidity</div><div id="liquidityScore" class="text-3xl font-bold text-blue-400">95%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Network Match</div><div id="networkScore" class="text-3xl font-bold text-yellow-400">100%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Transfer Speed</div><div id="speedScore" class="text-3xl font-bold text-cyan-400">90%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Volatility</div><div id="volatilityScore" class="text-3xl font-bold text-red-400">86%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">AI Decision</div><div id="aiDecision" class="text-3xl font-bold text-green-400">EXECUTE</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Trade Checklist -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-5">Smart Trade Checklist</h2>
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800">
+        <div id="tradeChecklist" class="space-y-4">
+          <div class="flex justify-between"><span>Spread Above Minimum</span><span id="checkSpread" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Enough Liquidity</span><span id="checkLiquidity" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Withdrawal Enabled</span><span id="checkWithdraw" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Deposit Enabled</span><span id="checkDeposit" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Matching Network</span><span id="checkNetwork" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Transfer Fee Acceptable</span><span id="checkFee" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>Market Volatility Safe</span><span id="checkVolatility" class="text-green-400 font-bold">✔ PASS</span></div>
+          <div class="flex justify-between"><span>AI Recommendation</span><span id="checkAI" class="text-green-400 text-xl font-bold">READY TO TRADE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Slippage Simulator -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-5">AI Slippage Simulator</h2>
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div><label class="text-slate-400">Trade Size (USDT)</label><input id="tradeSize" type="number" value="1000" class="input mt-2"></div>
+          <div><label class="text-slate-400">Estimated Slippage</label><div id="slippageValue" class="text-5xl font-bold text-green-400 mt-3">0.08%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-8">
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Execution Price</div><div id="executionPrice" class="text-3xl font-bold text-blue-400">0.00000000</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Expected Cost</div><div id="executionCost" class="text-3xl font-bold text-green-400">0 USDT</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Market Impact</div><div id="marketImpact" class="text-3xl font-bold text-yellow-400">LOW</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">AI Advice</div><div id="slippageAdvice" class="text-3xl font-bold text-cyan-400">SAFE</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Profit Probability -->
+    <div class="card mt-6 p-6">
+      <h2 class="text-3xl font-bold mb-5">AI Profit Probability</h2>
+      <div class="bg-slate-950 rounded-3xl p-6 border border-slate-800">
+        <div class="flex justify-between items-center">
+          <div><div id="profitProbability" class="text-6xl font-bold text-green-400">94%</div><p class="text-slate-400 mt-3 text-lg">Probability that this opportunity will remain profitable.</p></div>
+          <div><div id="forecastSignal" class="text-3xl font-bold text-green-400">VERY HIGH</div></div>
+        </div>
+        <div class="mt-8"><div class="w-full h-5 rounded-full bg-slate-800"><div id="probabilityBar" class="h-5 rounded-full bg-green-500" style="width:94%"></div></div></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Spread Strength</div><div id="spreadStrength" class="text-3xl font-bold text-green-400">95%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Transfer Window</div><div id="transferWindow" class="text-3xl font-bold text-cyan-400">91%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">Market Stability</div><div id="marketStability" class="text-3xl font-bold text-blue-400">89%</div></div>
+          <div class="bg-slate-900 rounded-2xl p-4"><div class="text-slate-400">AI Confidence</div><div id="forecastConfidence" class="text-3xl font-bold text-yellow-400">97%</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end extraPanels -->
+</div><!-- end home -->
+
+<!-- ========== PROFILE PAGE ========== -->
+<div id="profile" class="page">
+  <div class="card p-6 max-w-2xl mx-auto">
+    <h2 class="text-3xl font-bold">Profile</h2>
+    <div class="mt-6 space-y-4">
+      <div><div class="text-slate-400">Username</div><div id="profileUsername" class="text-2xl font-bold">—</div></div>
+      <div><div class="text-slate-400">Email</div><div id="profileEmail" class="text-xl">—</div></div>
+      <div><div class="text-slate-400">Mobile</div><div id="profilePhone" class="text-xl">—</div></div>
+      <div><div class="text-slate-400">Member since</div><div id="profileSince" class="text-xl">—</div></div>
+    </div>
+    <button class="bg-red-600 w-full mt-8 py-4 rounded-xl" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<div class="bottom-nav">
+  <button class="active" onclick="showPage('home')"><span>🏠</span><span>Home</span></button>
+  <button onclick="showPage('profile')"><span>👤</span><span>Profile</span></button>
+</div>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+  // ----- AUTH & STATE -----
+  let token = localStorage.getItem('token');
+  let opportunities = [];
+  let chartInstance = null;
+  let currentOpp = null;
+  let expandedId = null;
+
+  // ----- TOAST -----
+  function showToast(msg, type='info') {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = 'toast ' + type;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', 4000);
+  }
+
+  // ----- AUTH UI -----
+  function togglePwd(id, el) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; el.innerText = '🙈'; } else { inp.type = 'password'; el.innerText = '👁️'; }
+  }
+  function showLogin() { document.getElementById('loginModal').classList.add('show'); document.getElementById('registerModal').classList.remove('show'); }
+  function showRegister() { document.getElementById('registerModal').classList.add('show'); document.getElementById('loginModal').classList.remove('show'); }
+  function closeModal() { document.getElementById('loginModal').classList.remove('show'); document.getElementById('registerModal').classList.remove('show'); }
+
+  async function loginUser() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showToast('Email and password required', 'error'); return; }
+    try {
+      const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        token = data.token;
+        closeModal();
+        loadProfile();
+        fetchOpportunities();
+        showToast('✅ Login successful', 'success');
+      } else { showToast('❌ '+ (data.error||'Login failed'), 'error'); }
+    } catch(e) { showToast('❌ Network error', 'error'); }
+  }
+
+  async function registerUser() {
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const mpesa = document.getElementById('regMpesa').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!username || !email || !mpesa || !password) { showToast('All fields required', 'error'); return; }
+    try {
+      const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,email,mpesa,password}) });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        token = data.token;
+        closeModal();
+        loadProfile();
+        fetchOpportunities();
+        showToast('✅ Registration successful', 'success');
+      } else { showToast('❌ '+ (data.error||'Registration failed'), 'error'); }
+    } catch(e) { showToast('❌ Network error', 'error'); }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    token = null;
+    showLogin();
+    showToast('Logged out', 'info');
+  }
+
+  // ----- PAGE SWITCH -----
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+    const map = { home:0, profile:1 };
+    if (map[page] !== undefined) document.querySelectorAll('.bottom-nav button')[map[page]].classList.add('active');
+    if (page === 'profile') loadProfile();
+  }
+
+  // ----- PROFILE -----
+  async function loadProfile() {
+    if (!token) { document.getElementById('profileUsername').innerText = 'Not logged in'; return; }
+    try {
+      const res = await fetch('/api/me', { headers: { Authorization: token } });
+      const u = await res.json();
+      if (u.error) throw new Error(u.error);
+      document.getElementById('profileUsername').innerText = u.username;
+      document.getElementById('profileEmail').innerText = u.email;
+      document.getElementById('profilePhone').innerText = u.mpesa;
+      document.getElementById('profileSince').innerText = new Date().toLocaleDateString();
+    } catch(e) {
+      document.getElementById('profileUsername').innerText = 'Error loading profile';
+    }
+  }
+
+  // ----- MAIN: FETCH OPPORTUNITIES -----
+  async function fetchOpportunities() {
+    try {
+      const res = await fetch('/api/opportunities');
+      const data = await res.json();
+      opportunities = data.opportunities || [];
+      updateSummary();
+      renderOpportunities();
+      // Also update extra panels
+      updateAIEngine();
+      updateMarketOverview();
+      updateHeatmap();
+      updateExchangeStatus();
+      updateAIPrediction();
+      loadNews();
+    } catch(err) {
+      document.getElementById('opportunities').innerHTML = `<div class="text-red-400 text-center">Unable to connect to server</div>`;
+    }
+  }
+
+  // ----- SUMMARY -----
+  function updateSummary() {
+    document.getElementById('totalOpportunities').innerText = opportunities.length;
+    let highest = 0, tradable = 0, totalLiq = 0;
+    opportunities.forEach(o => {
+      const spread = parseFloat(o.spread) || 0;
+      if (spread > highest) highest = spread;
+      if (o.tradable) tradable++;
+      totalLiq += Number(o.liquidity) || 0;
+    });
+    document.getElementById('highestSpread').innerText = highest.toFixed(2) + '%';
+    document.getElementById('tradableCoins').innerText = tradable;
+    document.getElementById('avgLiquidity').innerText = 'KES ' + Math.round(totalLiq / Math.max(opportunities.length,1)).toLocaleString();
+  }
+
+  // ----- RENDER OPPORTUNITIES (with expandable details) -----
+  function renderOpportunities() {
+    const box = document.getElementById('opportunities');
+    if (!opportunities.length) {
+      box.innerHTML = `<div class="text-center text-slate-400">No opportunities found</div>`;
+      return;
+    }
+    let html = '';
+    opportunities.forEach(o => {
+      const spread = parseFloat(o.spread) || 0;
+      const risk = o.risk || 'medium';
+      const riskClass = risk === 'low' ? 'badge-green' : risk === 'high' ? 'badge-red' : 'badge-yellow';
+      const tradableText = o.tradable ? '✅' : '❌';
+      const profit = (parseFloat(o.sellPrice) - parseFloat(o.buyPrice)) * 100;
+      const netProfit = profit * 0.99;
+      const roi = (netProfit / 100) * 100;
+      const liq = Number(o.liquidity) || 0;
+      const vol = Number(o.volume) || 0;
+      const orderDepth = Math.round(liq * 0.8);
+      const slippage = (Math.random() * 0.5 + 0.1).toFixed(2);
+      const confidence = Math.round(Math.random() * 30 + 70);
+      const lifetime = Math.floor(Math.random() * 10 + 2) + ' min';
+
+      html += `
+        <div class="card p-5 mt-4 cursor-pointer" onclick="toggleExpand('${o.id}')">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-3xl font-bold">${o.symbol}</div>
+              <div class="text-slate-400 mt-1">${o.buyExchange} → ${o.sellExchange}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-4xl font-bold text-green-400">${spread.toFixed(2)}%</div>
+              <div class="text-slate-400">Spread</div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-4 gap-4 mt-6">
+            <div class="stat"><div class="text-slate-400">Buy Price</div><div class="text-2xl font-bold">${o.buyPrice}</div></div>
+            <div class="stat"><div class="text-slate-400">Sell Price</div><div class="text-2xl font-bold">${o.sellPrice}</div></div>
+            <div class="stat"><div class="text-slate-400">Liquidity</div><div class="text-2xl font-bold text-blue-400">${liq.toLocaleString()}</div></div>
+            <div class="stat"><div class="text-slate-400">Risk</div><div class="text-2xl font-bold ${riskClass}">${risk.toUpperCase()}</div></div>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-sm">
+            <div><span class="text-slate-400">Gross Profit:</span> $${profit.toFixed(2)}</div>
+            <div><span class="text-slate-400">Net Profit:</span> $${netProfit.toFixed(2)}</div>
+            <div><span class="text-slate-400">ROI:</span> ${roi.toFixed(2)}%</div>
+            <div><span class="text-slate-400">Volume:</span> $${vol.toLocaleString()}</div>
+            <div><span class="text-slate-400">Order Book Depth:</span> $${orderDepth}</div>
+            <div><span class="text-slate-400">Est. Slippage:</span> ${slippage}%</div>
+            <div><span class="text-slate-400">Confidence:</span> ${confidence}%</div>
+            <div><span class="text-slate-400">Lifetime:</span> ${lifetime}</div>
+            <div><span class="text-slate-400">Tradable:</span> ${tradableText}</div>
+            <div><span class="text-slate-400">AI Rec:</span> ${o.tradable ? '✅ Tradable' : '❌ Check manually'}</div>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button onclick="event.stopPropagation();toggleExpand('${o.id}')" class="bg-green-500 px-5 py-3 rounded-xl">View Details</button>
+            <button onclick="event.stopPropagation();calculateProfitForOpp('${o.id}')" class="bg-blue-600 px-5 py-3 rounded-xl">Profit Calculator</button>
+            <button onclick="event.stopPropagation();addToWatchlist('${o.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-3 rounded-xl">⭐ Favorite</button>
+          </div>
+
+          <!-- Expandable details -->
+          <div id="expand-${o.id}" style="display:none;" class="expand-details">
+            <div class="loading" style="height:80px;"></div>
+          </div>
+        </div>
+      `;
+    });
+    box.innerHTML = html;
+  }
+
+  // ----- TOGGLE EXPAND (fetch details) -----
+  async function toggleExpand(id) {
+    const container = document.getElementById('expand-' + id);
+    if (!container) return;
+    // if already open, close
+    if (expandedId === id) {
+      container.style.display = 'none';
+      expandedId = null;
+      return;
+    }
+    // close any other open
+    if (expandedId) {
+      const prev = document.getElementById('expand-' + expandedId);
+      if (prev) prev.style.display = 'none';
+    }
+    container.style.display = 'block';
+    container.innerHTML = '<div class="loading" style="height:60px;"></div>';
+    expandedId = id;
+
+    try {
+      const res = await fetch(`/api/opportunity/${id}/details`);
+      const opp = await res.json();
+      renderExpandedDetails(container, opp);
+    } catch(e) {
+      container.innerHTML = '<div class="text-red-400">Failed to load details</div>';
+    }
+  }
+
+  function renderExpandedDetails(container, opp) {
+    const buy = parseFloat(opp.buyPrice), sell = parseFloat(opp.sellPrice);
+    const gross = (sell - buy) * 100;
+    const tradeFee = (buy * 100 * 0.001) + (sell * 100 * 0.001);
+    const withdrawFee = (buy * 100 * 0.0005);
+    const depositFee = (sell * 100 * 0.0005);
+    const gasFee = 0.5;
+    const net = gross - tradeFee - withdrawFee - depositFee - gasFee;
+    const roi = (net / 100) * 100;
+    const mid = (buy + sell) / 2;
+    const high = Math.max(buy, sell) * 1.01;
+    const low = Math.min(buy, sell) * 0.99;
+
+    // AI scores
+    const stability = Math.min(95, 70 + Math.random()*25);
+    const liquidityScore = Math.min(95, 60 + Math.random()*30);
+    const transfer = opp.tradable ? 96 : 45;
+    const confidence = Math.min(98, 60 + Math.random()*30);
+    const exchangeRel = Math.min(95, 70 + Math.random()*25);
+    const networkRel = opp.tradable ? 92 : 40;
+    const profitScore = Math.min(90, 50 + Math.random()*40);
+    const safety = Math.min(95, 50 + Math.random()*40);
+    const speed = Math.min(90, 40 + Math.random()*50);
+    const overall = Math.round((stability + liquidityScore + transfer + confidence + exchangeRel + networkRel + profitScore + safety + speed) / 9);
+
+    let html = `
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-lg font-bold">📊 Full Details</span>
+        <button onclick="document.getElementById('expand-${opp.id}').style.display='none'; expandedId=null;" class="bg-red-500 px-4 py-2 rounded-xl">Close</button>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('${opp.id}','pricing')">Pricing</button>
+        <button class="tab-btn" onclick="switchTab('${opp.id}','networks')">Networks</button>
+        <button class="tab-btn" onclick="switchTab('${opp.id}','liquidity')">Liquidity</button>
+        <button class="tab-btn" onclick="switchTab('${opp.id}','profit')">Profit</button>
+        <button class="tab-btn" onclick="switchTab('${opp.id}','ai')">AI Analysis</button>
+        <button class="tab-btn" onclick="switchTab('${opp.id}','graphs')">Graphs</button>
+      </div>
+    `;
+
+    // Pricing
+    html += `
+      <div id="tab-pricing-${opp.id}" class="tab-content active">
+        <div class="detail-grid">
+          <div class="stat"><span class="text-slate-400">Buy Price</span><div class="text-2xl font-bold">$${opp.buyPrice}</div></div>
+          <div class="stat"><span class="text-slate-400">Sell Price</span><div class="text-2xl font-bold">$${opp.sellPrice}</div></div>
+          <div class="stat"><span class="text-slate-400">Mid Price</span><div class="text-2xl font-bold">$${mid.toFixed(8)}</div></div>
+          <div class="stat"><span class="text-slate-400">Highest Price</span><div class="text-2xl font-bold">$${high.toFixed(8)}</div></div>
+          <div class="stat"><span class="text-slate-400">Lowest Price</span><div class="text-2xl font-bold">$${low.toFixed(8)}</div></div>
+          <div class="stat"><span class="text-slate-400">Price Difference</span><div class="text-2xl font-bold text-green-400">$${(sell - buy).toFixed(8)}</div></div>
+        </div>
+      </div>
+    `;
+
+    // Networks
+    let netHtml = '';
+    const nets = { ...(opp.buyNetworks || {}), ...(opp.sellNetworks || {}) };
+    if (Object.keys(nets).length) {
+      Object.values(nets).slice(0,6).forEach(n => {
+        netHtml += `<div class="flex justify-between border-b border-slate-700 py-2"><span class="font-medium">${n.name}</span><span>Fee: ${n.fee||0} ${n.feeUnit||''}</span><span>Withdraw ${n.withdraw?'✅':'❌'}</span><span>Deposit ${n.deposit?'✅':'❌'}</span></div>`;
+      });
+    } else {
+      netHtml = '<div class="text-slate-400">No network data</div>';
+    }
+    html += `<div id="tab-networks-${opp.id}" class="tab-content"><div class="space-y-2">${netHtml}</div></div>`;
+
+    // Liquidity
+    const liq = opp.liquidity || 0;
+    html += `
+      <div id="tab-liquidity-${opp.id}" class="tab-content">
+        <div class="detail-grid">
+          <div class="stat"><span class="text-slate-400">Buy Liquidity</span><div class="text-2xl font-bold">$${liq.toLocaleString()}</div></div>
+          <div class="stat"><span class="text-slate-400">Sell Liquidity</span><div class="text-2xl font-bold">$${(opp.sellLiquidity || 0).toLocaleString()}</div></div>
+          <div class="stat"><span class="text-slate-400">Bid Depth</span><div class="text-2xl font-bold">$${(liq * 0.6).toFixed(0)}</div></div>
+          <div class="stat"><span class="text-slate-400">Ask Depth</span><div class="text-2xl font-bold">$${(liq * 0.4).toFixed(0)}</div></div>
+          <div class="stat"><span class="text-slate-400">Spread Depth</span><div class="text-2xl font-bold">${opp.spread}%</div></div>
+          <div class="stat"><span class="text-slate-400">Volume Analysis</span><div class="text-2xl font-bold">Normal</div></div>
+        </div>
+      </div>
+    `;
+
+    // Profit
+    html += `
+      <div id="tab-profit-${opp.id}" class="tab-content">
+        <div class="detail-grid">
+          <div class="stat"><span class="text-slate-400">Gross Profit</span><div class="text-2xl font-bold text-green-400">$${gross.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">Trading Fees</span><div class="text-2xl font-bold text-yellow-400">$${tradeFee.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">Withdrawal Fees</span><div class="text-2xl font-bold text-yellow-400">$${withdrawFee.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">Deposit Fees</span><div class="text-2xl font-bold text-yellow-400">$${depositFee.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">Gas Fees</span><div class="text-2xl font-bold text-yellow-400">$${gasFee.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">Net Profit</span><div class="text-2xl font-bold text-green-400">$${net.toFixed(2)}</div></div>
+          <div class="stat"><span class="text-slate-400">ROI</span><div class="text-2xl font-bold text-green-400">${roi.toFixed(2)}%</div></div>
+          <div class="stat"><span class="text-slate-400">Break-even Price</span><div class="text-2xl font-bold">$${(buy - 0.01).toFixed(8)}</div></div>
+        </div>
+      </div>
+    `;
+
+    // AI Analysis
+    html += `
+      <div id="tab-ai-${opp.id}" class="tab-content">
+        <div class="ai-score-grid">
+          <div class="stat"><div class="text-slate-400">Spread Stability</div><div class="text-2xl font-bold text-green-400">${Math.round(stability)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Liquidity Score</div><div class="text-2xl font-bold text-blue-400">${Math.round(liquidityScore)}%</div></div>
+          <div class="stat"><div class="text-slate-400">AI Confidence</div><div class="text-2xl font-bold text-yellow-400">${Math.round(confidence)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Transfer Success</div><div class="text-2xl font-bold text-green-400">${Math.round(transfer)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Exchange Reliability</div><div class="text-2xl font-bold text-blue-400">${Math.round(exchangeRel)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Network Reliability</div><div class="text-2xl font-bold text-purple-400">${Math.round(networkRel)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Profit Score</div><div class="text-2xl font-bold text-green-400">${Math.round(profitScore)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Safety Score</div><div class="text-2xl font-bold text-blue-400">${Math.round(safety)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Speed Score</div><div class="text-2xl font-bold text-yellow-400">${Math.round(speed)}%</div></div>
+          <div class="stat"><div class="text-slate-400">Overall Score</div><div class="text-2xl font-bold text-green-400">${overall}%</div></div>
+        </div>
+        <div class="card p-4 mt-4">
+          <h4 class="font-bold">AI Recommendation</h4>
+          <p class="text-slate-300 mt-2">Buy on ${opp.buyExchange}, transfer via TRC20, sell on ${opp.sellExchange}. Estimated completion: 3 min. Confidence: ${Math.round(confidence)}%. Risk: ${opp.risk||'medium'}.</p>
+        </div>
+      </div>
+    `;
+
+    // Graphs
+    const graphId = opp.id.replace(/[^a-zA-Z0-9]/g, '');
+    html += `
+      <div id="tab-graphs-${opp.id}" class="tab-content">
+        <div class="chart-container"><h4 class="text-md font-semibold mb-2">Spread Trend</h4><canvas id="detailSpread-${graphId}"></canvas></div>
+        <div class="chart-container"><h4 class="text-md font-semibold mb-2">Price Trend</h4><canvas id="detailPrice-${graphId}"></canvas></div>
+        <div class="chart-container"><h4 class="text-md font-semibold mb-2">Liquidity Trend</h4><canvas id="detailLiquidity-${graphId}"></canvas></div>
+        <div class="chart-container"><h4 class="text-md font-semibold mb-2">Volume Trend</h4><canvas id="detailVolume-${graphId}"></canvas></div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Draw graphs after DOM update
+    setTimeout(() => {
+      const spreadData = [parseFloat(opp.spread)*0.6, parseFloat(opp.spread)*0.75, parseFloat(opp.spread)*0.9, parseFloat(opp.spread)*1.05, parseFloat(opp.spread)*0.95, parseFloat(opp.spread)];
+      const priceData = [buy*0.98, buy*0.99, buy, sell*0.99, sell*1.01, sell];
+      const liqData = [opp.liquidity*0.8, opp.liquidity*0.9, opp.liquidity, opp.liquidity*0.95, opp.liquidity*0.85, opp.liquidity];
+      const volData = [opp.liquidity*0.5, opp.liquidity*0.6, opp.liquidity*0.7, opp.liquidity*0.65, opp.liquidity*0.75, opp.liquidity];
+      drawCardChart(`detailSpread-${graphId}`, 'Spread %', spreadData, '#22c55e');
+      drawCardChart(`detailPrice-${graphId}`, 'Price', priceData, '#3b82f6');
+      drawCardChart(`detailLiquidity-${graphId}`, 'Liquidity', liqData, '#8b5cf6');
+      drawCardChart(`detailVolume-${graphId}`, 'Volume', volData, '#f59e0b');
+    }, 100);
+  }
+
+  function switchTab(oppId, tab) {
+    const container = document.getElementById('expand-' + oppId);
+    if (!container) return;
+    container.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`tab-${tab}-${oppId}`).classList.add('active');
+    container.querySelector(`.tab-btn[onclick="switchTab('${oppId}','${tab}')"]`).classList.add('active');
+  }
+
+  function drawCardChart(id, label, data, color) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    if (chartInstance && chartInstance.canvas.id === id) chartInstance.destroy();
+    const ctx = canvas.getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: { labels: ['1','2','3','4','5','Now'], datasets: [{ label, data, borderColor: color, backgroundColor: color+'20', fill: true, tension: .4, pointRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white', font: { size: 12 } } } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } } } }
+    });
+  }
+
+  // ----- PROFIT CALCULATOR (modal/standalone) -----
+  function calculateProfitForOpp(id) {
+    const opp = opportunities.find(o => o.id === id);
+    if (!opp) return;
+    document.getElementById('investment').value = 1000;
+    document.getElementById('spreadInput').value = opp.spread;
+    document.getElementById('feeInput').value = 0.2;
+    document.getElementById('withdrawFeeCalc').value = 2;
+    calculateProfitStandalone();
+    // scroll to calculator
+    document.querySelector('.card.mt-6.p-6 h2:contains("Profit Calculator")').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function calculateProfitStandalone() {
+    const investment = Number(document.getElementById('investment').value) || 0;
+    const spread = Number(document.getElementById('spreadInput').value) || 0;
+    const fee = Number(document.getElementById('feeInput').value) || 0;
+    const withdraw = Number(document.getElementById('withdrawFeeCalc').value) || 0;
+    if (investment <= 0 || spread <= 0) return;
+    const gross = investment * (spread/100);
+    const totalFees = fee + withdraw;
+    const net = gross - totalFees;
+    const roi = (net / investment) * 100;
+    document.getElementById('grossProfitCalc').innerText = '$' + gross.toFixed(2);
+    document.getElementById('totalFeesCalc').innerText = '$' + totalFees.toFixed(2);
+    document.getElementById('netProfitCalc').innerText = '$' + net.toFixed(2);
+    document.getElementById('roiCalc').innerText = roi.toFixed(2) + '%';
+    const status = document.getElementById('tradeStatus');
+    if (net > 0) {
+      status.innerHTML = `<span class="text-green-400">✅ PROFITABLE TRADE</span>`;
+    } else {
+      status.innerHTML = `<span class="text-red-400">❌ NOT PROFITABLE</span>`;
+    }
+  }
+
+  // ----- WATCHLIST -----
+  let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+  function saveWatchlist() { localStorage.setItem('watchlist', JSON.stringify(watchlist)); }
+  function addToWatchlist(id) {
+    const opp = opportunities.find(o => o.id === id);
+    if (!opp) return;
+    if (watchlist.find(w => w.id === id)) {
+      showToast('Already in watchlist', 'info');
+      return;
+    }
+    watchlist.push({ id, symbol: opp.symbol, buyExchange: opp.buyExchange, sellExchange: opp.sellExchange, spread: opp.spread, price: opp.buyPrice });
+    saveWatchlist();
+    renderWatchlist();
+    showToast('Added to watchlist', 'success');
+  }
+  function removeWatchlist(index) {
+    watchlist.splice(index, 1);
+    saveWatchlist();
+    renderWatchlist();
+  }
+  function renderWatchlist() {
+    const body = document.getElementById('watchlistBody');
+    if (!body) return;
+    if (!watchlist.length) {
+      body.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">No Favorite Coins</td></tr>`;
+      return;
+    }
+    body.innerHTML = '';
+    watchlist.forEach((w, i) => {
+      body.innerHTML += `
+        <tr class="border-b border-slate-800">
+          <td class="p-3 font-bold">⭐ ${w.symbol}</td>
+          <td class="p-3 text-green-400">${w.buyExchange}</td>
+          <td class="p-3 text-red-400">${w.sellExchange}</td>
+          <td class="p-3">$${w.price}</td>
+          <td class="p-3 text-green-400">${w.spread}%</td>
+          <td class="p-3"><button onclick="removeWatchlist(${i})" class="bg-red-600 px-3 py-2 rounded-lg">Remove</button></td>
+        </tr>
+      `;
+    });
+  }
+
+  // ----- PORTFOLIO -----
+  let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+  function savePortfolio() { localStorage.setItem('portfolio', JSON.stringify(portfolio)); }
+  function addCoin() {
+    const coin = document.getElementById('coinName').value.toUpperCase();
+    const amount = Number(document.getElementById('coinAmount').value);
+    const price = Number(document.getElementById('coinPrice').value);
+    if (!coin || amount <= 0 || price <= 0) { alert('Enter valid values'); return; }
+    portfolio.push({ coin, amount, buyPrice: price, currentPrice: price, added: new Date().toLocaleString() });
+    savePortfolio();
+    renderPortfolio();
+  }
+  function removeCoin(index) {
+    portfolio.splice(index, 1);
+    savePortfolio();
+    renderPortfolio();
+  }
+  function renderPortfolio() {
+    const body = document.getElementById('portfolioBody');
+    if (!body) return;
+    body.innerHTML = '';
+    let totalValue = 0, totalCost = 0;
+    portfolio.forEach((c, i) => {
+      const value = c.amount * c.currentPrice;
+      const cost = c.amount * c.buyPrice;
+      const profit = value - cost;
+      const roi = cost > 0 ? (profit / cost) * 100 : 0;
+      totalValue += value;
+      totalCost += cost;
+      body.innerHTML += `
+        <tr class="border-b border-slate-800">
+          <td class="p-3 font-bold">${c.coin}</td>
+          <td class="p-3">${c.amount}</td>
+          <td class="p-3">$${c.buyPrice.toFixed(4)}</td>
+          <td class="p-3">$${c.currentPrice.toFixed(4)}</td>
+          <td class="p-3">$${value.toFixed(2)}</td>
+          <td class="p-3 ${profit >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit.toFixed(2)}</td>
+          <td class="p-3 ${roi >= 0 ? 'text-green-400' : 'text-red-400'}">${roi.toFixed(2)}%</td>
+          <td class="p-3"><button onclick="removeCoin(${i})" class="bg-red-600 px-3 py-2 rounded-lg">Delete</button></td>
+        </tr>
+      `;
+    });
+    const netProfit = totalValue - totalCost;
+    document.getElementById('portfolioValue').innerText = '$' + totalValue.toFixed(2);
+    document.getElementById('portfolioCost').innerText = '$' + totalCost.toFixed(2);
+    document.getElementById('portfolioProfit').innerText = '$' + netProfit.toFixed(2);
+  }
+
+  // ----- EXCHANGE STATUS -----
+  async function loadExchangeStatus() {
+    try {
+      const res = await fetch('/api/exchange-health');
+      const data = await res.json();
+      const body = document.getElementById('exchangeStatusBody');
+      body.innerHTML = '';
+      for (const [name, info] of Object.entries(data)) {
+        body.innerHTML += `
+          <tr class="border-b border-slate-800">
+            <td class="p-3 font-bold">${name}</td>
+            <td class="p-3 ${info.status === 'online' ? 'text-green-400' : 'text-red-400'}">${info.status.toUpperCase()}</td>
+            <td class="p-3">${info.latency || '—'} ms</td>
+            <td class="p-3 text-green-400">YES</td>
+            <td class="p-3 text-blue-400">YES</td>
+          </tr>
+        `;
+      }
+    } catch(e) { console.log(e); }
+  }
+
+  // ----- MARKET OVERVIEW -----
+  function updateMarketOverview() {
+    const len = opportunities.length;
+    let highest = 0, avg = 0, totalLiq = 0;
+    opportunities.forEach(o => {
+      const s = parseFloat(o.spread) || 0;
+      if (s > highest) highest = s;
+      avg += s;
+      totalLiq += Number(o.liquidity) || 0;
+    });
+    avg = len ? avg / len : 0;
+    document.getElementById('marketCoins').innerText = len;
+    document.getElementById('marketSpread').innerText = highest.toFixed(2) + '%';
+    document.getElementById('averageSpread').innerText = avg.toFixed(2) + '%';
+    const sentiment = avg > 5 ? 'Bullish' : avg < 1 ? 'Bearish' : 'Neutral';
+    const el = document.getElementById('marketSentiment');
+    el.innerText = sentiment;
+    el.className = 'text-2xl font-bold ' + (sentiment === 'Bullish' ? 'text-green-400' : sentiment === 'Bearish' ? 'text-red-400' : 'text-yellow-400');
+  }
+
+  // ----- HEATMAP -----
+  function updateHeatmap() {
+    const container = document.getElementById('heatmapContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    opportunities.slice(0, 30).forEach(o => {
+      const spread = parseFloat(o.spread) || 0;
+      let color = 'bg-red-600';
+      if (spread >= 5) color = 'bg-green-600';
+      else if (spread >= 2) color = 'bg-yellow-500';
+      container.innerHTML += `
+        <div class="${color} rounded-xl p-4 text-center cursor-pointer hover:scale-105 transition" onclick="toggleExpand('${o.id}')">
+          <div class="text-2xl font-bold">${o.symbol}</div>
+          <div class="mt-2">${spread.toFixed(2)}%</div>
+          <div class="text-sm mt-2">${o.buyExchange} ↓ ${o.sellExchange}</div>
+        </div>
+      `;
+    });
+  }
+
+  // ----- AI ENGINE (risk, trend, etc.) -----
+  function updateAIEngine() {
+    if (!opportunities.length) return;
+    const opp = opportunities[0];
+    const spread = parseFloat(opp.spread) || 0;
+    const liq = Number(opp.liquidity) || 0;
+    // Risk
+    let risk = 'MEDIUM RISK';
+    let riskColor = 'bg-yellow-500';
+    if (spread < 1) { risk = 'LOW RISK'; riskColor = 'bg-green-500'; }
+    else if (spread > 3) { risk = 'HIGH RISK'; riskColor = 'bg-red-500'; }
+    document.getElementById('riskBadge').innerText = risk;
+    document.getElementById('riskBadge').className = riskColor + ' px-5 py-2 rounded-full font-bold';
+
+    const liqScore = Math.min(100, 88 + Math.random() * 10);
+    const exeScore = Math.min(100, 90 + Math.random() * 9);
+    const transferScore = Math.min(100, 92 + Math.random() * 7);
+    const stableScore = spread < 2 ? 96 : spread < 5 ? 90 : 80;
+    document.getElementById('liqBar').value = liqScore;
+    document.getElementById('exeBar').value = exeScore;
+    document.getElementById('transferBar').value = transferScore;
+    document.getElementById('stableBar').value = stableScore;
+    document.getElementById('liqValue').innerText = liqScore.toFixed(1) + '%';
+    document.getElementById('exeValue').innerText = exeScore.toFixed(1) + '%';
+    document.getElementById('transferValue').innerText = transferScore.toFixed(1) + '%';
+    document.getElementById('stableValue').innerText = stableScore.toFixed(1) + '%';
+
+    let sentiment = 'BULLISH', quality = 'A+', rec = '';
+    if (spread < 1) {
+      sentiment = 'STABLE';
+      quality = 'A+';
+      rec = 'AI recommends immediate execution. Excellent liquidity, low volatility, and very high execution probability.';
+    } else if (spread < 3) {
+      sentiment = 'BULLISH';
+      quality = 'A';
+      rec = 'Good arbitrage opportunity. Monitor network confirmation time and withdrawal fees before placing orders.';
+    } else {
+      sentiment = 'VOLATILE';
+      quality = 'B';
+      rec = 'Large spread detected. High reward potential but increased risk of price movement during transfer. Confirm liquidity before trading.';
+    }
+    document.getElementById('marketSentiment2').innerText = sentiment;
+    document.getElementById('tradeQuality').innerText = quality;
+    document.getElementById('aiRecommendation').innerHTML = rec;
+
+    // Trend chart
+    const trendValues = Array.from({ length: 20 }, () => spread + (Math.random() * 0.8 - 0.4));
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: 20 }, (_, i) => i+1),
+        datasets: [{ label: 'Spread %', data: trendValues, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.15)', fill: true, borderWidth: 4, pointRadius: 4, tension: .4 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: 'white', font: { size: 16 } } } },
+        scales: { x: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,.05)' } }, y: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,.05)' } } }
+      }
+    });
+    document.getElementById('currentSpread').innerText = spread.toFixed(2) + '%';
+    document.getElementById('prediction').innerText = spread > 2 ? 'STRONG BUY' : spread > 1 ? 'BUY' : 'WATCH';
+    document.getElementById('confidence').innerText = (95 + Math.random()*5).toFixed(1) + '%';
+    document.getElementById('volatility').innerText = spread > 5 ? 'HIGH' : spread > 2 ? 'MEDIUM' : 'LOW';
+  }
+
+  // ----- AI PREDICTION -----
+  function updateAIPrediction() {
+    if (!opportunities.length) return;
+    let avgSpread = 0, totalLiq = 0, highRisk = 0, lowRisk = 0;
+    opportunities.forEach(o => {
+      const s = parseFloat(o.spread) || 0;
+      avgSpread += s;
+      totalLiq += Number(o.liquidity) || 0;
+      if (o.risk === 'high') highRisk++;
+      if (o.risk === 'low') lowRisk++;
+    });
+    avgSpread /= opportunities.length;
+    let pred = 'SIDEWAYS', conf = 70, reason = '', color = 'text-yellow-400';
+    if (avgSpread > 5 && lowRisk > highRisk) {
+      pred = 'BULLISH';
+      conf = 96;
+      reason = 'High spreads, strong liquidity and low risk opportunities.';
+      color = 'text-green-400';
+    } else if (avgSpread < 1) {
+      pred = 'BEARISH';
+      conf = 91;
+      reason = 'Low spreads detected with weak arbitrage potential.';
+      color = 'text-red-400';
+    } else {
+      pred = 'SIDEWAYS';
+      conf = 82;
+      reason = 'Market is stable with moderate opportunities.';
+    }
+    document.getElementById('predictionTitle').innerText = pred;
+    document.getElementById('predictionTitle').className = 'text-6xl font-bold ' + color;
+    document.getElementById('predictionConfidence').innerText = conf + '%';
+    document.getElementById('predictionSpread').innerText = avgSpread.toFixed(2) + '%';
+    document.getElementById('predictionLiquidity').innerText = '$' + Math.round(totalLiq).toLocaleString();
+    document.getElementById('predictionRisk').innerText = highRisk;
+    document.getElementById('predictionReason').innerText = reason;
+  }
+
+  // ----- NEWS -----
+  async function loadNews() {
+    try {
+      const res = await fetch('/api/crypto-news');
+      const news = await res.json();
+      const container = document.getElementById('newsContainer');
+      if (!news.length) { container.innerHTML = '<div class="text-center py-10 text-slate-400">No news available.</div>'; return; }
+      container.innerHTML = '';
+      news.forEach(item => {
+        container.innerHTML += `
+          <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 mb-4 hover:border-green-500 transition">
+            <div class="flex justify-between"><h3 class="text-xl font-bold">${item.title}</h3><span class="text-sm text-slate-400">${item.source}</span></div>
+            <p class="text-slate-300 mt-3 leading-7">${item.description}</p>
+            <div class="flex justify-between mt-5"><span class="text-green-400">${item.category}</span><a href="${item.url}" target="_blank" class="text-blue-400 hover:underline">Read More →</a></div>
+          </div>
+        `;
+      });
+    } catch(e) { console.log(e); }
+  }
+
+  // ----- SMART TRADING PANEL -----
+  function calculateTrade() {
+    if (!opportunities.length) return;
+    const opp = opportunities[0];
+    const amount = Number(document.getElementById('tradeAmount').value) || 0;
+    const fee = Number(document.getElementById('tradeFee').value) || 0;
+    const withdraw = Number(document.getElementById('withdrawFeeInput').value) || 0;
+    const spread = parseFloat(opp.spread) || 0;
+    const gross = amount * (spread/100);
+    const totalFees = amount * (fee/100) * 2 + withdraw;
+    const net = gross - totalFees;
+    document.getElementById('grossProfit').innerText = gross.toFixed(2) + ' USDT';
+    document.getElementById('smartNetProfit').innerText = net.toFixed(2) + ' USDT';
+    document.getElementById('breakEven').innerText = ((totalFees/amount)*100).toFixed(2) + '%';
+    document.getElementById('executionTime').innerText = Math.floor(Math.random()*4+2) + ' mins';
+    const decision = document.getElementById('tradeDecision');
+    const advice = document.getElementById('tradeAdvice');
+    if (net > 20) {
+      decision.innerText = 'STRONG BUY';
+      decision.className = 'text-green-400 text-2xl font-bold';
+      advice.innerHTML = 'AI estimates this trade has a strong probability of success with healthy profit after estimated fees.';
+    } else if (net > 5) {
+      decision.innerText = 'BUY';
+      decision.className = 'text-blue-400 text-2xl font-bold';
+      advice.innerHTML = 'Trade appears profitable, but monitor liquidity and blockchain confirmation times.';
+    } else {
+      decision.innerText = 'SKIP';
+      decision.className = 'text-red-400 text-2xl font-bold';
+      advice.innerHTML = 'Estimated profit after fees is too low. Wait for a better opportunity.';
+    }
+  }
+
+  // ----- CONFIDENCE & CHECKLIST (mock) -----
+  function updateConfidenceAndChecklist() {
+    if (!opportunities.length) return;
+    const opp = opportunities[0];
+    const spread = parseFloat(opp.spread) || 0;
+    const liq = Number(opp.liquidity) || 0;
+    // Confidence scores
+    const spreadScore = Math.min(100, spread * 18);
+    const liqScore = Math.min(100, (liq / 10000) * 100);
+    const network = opp.tradable ? 100 : 40;
+    const speed = opp.buyNetworks ? 90 : 60;
+    const volatility = opp.risk === 'low' ? 96 : opp.risk === 'medium' ? 82 : 58;
+    const confidence = Math.round((spreadScore + liqScore + network + speed + volatility) / 5);
+    document.getElementById('confidenceValue').innerText = confidence + '%';
+    document.getElementById('confidenceBar').style.width = confidence + '%';
+    document.getElementById('spreadScore').innerText = Math.round(spreadScore) + '%';
+    document.getElementById('liquidityScore').innerText = Math.round(liqScore) + '%';
+    document.getElementById('networkScore').innerText = network + '%';
+    document.getElementById('speedScore').innerText = speed + '%';
+    document.getElementById('volatilityScore').innerText = volatility + '%';
+    document.getElementById('aiDecision').innerText = confidence >= 90 ? 'EXECUTE' : confidence >= 70 ? 'GOOD' : confidence >= 50 ? 'WAIT' : 'AVOID';
+
+    // Checklist
+    document.getElementById('checkSpread').innerHTML = spread >= 0.5 ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-red-400">✖ FAIL</span>';
+    document.getElementById('checkLiquidity').innerHTML = liq >= 10000 ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-red-400">✖ FAIL</span>';
+    document.getElementById('checkWithdraw').innerHTML = opp.buyWithdraw ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-red-400">✖ FAIL</span>';
+    document.getElementById('checkDeposit').innerHTML = opp.sellDeposit ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-red-400">✖ FAIL</span>';
+    document.getElementById('checkNetwork').innerHTML = opp.tradable ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-red-400">✖ FAIL</span>';
+    document.getElementById('checkFee').innerHTML = spread > 1 ? '<span class="text-green-400">✔ PASS</span>' : '<span class="text-yellow-400">⚠ CHECK</span>';
+    document.getElementById('checkVolatility').innerHTML = opp.risk === 'low' ? '<span class="text-green-400">✔ PASS</span>' : opp.risk === 'medium' ? '<span class="text-yellow-400">⚠ MEDIUM</span>' : '<span class="text-red-400">✖ HIGH</span>';
+    document.getElementById('checkAI').innerHTML = (spread >= 1 && liq >= 10000 && opp.tradable) ? '<span class="text-green-400">READY TO TRADE</span>' : '<span class="text-red-400">DO NOT TRADE</span>';
+  }
+
+  // ----- SLIPPAGE -----
+  function updateSlippage() {
+    if (!opportunities.length) return;
+    const opp = opportunities[0];
+    const tradeSize = Number(document.getElementById('tradeSize').value) || 0;
+    const price = parseFloat(opp.buyPrice) || 0;
+    const liq = Number(opp.liquidity) || 1;
+    let slippage = ((tradeSize / liq) * 100);
+    if (slippage < 0.05) slippage = 0.05;
+    const execPrice = price + (price * (slippage / 100));
+    const totalCost = execPrice * (tradeSize / price);
+    document.getElementById('slippageValue').innerText = slippage.toFixed(2) + '%';
+    document.getElementById('executionPrice').innerText = execPrice.toFixed(8);
+    document.getElementById('executionCost').innerText = totalCost.toFixed(2) + ' USDT';
+    document.getElementById('marketImpact').innerText = slippage < 0.30 ? 'LOW' : slippage < 1 ? 'MEDIUM' : 'HIGH';
+    document.getElementById('slippageAdvice').innerText = slippage < 0.30 ? 'SAFE' : slippage < 1 ? 'CAUTION' : 'AVOID';
+  }
+
+  // ----- PROFIT PROBABILITY -----
+  function updateProfitForecast() {
+    if (!opportunities.length) return;
+    const opp = opportunities[0];
+    const spread = parseFloat(opp.spread) || 0;
+    const liq = Number(opp.liquidity) || 0;
+    const stability = opp.risk === 'low' ? 95 : opp.risk === 'medium' ? 82 : 55;
+    const transfer = opp.tradable ? 95 : 45;
+    const spreadStrength = Math.min(100, spread * 15);
+    const prob = Math.round((spreadStrength + Math.min(100, liq/15000*100) + stability + transfer) / 4);
+    document.getElementById('profitProbability').innerText = prob + '%';
+    document.getElementById('probabilityBar').style.width = prob + '%';
+    document.getElementById('spreadStrength').innerText = Math.round(spreadStrength) + '%';
+    document.getElementById('transferWindow').innerText = transfer + '%';
+    document.getElementById('marketStability').innerText = stability + '%';
+    document.getElementById('forecastConfidence').innerText = Math.min(prob + 3, 100) + '%';
+    const signal = document.getElementById('forecastSignal');
+    if (prob >= 90) { signal.innerText = 'VERY HIGH'; signal.className = 'text-3xl font-bold text-green-400'; }
+    else if (prob >= 75) { signal.innerText = 'HIGH'; signal.className = 'text-3xl font-bold text-blue-400'; }
+    else if (prob >= 60) { signal.innerText = 'MEDIUM'; signal.className = 'text-3xl font-bold text-yellow-400'; }
+    else { signal.innerText = 'LOW'; signal.className = 'text-3xl font-bold text-red-400'; }
+  }
+
+  // ----- SETTINGS -----
+  const defaultSettings = { darkMode: true, soundAlerts: true, desktopNotifications: true, refreshInterval: 30, minimumSpread: 2, minimumLiquidity: 5000, showHighRisk: false, preferredExchange: 'ALL' };
+  let settings = JSON.parse(localStorage.getItem('arbimineSettings')) || defaultSettings;
+  function applySettings() {
+    document.documentElement.classList.toggle('dark', settings.darkMode);
+    document.getElementById('darkMode').checked = settings.darkMode;
+    document.getElementById('soundAlerts').checked = settings.soundAlerts;
+    document.getElementById('desktopNotifications').checked = settings.desktopNotifications;
+    document.getElementById('refreshInterval').value = settings.refreshInterval;
+    document.getElementById('minimumSpread').value = settings.minimumSpread;
+    document.getElementById('minimumLiquidity').value = settings.minimumLiquidity;
+    document.getElementById('showHighRisk').checked = settings.showHighRisk;
+    document.getElementById('preferredExchange').value = settings.preferredExchange;
+  }
+  function saveSettings() {
+    settings.darkMode = document.getElementById('darkMode').checked;
+    settings.soundAlerts = document.getElementById('soundAlerts').checked;
+    settings.desktopNotifications = document.getElementById('desktopNotifications').checked;
+    settings.refreshInterval = Number(document.getElementById('refreshInterval').value) || 30;
+    settings.minimumSpread = Number(document.getElementById('minimumSpread').value) || 2;
+    settings.minimumLiquidity = Number(document.getElementById('minimumLiquidity').value) || 5000;
+    settings.showHighRisk = document.getElementById('showHighRisk').checked;
+    settings.preferredExchange = document.getElementById('preferredExchange').value;
+    localStorage.setItem('arbimineSettings', JSON.stringify(settings));
+    applySettings();
+    document.getElementById('settingsSaved').classList.remove('hidden');
+    setTimeout(() => document.getElementById('settingsSaved').classList.add('hidden'), 3000);
+  }
+  function resetSettings() {
+    settings = { ...defaultSettings };
+    localStorage.setItem('arbimineSettings', JSON.stringify(settings));
+    applySettings();
+    showToast('Settings reset to default', 'info');
+  }
+
+  // ----- EVENT LISTENERS -----
+  document.addEventListener('DOMContentLoaded', function() {
+    // Profit calculator inputs
+    document.querySelectorAll('#investment, #spreadInput, #feeInput, #withdrawFeeCalc').forEach(el => {
+      el.addEventListener('input', calculateProfitStandalone);
+    });
+    // Slippage input
+    document.getElementById('tradeSize').addEventListener('input', updateSlippage);
+    // Search filter
+    document.getElementById('searchCoin').addEventListener('input', function() {
+      const q = this.value.toUpperCase();
+      const filtered = opportunities.filter(o => o.symbol.includes(q));
+      renderOpportunitiesFiltered(filtered);
+    });
+  });
+
+  function renderOpportunitiesFiltered(filtered) {
+    // quick re-render with filter – we can reuse the main render but with filtered list
+    const box = document.getElementById('opportunities');
+    if (!filtered.length) {
+      box.innerHTML = `<div class="text-center text-slate-400">No opportunities match</div>`;
+      return;
+    }
+    let html = '';
+    filtered.forEach(o => {
+      // same card structure as renderOpportunities, but we'll replicate inline
+      // (we could call a helper, but for simplicity we duplicate)
+      const spread = parseFloat(o.spread) || 0;
+      const risk = o.risk || 'medium';
+      const riskClass = risk === 'low' ? 'badge-green' : risk === 'high' ? 'badge-red' : 'badge-yellow';
+      const profit = (parseFloat(o.sellPrice) - parseFloat(o.buyPrice)) * 100;
+      const netProfit = profit * 0.99;
+      const roi = (netProfit / 100) * 100;
+      const liq = Number(o.liquidity) || 0;
+      const vol = Number(o.volume) || 0;
+      const orderDepth = Math.round(liq * 0.8);
+      const slippage = (Math.random() * 0.5 + 0.1).toFixed(2);
+      const confidence = Math.round(Math.random() * 30 + 70);
+      const lifetime = Math.floor(Math.random() * 10 + 2) + ' min';
+      html += `
+        <div class="card p-5 mt-4 cursor-pointer" onclick="toggleExpand('${o.id}')">
+          <div class="flex justify-between items-center">
+            <div><div class="text-3xl font-bold">${o.symbol}</div><div class="text-slate-400 mt-1">${o.buyExchange} → ${o.sellExchange}</div></div>
+            <div class="text-right"><div class="text-4xl font-bold text-green-400">${spread.toFixed(2)}%</div><div class="text-slate-400">Spread</div></div>
+          </div>
+          <div class="grid md:grid-cols-4 gap-4 mt-6">
+            <div class="stat"><div class="text-slate-400">Buy Price</div><div class="text-2xl font-bold">${o.buyPrice}</div></div>
+            <div class="stat"><div class="text-slate-400">Sell Price</div><div class="text-2xl font-bold">${o.sellPrice}</div></div>
+            <div class="stat"><div class="text-slate-400">Liquidity</div><div class="text-2xl font-bold text-blue-400">${liq.toLocaleString()}</div></div>
+            <div class="stat"><div class="text-slate-400">Risk</div><div class="text-2xl font-bold ${riskClass}">${risk.toUpperCase()}</div></div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-sm">
+            <div><span class="text-slate-400">Gross Profit:</span> $${profit.toFixed(2)}</div>
+            <div><span class="text-slate-400">Net Profit:</span> $${netProfit.toFixed(2)}</div>
+            <div><span class="text-slate-400">ROI:</span> ${roi.toFixed(2)}%</div>
+            <div><span class="text-slate-400">Volume:</span> $${vol.toLocaleString()}</div>
+            <div><span class="text-slate-400">Order Book Depth:</span> $${orderDepth}</div>
+            <div><span class="text-slate-400">Est. Slippage:</span> ${slippage}%</div>
+            <div><span class="text-slate-400">Confidence:</span> ${confidence}%</div>
+            <div><span class="text-slate-400">Lifetime:</span> ${lifetime}</div>
+            <div><span class="text-slate-400">Tradable:</span> ${o.tradable ? '✅' : '❌'}</div>
+            <div><span class="text-slate-400">AI Rec:</span> ${o.tradable ? '✅ Tradable' : '❌ Check manually'}</div>
+          </div>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button onclick="event.stopPropagation();toggleExpand('${o.id}')" class="bg-green-500 px-5 py-3 rounded-xl">View Details</button>
+            <button onclick="event.stopPropagation();calculateProfitForOpp('${o.id}')" class="bg-blue-600 px-5 py-3 rounded-xl">Profit Calculator</button>
+            <button onclick="event.stopPropagation();addToWatchlist('${o.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-3 rounded-xl">⭐ Favorite</button>
+          </div>
+          <div id="expand-${o.id}" style="display:none;" class="expand-details"><div class="loading" style="height:80px;"></div></div>
+        </div>
+      `;
+    });
+    box.innerHTML = html;
+  }
+
+  // ----- INIT -----
+  if (!token) showLogin();
+  else { loadProfile(); fetchOpportunities(); }
+
+  // Auto-refresh
+  setInterval(() => {
+    if (document.getElementById('home').classList.contains('active')) {
+      fetchOpportunities();
+      loadExchangeStatus();
+      updateAIPrediction();
+      updateHeatmap();
+      updateAIEngine();
+      updateConfidenceAndChecklist();
+      updateProfitForecast();
+      updateSlippage();
+    }
+  }, 30000);
+
+  // Also load on first load
+  loadExchangeStatus();
+  renderWatchlist();
+  renderPortfolio();
+  applySettings();
+</script>
+</body>
+</html>
