@@ -1,600 +1,87 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ArbiMine Pro – Enterprise</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:#020617; color:#eef2ff; }
-    .card { background:#0f172a; border:1px solid #1e293b; border-radius:22px; box-shadow:0 0 25px rgba(0,0,0,.35); }
-    .stat { background:#111827; border-radius:20px; padding:20px; border:1px solid #1f2937; transition:.3s; }
-    .stat:hover { transform:translateY(-5px); }
-    .input { width:100%; padding:12px 16px; border-radius:12px; background:#0f172a; border:1px solid #1e293b; color:white; outline:none; }
-    .input:focus { border-color:#22c55e; }
-    .badge { display:inline-block; padding:4px 12px; border-radius:40px; font-size:12px; font-weight:600; }
-    .badge-green { background:#14532d; color:#4ade80; }
-    .badge-red { background:#5a1a1a; color:#ff6b6b; }
-    .badge-yellow { background:#5a4a1a; color:#ffb020; }
-    .badge-blue { background:#1a2a5a; color:#60a5fa; }
-    .tab-bar { display:flex; gap:8px; overflow-x:auto; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.06); margin-bottom:16px; flex-wrap:nowrap; }
-    .tab-btn { background:none; border:none; color:#94a3b8; padding:8px 16px; border-radius:40px; cursor:pointer; font-weight:500; transition:.2s; white-space:nowrap; }
-    .tab-btn.active { background:#22c55e; color:#0a0c15; }
-    .tab-content { display:none; }
-    .tab-content.active { display:block; }
-    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    @media (max-width:640px) { .detail-grid { grid-template-columns:1fr; } }
-    .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(17,24,39,.95); backdrop-filter:blur(12px); padding:14px 24px; border-radius:60px; border-left:4px solid; z-index:9999; font-size:14px; font-weight:500; max-width:90%; text-align:center; display:none; }
-    .toast.success { border-left-color:#22c55e; color:#22c55e; }
-    .toast.error { border-left-color:#ef4444; color:#ef4444; }
-    .toast.info { border-left-color:#3b82f6; color:#3b82f6; }
-    .loading { animation:pulse 1.5s ease-in-out infinite; background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%); background-size:200% 100%; }
-    @keyframes pulse { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-    .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:72px; background:#071226; display:flex; justify-content:space-around; align-items:center; border-top:1px solid rgba(255,255,255,.05); z-index:999; overflow-x:auto; }
-    .bottom-nav button { background:none; border:none; color:#94a3b8; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; transition:.2s; padding:0 8px; white-space:nowrap; }
-    .bottom-nav button.active { color:#22c55e; }
-    .bottom-nav button span { font-size:10px; }
-    .page { display:none; padding:18px 16px; padding-bottom:90px; }
-    .page.active { display:block; }
-    .glass { background:rgba(255,255,255,.05); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); border-radius:28px; }
-    .btn { background:linear-gradient(135deg,#22c55e,#16a34a); padding:12px 20px; border-radius:16px; font-weight:600; transition:.3s; cursor:pointer; border:none; color:white; }
-    .btn:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(34,197,94,.3); }
-    .btn-secondary { background:#334155; }
-    .feature-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    @media (min-width:768px) { .feature-grid { grid-template-columns:1fr 1fr 1fr; } }
-    .feature-card { background:#0f172a; border-radius:16px; padding:12px; border:1px solid #1e293b; }
-    .feature-card .label { font-size:11px; color:#94a3b8; text-transform:uppercase; letter-spacing:.3px; }
-    .feature-card .value { font-size:18px; font-weight:700; margin-top:2px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbiMine | Intelligence Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #e5e7eb; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .row-hover:hover { background: rgba(255, 255, 255, 0.05); }
+    </style>
 </head>
-<body>
+<body class="p-6">
 
-<!-- ========== TOAST ========== -->
-<div id="toast" class="toast"></div>
-
-<!-- ========== HOME PAGE ========== -->
-<div id="home" class="page active">
-  <header class="flex justify-between items-center mb-6">
-    <div>
-      <h1 class="text-4xl font-bold text-green-400">ArbiMine Pro</h1>
-      <p class="text-slate-400 text-sm">Enterprise Arbitrage Intelligence</p>
-    </div>
-    <span id="connectionStatus" class="bg-green-500 px-4 py-2 rounded-full text-sm font-bold">LIVE</span>
-  </header>
-
-  <!-- Summary Stats -->
-  <div class="grid md:grid-cols-4 gap-5 mt-4">
-    <div class="stat"><div class="text-slate-400">Live Opportunities</div><div id="totalOpportunities" class="text-4xl font-bold mt-3">0</div></div>
-    <div class="stat"><div class="text-slate-400">Highest Spread</div><div id="highestSpread" class="text-4xl font-bold text-green-400 mt-3">0%</div></div>
-    <div class="stat"><div class="text-slate-400">Tradable Coins</div><div id="tradableCoins" class="text-4xl font-bold text-blue-400 mt-3">0</div></div>
-    <div class="stat"><div class="text-slate-400">Average Liquidity</div><div id="avgLiquidity" class="text-4xl font-bold text-yellow-400 mt-3">$0</div></div>
-  </div>
-
-  <!-- System Diagnostics (new) -->
-  <div class="card p-5 mt-6">
-    <h2 class="text-3xl font-bold mb-4">🖥️ Live System Diagnostics</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="stat"><div class="text-slate-400">CPU Usage</div><div id="cpuUsage" class="text-2xl font-bold">23%</div></div>
-      <div class="stat"><div class="text-slate-400">RAM Usage</div><div id="ramUsage" class="text-2xl font-bold">1.2 GB</div></div>
-      <div class="stat"><div class="text-slate-400">API Calls</div><div id="apiCalls" class="text-2xl font-bold">1,234</div></div>
-      <div class="stat"><div class="text-slate-400">Scan Latency</div><div id="scanLatency" class="text-2xl font-bold">45 ms</div></div>
-    </div>
-  </div>
-
-  <!-- Search -->
-  <div class="card p-5 mt-6">
-    <input id="searchCoin" type="text" placeholder="Search BTC, ETH, SOL..." class="input">
-  </div>
-
-  <!-- Opportunities List -->
-  <div class="card mt-6 p-6">
-    <div class="flex justify-between items-center">
-      <h2 class="text-3xl font-bold">Live Opportunities</h2>
-      <button onclick="fetchOpportunities()" class="bg-green-500 px-6 py-3 rounded-xl">Refresh</button>
-    </div>
-    <div id="opportunities" class="mt-6 space-y-4">
-      <div class="text-center text-slate-500">Loading opportunities...</div>
-    </div>
-  </div>
-
-  <!-- Top Movers -->
-  <div class="card mt-6 p-6">
-    <h2 class="text-3xl font-bold mb-4">📈 Top Movers (24h)</h2>
-    <div id="topMovers" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="text-slate-400">Loading...</div>
-    </div>
-  </div>
-
-  <!-- AI Spread Trend -->
-  <div class="card mt-6 p-6">
-    <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">AI Spread Trend</h2><span class="bg-green-500 px-4 py-2 rounded-full">LIVE</span></div>
-    <div class="mt-6" style="height:300px"><canvas id="trendChart"></canvas></div>
-    <div class="grid md:grid-cols-4 gap-5 mt-8">
-      <div class="stat"><div class="text-slate-400">Current Spread</div><div id="currentSpread" class="text-3xl font-bold text-green-400">0%</div></div>
-      <div class="stat"><div class="text-slate-400">AI Prediction</div><div id="prediction" class="text-3xl font-bold text-blue-400">UP</div></div>
-      <div class="stat"><div class="text-slate-400">Confidence</div><div id="confidence" class="text-3xl font-bold text-yellow-400">95%</div></div>
-      <div class="stat"><div class="text-slate-400">Volatility</div><div id="volatility" class="text-3xl font-bold text-red-400">LOW</div></div>
-    </div>
-  </div>
-
-  <!-- AI Risk Engine -->
-  <div class="card mt-6 p-6">
-    <div class="flex justify-between items-center"><h2 class="text-3xl font-bold">AI Risk Engine</h2><div id="riskBadge" class="bg-yellow-500 px-5 py-2 rounded-full font-bold">MEDIUM RISK</div></div>
-    <div class="grid md:grid-cols-2 gap-6 mt-8">
-      <div class="space-y-5">
-        <div><div class="flex justify-between"><span>Liquidity Score</span><span id="liqValue">92%</span></div><progress id="liqBar" value="92" max="100" class="w-full h-4"></progress></div>
-        <div><div class="flex justify-between"><span>Execution Probability</span><span id="exeValue">96%</span></div><progress id="exeBar" value="96" max="100" class="w-full h-4"></progress></div>
-        <div><div class="flex justify-between"><span>Transfer Success</span><span id="transferValue">94%</span></div><progress id="transferBar" value="94" max="100" class="w-full h-4"></progress></div>
-        <div><div class="flex justify-between"><span>Market Stability</span><span id="stableValue">90%</span></div><progress id="stableBar" value="90" max="100" class="w-full h-4"></progress></div>
-      </div>
-      <div>
-        <div class="card p-5"><h3 class="text-2xl font-bold text-green-400">AI Recommendation</h3><p id="aiRecommendation" class="text-slate-300 leading-8 mt-5">Waiting for analysis...</p></div>
-        <div class="grid grid-cols-2 gap-4 mt-5">
-          <div class="stat"><div class="text-slate-400">Market Sentiment</div><div id="marketSentiment" class="text-3xl font-bold text-green-400">BULLISH</div></div>
-          <div class="stat"><div class="text-slate-400">Trade Quality</div><div id="tradeQuality" class="text-3xl font-bold text-blue-400">A+</div></div>
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">ArbiMine <span class="text-blue-500">Pro</span></h1>
+            <p class="text-gray-500">Global Arbitrage Intelligence System</p>
         </div>
-      </div>
-    </div>
-  </div>
+        <div id="status" class="text-sm font-mono text-green-500">● System Operational</div>
+    </header>
 
-  <!-- Heatmap -->
-  <div class="card mt-6 p-6">
-    <h2 class="text-3xl font-bold mb-6">🔥 Opportunity Confidence Heatmap</h2>
-    <div id="heatmapContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-  </div>
-
-  <!-- News -->
-  <div class="card mt-6 p-6">
-    <h2 class="text-3xl font-bold mb-6">📰 Crypto News</h2>
-    <div id="newsContainer"><div class="text-center py-12">Loading news...</div></div>
-  </div>
-</div>
-
-<!-- ========== DETAIL PAGE ========== -->
-<div id="details" class="page">
-  <div class="flex justify-between items-center mb-6">
-    <button onclick="showPage('home')" class="btn-secondary px-6 py-3 rounded-xl">← Back</button>
-    <h2 id="detailSymbol" class="text-4xl font-bold text-green-400">Loading...</h2>
-  </div>
-
-  <!-- Summary -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="stat"><div class="text-slate-400">Buy Exchange</div><div id="dBuyEx" class="text-2xl font-bold">-</div></div>
-    <div class="stat"><div class="text-slate-400">Sell Exchange</div><div id="dSellEx" class="text-2xl font-bold">-</div></div>
-    <div class="stat"><div class="text-slate-400">Spread</div><div id="dSpread" class="text-2xl font-bold text-green-400">0%</div></div>
-    <div class="stat"><div class="text-slate-400">Risk</div><div id="dRisk" class="text-2xl font-bold">-</div></div>
-  </div>
-
-  <!-- Tabs (all 12 tabs) -->
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('pricing')">Pricing</button>
-    <button class="tab-btn" onclick="switchTab('networks')">Networks</button>
-    <button class="tab-btn" onclick="switchTab('liquidity')">Liquidity</button>
-    <button class="tab-btn" onclick="switchTab('profit')">Profit</button>
-    <button class="tab-btn" onclick="switchTab('ai')">AI Analysis</button>
-    <button class="tab-btn" onclick="switchTab('graphs')">Graphs</button>
-    <button class="tab-btn" onclick="switchTab('compare')">Compare</button>
-    <button class="tab-btn" onclick="switchTab('smart')">Smart Trading</button>
-    <button class="tab-btn" onclick="switchTab('orderbook')">Order Book</button>
-    <button class="tab-btn" onclick="switchTab('persistence')">Persistence</button>
-    <button class="tab-btn" onclick="switchTab('latency')">Latency</button>
-    <button class="tab-btn" onclick="switchTab('fees')">Fees & Profit</button>
-    <button class="tab-btn" onclick="switchTab('network')">Network & Transfer</button>
-    <button class="tab-btn" onclick="switchTab('riskdetect')">Risk & Detection</button>
-    <button class="tab-btn" onclick="switchTab('execution')">Execution & Strategy</button>
-    <button class="tab-btn" onclick="switchTab('aiopt')">AI & Optimization</button>
-    <button class="tab-btn" onclick="switchTab('system')">System</button>
-  </div>
-
-  <!-- Tab contents -->
-  <!-- Pricing, Networks, Liquidity, Profit, AI, Graphs, Compare, Smart Trading (already existing) -->
-  <div id="tab-pricing" class="tab-content active">...existing content...</div>
-  <div id="tab-networks" class="tab-content">...existing...</div>
-  <div id="tab-liquidity" class="tab-content">...existing...</div>
-  <div id="tab-profit" class="tab-content">...existing...</div>
-  <div id="tab-ai" class="tab-content">...existing...</div>
-  <div id="tab-graphs" class="tab-content">...existing...</div>
-  <div id="tab-compare" class="tab-content">...existing...</div>
-  <div id="tab-smart" class="tab-content">...existing...</div>
-
-  <!-- ===== NEW TAB: ORDER BOOK ===== -->
-  <div id="tab-orderbook" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">📊 Order Book & Slippage</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Order Book Depth</div><div id="orderDepth" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Multi-Level Slippage</div><div id="multiSlippage" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Partial Fill Probability</div><div id="partialFill" class="value text-purple-400">--</div></div>
-        <div class="feature-card"><div class="label">Smart Order Splitting</div><div id="orderSplitting" class="value text-green-400">--</div></div>
-      </div>
-      <div class="mt-4 text-sm text-slate-400">Real-time depth analysis ensures minimal slippage.</div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: PERSISTENCE ===== -->
-  <div id="tab-persistence" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">⏳ Opportunity Persistence</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Stability Score</div><div id="stabilityScore" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Lifetime Prediction</div><div id="lifetimePred" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Expiration Countdown</div><div id="expirationCountdown" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Historical Success Rate</div><div id="historicalSuccess" class="value text-purple-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: LATENCY & RELIABILITY ===== -->
-  <div id="tab-latency" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">⚡ Latency & Reliability</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Exchange Latency</div><div id="exchangeLatency" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Reliability Score</div><div id="reliabilityScore" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Exchange Health</div><div id="exchangeHealthStatus" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">API Failover Active</div><div id="apiFailover" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">WebSocket Failover</div><div id="wsFailover" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">Smart Cache</div><div id="smartCache" class="value text-green-400">✅</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: FEES & PROFIT ===== -->
-  <div id="tab-fees" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">💰 Dynamic Fee Engine & Net Profit</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Trading Fees</div><div id="dynTradingFee" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Withdrawal Fees</div><div id="dynWithdrawFee" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Deposit Fees</div><div id="dynDepositFee" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Gas Fees</div><div id="dynGasFee" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Net Profit</div><div id="dynNetProfit" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">ROI</div><div id="dynROI" class="value text-green-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: NETWORK & TRANSFER ===== -->
-  <div id="tab-network" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">🌐 Network & Transfer</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Transfer Risk Score</div><div id="transferRisk" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Wallet Maintenance Predictor</div><div id="walletMaintenance" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Confirmation Predictor</div><div id="confirmationPredict" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Smart Network Selection</div><div id="smartNetwork" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Cross-Chain Arbitrage</div><div id="crossChain" class="value text-purple-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: RISK & DETECTION ===== -->
-  <div id="tab-riskdetect" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">🛡️ Risk & Detection</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">Liquidity Exhaustion</div><div id="liquidityExhaustion" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Scam Coin Detector</div><div id="scamDetect" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Price Manipulation</div><div id="manipulationDetect" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Wash Trading</div><div id="washDetect" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Exchange Reserve Monitor</div><div id="reserveMonitor" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Market Regime</div><div id="marketRegime" class="value text-yellow-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: EXECUTION & STRATEGY ===== -->
-  <div id="tab-execution" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">⚙️ Execution & Strategy</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">AI Execution Timing</div><div id="execTiming" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Smart Exit Strategy</div><div id="exitStrategy" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Emergency Stop</div><div id="emergencyStop" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Error Recovery</div><div id="errorRecovery" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Execution Simulator</div><div id="execSim" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">AI Explanation</div><div id="aiExplanation" class="value text-purple-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: AI & OPTIMIZATION ===== -->
-  <div id="tab-aiopt" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">🧠 AI & Optimization</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">ML Trade Optimizer</div><div id="mlOptimizer" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Self-Learning AI</div><div id="selfLearning" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Opportunity Clustering</div><div id="clustering" class="value text-purple-400">--</div></div>
-        <div class="feature-card"><div class="label">Duplicate Filter</div><div id="duplicateFilter" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Trade Quality Ranking</div><div id="qualityRank" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Adaptive Risk Manager</div><div id="adaptiveRisk" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Portfolio Rebalancer</div><div id="portfolioRebal" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">AI Portfolio Optimization</div><div id="portfolioOpt" class="value text-purple-400">--</div></div>
-        <div class="feature-card"><div class="label">Predictive Scanner</div><div id="predictiveScan" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Market Correlation</div><div id="marketCorrel" class="value text-blue-400">--</div></div>
-        <div class="feature-card"><div class="label">Self-Optimization</div><div id="selfOpt" class="value text-green-400">--</div></div>
-        <div class="feature-card"><div class="label">Stablecoin Depeg Monitor</div><div id="depegMonitor" class="value text-yellow-400">--</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NEW TAB: SYSTEM ===== -->
-  <div id="tab-system" class="tab-content">
-    <div class="card p-4">
-      <h3 class="text-xl font-bold mb-4">🖥️ System & Performance</h3>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="label">API Failover</div><div id="sysFailover" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">WebSocket Failover</div><div id="sysWSFailover" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">Smart Cache</div><div id="sysCache" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">Distributed Scanner</div><div id="distScanner" class="value text-green-400">✅</div></div>
-        <div class="feature-card"><div class="label">CPU Usage</div><div id="sysCPU" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">RAM Usage</div><div id="sysRAM" class="value text-yellow-400">--</div></div>
-        <div class="feature-card"><div class="label">Network Errors</div><div id="sysErrors" class="value text-green-400">0</div></div>
-        <div class="feature-card"><div class="label">Scanner Performance</div><div id="sysPerformance" class="value text-green-400">--</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== BOTTOM NAV ========== -->
-<div class="bottom-nav">
-  <button class="active" onclick="showPage('home')"><span>🏠</span><span>Home</span></button>
-  <button onclick="showPage('details')" style="display:none;" id="navDetails"><span>📊</span><span>Details</span></button>
-</div>
-
-<script>
-  // ========== STATE ==========
-  let opportunities = [];
-  let chartInstances = {};
-  let currentOpp = null;
-  let assistantHistory = [];
-
-  // ========== TOAST ==========
-  function showToast(msg, type='info') {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.className = 'toast ' + type;
-    t.style.display = 'block';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.style.display = 'none', 4000);
-  }
-
-  // ========== PAGE SWITCH ==========
-  function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
-    document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-    if (page === 'home') {
-      document.querySelector('.bottom-nav button:first-child').classList.add('active');
-      document.getElementById('navDetails').style.display = 'none';
-    } else {
-      document.querySelector('.bottom-nav button:last-child').classList.add('active');
-      document.getElementById('navDetails').style.display = 'flex';
-    }
-  }
-
-  // ========== FETCH OPPORTUNITIES ==========
-  async function fetchOpportunities() {
-    try {
-      const res = await fetch('/api/opportunities');
-      const data = await res.json();
-      opportunities = data.opportunities || [];
-      updateSummary();
-      renderOpportunities();
-      updateAIEngine();
-      updateHeatmap();
-      updateTrendChart();
-      loadNews();
-      loadTopMovers();
-      updateSystemDiagnostics();
-    } catch(err) {
-      document.getElementById('opportunities').innerHTML = `<div class="text-red-400 text-center">Failed to load</div>`;
-    }
-  }
-
-  function updateSummary() {
-    document.getElementById('totalOpportunities').innerText = opportunities.length;
-    let highest = 0, tradable = 0, totalLiq = 0;
-    opportunities.forEach(o => {
-      const spread = parseFloat(o.spread) || 0;
-      if (spread > highest) highest = spread;
-      if (o.tradable) tradable++;
-      totalLiq += Number(o.liquidity) || 0;
-    });
-    document.getElementById('highestSpread').innerText = highest.toFixed(2) + '%';
-    document.getElementById('tradableCoins').innerText = tradable;
-    document.getElementById('avgLiquidity').innerText = '$' + Math.round(totalLiq / Math.max(opportunities.length,1)).toLocaleString();
-  }
-
-  function renderOpportunities() {
-    const box = document.getElementById('opportunities');
-    if (!opportunities.length) {
-      box.innerHTML = `<div class="text-center text-slate-400">No opportunities found</div>`;
-      return;
-    }
-    let html = '';
-    opportunities.forEach(o => {
-      const spread = parseFloat(o.spread) || 0;
-      const risk = o.risk || 'medium';
-      const riskClass = risk === 'low' ? 'badge-green' : risk === 'high' ? 'badge-red' : 'badge-yellow';
-      html += `
-        <div class="card p-5 mt-4 cursor-pointer hover:border-green-500 transition" onclick="openDetails('${o.id}')">
-          <div class="flex justify-between items-center">
-            <div>
-              <div class="text-3xl font-bold">${o.symbol}</div>
-              <div class="text-slate-400 mt-1">${o.buyExchange} → ${o.sellExchange}</div>
-            </div>
-            <div class="text-right">
-              <div class="text-4xl font-bold text-green-400">${spread.toFixed(2)}%</div>
-              <div class="text-slate-400">Spread</div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div class="stat"><div class="text-slate-400">Buy Price</div><div class="text-2xl font-bold">${o.buyPrice}</div></div>
-            <div class="stat"><div class="text-slate-400">Sell Price</div><div class="text-2xl font-bold">${o.sellPrice}</div></div>
-            <div class="stat"><div class="text-slate-400">Liquidity</div><div class="text-2xl font-bold text-blue-400">${Number(o.liquidity).toLocaleString()}</div></div>
-            <div class="stat"><div class="text-slate-400">Risk</div><div class="text-2xl font-bold ${riskClass}">${risk.toUpperCase()}</div></div>
-          </div>
-          <div class="mt-4 text-sm text-slate-400">Click for full details →</div>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="glass p-4 rounded-xl">
+            <p class="text-gray-400 text-xs">Active Exchanges</p>
+            <p class="text-2xl font-bold">15+</p>
         </div>
-      `;
-    });
-    box.innerHTML = html;
-  }
+        <div class="glass p-4 rounded-xl">
+            <p class="text-gray-400 text-xs">Live Opportunities</p>
+            <p id="opp-count" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="glass p-4 rounded-xl">
+            <p class="text-gray-400 text-xs">Scan Latency</p>
+            <p class="text-2xl font-bold"><span id="latency">--</span>ms</p>
+        </div>
+        <div class="glass p-4 rounded-xl">
+            <p class="text-gray-400 text-xs">System Risk</p>
+            <p class="text-2xl font-bold text-green-400">Low</p>
+        </div>
+    </div>
 
-  // ========== OPEN DETAILS ==========
-  async function openDetails(id) {
-    showPage('details');
-    document.getElementById('detailSymbol').innerText = 'Loading...';
-    try {
-      const res = await fetch(`/api/opportunity/${id}/details`);
-      const opp = await res.json();
-      currentOpp = opp;
-      renderDetails(opp);
-      populateEnterpriseFeatures(opp);
-    } catch(e) {
-      showToast('Failed to load details', 'error');
-    }
-  }
+    <!-- Main Table -->
+    <div class="glass rounded-xl overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-white/5 uppercase text-[10px] tracking-widest text-gray-400">
+                <tr>
+                    <th class="p-4">Symbol</th>
+                    <th class="p-4">Buy Exchange</th>
+                    <th class="p-4">Sell Exchange</th>
+                    <th class="p-4">Spread</th>
+                    <th class="p-4">Liquidity</th>
+                    <th class="p-4">Risk</th>
+                </tr>
+            </thead>
+            <tbody id="opp-body" class="text-sm">
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
+    </div>
 
-  function renderDetails(opp) {
-    // ... (same as before, with all existing tabs content)
-    // We'll reuse the previous rendering logic but also call populateEnterpriseFeatures
-    // For brevity, we assume the rendering code is identical to the previous version
-    // (all existing tabs: pricing, networks, liquidity, profit, ai, graphs, compare, smart)
-    // and we add the new feature population.
-    // Since this is a large file, we'll keep the previous logic and add the new function.
-    // We'll just place the new function call at the end.
-    // (In practice, the full rendering code is here, but for the answer we'll summarize)
-    // We'll provide a minimal version that still works.
-    // To save space, we'll assume the user has the previous version and we only add the new features.
-    // Actually, we need to output a complete file. We'll include the full script.
-  }
-
-  // ===== POPULATE ENTERPRISE FEATURES =====
-  function populateEnterpriseFeatures(opp) {
-    const buy = parseFloat(opp.buyPrice), sell = parseFloat(opp.sellPrice);
-    const spread = parseFloat(opp.spread) || 0;
-    const liq = Number(opp.liquidity) || 0;
-
-    // Order Book
-    document.getElementById('orderDepth').innerText = '$' + (liq * 1.2).toFixed(0);
-    document.getElementById('multiSlippage').innerText = (Math.random() * 0.5 + 0.1).toFixed(2) + '%';
-    document.getElementById('partialFill').innerText = (Math.random() * 20 + 80).toFixed(0) + '%';
-    document.getElementById('orderSplitting').innerHTML = liq > 10000 ? '✅ Recommended' : '⚠️ Not needed';
-
-    // Persistence
-    const stability = Math.min(100, 70 + Math.random() * 25);
-    document.getElementById('stabilityScore').innerText = stability.toFixed(0) + '%';
-    const lifetime = Math.floor(Math.random() * 60 + 30) + 's';
-    document.getElementById('lifetimePred').innerText = lifetime;
-    const countdown = Math.floor(Math.random() * 20 + 5) + 's';
-    document.getElementById('expirationCountdown').innerText = countdown;
-    document.getElementById('historicalSuccess').innerText = (Math.random() * 20 + 75).toFixed(0) + '%';
-
-    // Latency
-    document.getElementById('exchangeLatency').innerText = (Math.random() * 100 + 30).toFixed(0) + ' ms';
-    const reliability = Math.min(100, 80 + Math.random() * 15);
-    document.getElementById('reliabilityScore').innerText = reliability.toFixed(0) + '%';
-    document.getElementById('exchangeHealthStatus').innerText = reliability > 90 ? '🟢 Excellent' : reliability > 70 ? '🟡 Good' : '🔴 Poor';
-
-    // Fees & Profit
-    const gross = (sell - buy) * 100;
-    const tradeFee = (buy * 100 * 0.001) + (sell * 100 * 0.001);
-    const withdrawFee = (buy * 100 * 0.0005);
-    const depositFee = (sell * 100 * 0.0005);
-    const gasFee = 0.5;
-    const net = gross - tradeFee - withdrawFee - depositFee - gasFee;
-    const roi = (net / 100) * 100;
-    document.getElementById('dynTradingFee').innerText = '$' + tradeFee.toFixed(2);
-    document.getElementById('dynWithdrawFee').innerText = '$' + withdrawFee.toFixed(2);
-    document.getElementById('dynDepositFee').innerText = '$' + depositFee.toFixed(2);
-    document.getElementById('dynGasFee').innerText = '$' + gasFee.toFixed(2);
-    document.getElementById('dynNetProfit').innerText = '$' + net.toFixed(2);
-    document.getElementById('dynROI').innerText = roi.toFixed(2) + '%';
-
-    // Network & Transfer
-    const transferRisk = Math.random() * 40 + 10;
-    document.getElementById('transferRisk').innerText = transferRisk < 20 ? '🟢 Low' : transferRisk < 40 ? '🟡 Medium' : '🔴 High';
-    document.getElementById('walletMaintenance').innerText = Math.random() > 0.9 ? '⚠️ Soon' : '✅ Clear';
-    document.getElementById('confirmationPredict').innerText = (Math.floor(Math.random() * 5) + 2) + ' min';
-    const netNames = Object.keys(opp.buyNetworks || {});
-    const bestNet = netNames.length ? netNames[0] : 'N/A';
-    document.getElementById('smartNetwork').innerText = bestNet;
-    document.getElementById('crossChain').innerHTML = opp.tradable ? '✅ Available' : '❌ Not available';
-
-    // Risk & Detection
-    const liqExhaust = liq < 10000 ? '⚠️ Low' : '✅ Sufficient';
-    document.getElementById('liquidityExhaustion').innerText = liqExhaust;
-    document.getElementById('scamDetect').innerHTML = liq > 5000 && spread < 20 ? '✅ Clean' : '⚠️ Suspicious';
-    document.getElementById('manipulationDetect').innerHTML = spread < 10 ? '✅ Normal' : '⚠️ Abnormal';
-    document.getElementById('washDetect').innerHTML = Math.random() > 0.85 ? '⚠️ Detected' : '✅ Clear';
-    const reserve = (Math.random() * 20 + 80).toFixed(0) + '%';
-    document.getElementById('reserveMonitor').innerText = reserve;
-    const regimes = ['📈 Trending', '📊 Ranging', '⚡ Volatile'];
-    document.getElementById('marketRegime').innerText = regimes[Math.floor(Math.random() * 3)];
-
-    // Execution & Strategy
-    const timings = ['Immediate', 'In 30s', 'In 1min'];
-    document.getElementById('execTiming').innerText = timings[Math.floor(Math.random() * 3)];
-    document.getElementById('exitStrategy').innerText = spread > 3 ? 'Hold' : 'Exit soon';
-    document.getElementById('emergencyStop').innerHTML = '✅ Active';
-    document.getElementById('errorRecovery').innerHTML = '✅ Enabled';
-    document.getElementById('execSim').innerText = (Math.random() * 20 + 80).toFixed(0) + '% success';
-    const explanations = ['High liquidity and low spread', 'Medium risk, monitor fees', 'Profit likely after fees'];
-    document.getElementById('aiExplanation').innerText = explanations[Math.floor(Math.random() * 3)];
-
-    // AI & Optimization
-    const mlOpt = (Math.random() * 20 + 75).toFixed(0) + '%';
-    document.getElementById('mlOptimizer').innerText = mlOpt;
-    document.getElementById('selfLearning').innerHTML = '✅ Active';
-    document.getElementById('clustering').innerText = 'Group ' + (Math.floor(Math.random() * 5) + 1);
-    document.getElementById('duplicateFilter').innerHTML = '✅ Enabled';
-    const quality = (Math.random() * 30 + 60).toFixed(0);
-    document.getElementById('qualityRank').innerText = quality + '/100';
-    document.getElementById('adaptiveRisk').innerText = spread > 3 ? '🔴 High' : '🟢 Normal';
-    document.getElementById('portfolioRebal').innerHTML = '✅ Suggested';
-    document.getElementById('portfolioOpt').innerText = (Math.random() * 20 + 70).toFixed(0) + '%';
-    document.getElementById('predictiveScan').innerText = (Math.random() * 10 + 5).toFixed(1) + ' min ahead';
-    document.getElementById('marketCorrel').innerText = (Math.random() * 0.6 + 0.2).toFixed(2);
-    document.getElementById('selfOpt').innerHTML = '✅ Active';
-    document.getElementById('depegMonitor').innerHTML = '✅ Stable';
-
-    // System (static values)
-    document.getElementById('sysCPU').innerText = (Math.random() * 30 + 10).toFixed(1) + '%';
-    document.getElementById('sysRAM').innerText = (Math.random() * 2 + 0.5).toFixed(1) + ' GB';
-    document.getElementById('sysPerformance').innerText = (Math.random() * 50 + 100).toFixed(0) + ' scans/min';
-  }
-
-  // ===== UPDATE SYSTEM DIAGNOSTICS (home) =====
-  function updateSystemDiagnostics() {
-    document.getElementById('cpuUsage').innerText = (Math.random() * 30 + 15).toFixed(0) + '%';
-    document.getElementById('ramUsage').innerText = (Math.random() * 1.5 + 0.5).toFixed(1) + ' GB';
-    document.getElementById('apiCalls').innerText = Math.floor(Math.random() * 5000 + 1000);
-    document.getElementById('scanLatency').innerText = (Math.random() * 80 + 20).toFixed(0) + ' ms';
-  }
-
-  // ========== TAB SWITCHING ==========
-  function switchTab(tab) {
-    document.querySelectorAll('#details .tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('#details .tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.querySelector(`#details .tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
-  }
-
-  // ========== OTHER HELPER FUNCTIONS (existing) ==========
-  // ... (all the previously defined functions: drawCardChart, calculateTrade, updateAIEngine, updateHeatmap, updateTrendChart, loadNews, loadTopMovers, etc.)
-  // We need to include them, but for brevity we'll assume they are present.
-  // In the final file, we'll include them all.
-
-  // ========== INIT ==========
-  fetchOpportunities();
-  setInterval(fetchOpportunities, 30000);
-  setInterval(updateSystemDiagnostics, 10000);
-</script>
+    <script>
+        async function fetchOpps() {
+            const res = await fetch('/api/opportunities');
+            const data = await res.json();
+            const body = document.getElementById('opp-body');
+            document.getElementById('opp-count').innerText = data.count;
+            
+            body.innerHTML = data.opportunities.map(o => `
+                <tr class="border-t border-white/5 row-hover transition-colors">
+                    <td class="p-4 font-bold text-blue-400">${o.symbol}</td>
+                    <td class="p-4">${o.buyExchange}</td>
+                    <td class="p-4">${o.sellExchange}</td>
+                    <td class="p-4 text-green-400 font-mono">+${o.spread}%</td>
+                    <td class="p-4">$${parseInt(o.liquidity).toLocaleString()}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-[10px] ${o.risk === 'low' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}">${o.risk.toUpperCase()}</span></td>
+                </tr>
+            `).join('');
+        }
+        setInterval(fetchOpps, 30000);
+        fetchOpps();
+    </script>
 </body>
 </html>
+
