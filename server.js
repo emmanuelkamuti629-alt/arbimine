@@ -20,15 +20,14 @@ app.use((req, res, next) => {
 
 // ==================== MongoDB ====================
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB error:', err));
+  .catch(err => console.error('❌ MongoDB error:', err.message));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== Schemas ====================
-// User, Session, Message, BlockedUser (existing)
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -56,8 +55,6 @@ const blockedUserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   blockedAt: { type: Date, default: Date.now }
 });
-
-// ==================== New: Trade Schema ====================
 const tradeSchema = new mongoose.Schema({
   user: { type: String, required: true },
   symbol: { type: String, required: true },
@@ -65,8 +62,8 @@ const tradeSchema = new mongoose.Schema({
   sellExchange: { type: String, required: true },
   buyPrice: Number,
   sellPrice: Number,
-  amount: Number,          // amount of base asset (e.g., BTC)
-  investment: Number,      // in USDT
+  amount: Number,
+  investment: Number,
   grossProfit: Number,
   tradingFees: Number,
   withdrawalFees: Number,
@@ -191,7 +188,7 @@ const FAST_SCAN_INTERVAL = 60000;
 const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 
-// === fetchRealNetworks, fetchLiquidity, fastScan, detailScan (same as before) ===
+// === fetchRealNetworks, fetchLiquidity (same as before) ===
 async function fetchRealNetworks(exchangeId, coin) {
   const key = exchangeId.toLowerCase();
   if (!SUPPORTED_EXCHANGES.includes(key)) return null;
@@ -245,6 +242,7 @@ async function fetchLiquidity(exchangeId, symbol) {
   }
 }
 
+// === Fast Scan ===
 async function fastScan() {
   console.log('🔄 Fast scan (prices)...');
   const start = Date.now();
@@ -375,6 +373,7 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
+// Start scanning
 fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
@@ -472,7 +471,7 @@ app.get('/api/user/subscription', async (req, res) => {
   }
 });
 
-// ==================== Messaging (Chat) ====================
+// ==================== Messaging ====================
 app.post('/api/messages', async (req, res) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -519,12 +518,20 @@ app.get('/admin/messages', adminAuth, async (req, res) => {
 
 // ==================== Opportunities ====================
 app.get('/api/opportunities', adminAuth, (req, res) => {
+  console.log(`📊 /api/opportunities called, cached: ${cachedOpportunities.length}`);
   const withDetails = cachedOpportunities.map(opp => {
     const detailed = detailedCache.get(opp.id);
     if (detailed) return detailed;
     return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
   });
-  res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan, lastDetail: lastDetailScan });
+  const scanning = cachedOpportunities.length === 0 && Date.now() - lastFastScan > 5000;
+  res.json({
+    count: withDetails.length,
+    opportunities: withDetails,
+    lastScan: lastFastScan,
+    lastDetail: lastDetailScan,
+    scanning
+  });
 });
 
 app.get('/api/opportunity/:id/details', adminAuth, async (req, res) => {
@@ -573,7 +580,6 @@ app.get('/api/balance/:exchange', async (req, res) => {
   const session = await Session.findOne({ token });
   if (!session) return res.status(401).json({ error: 'Invalid session' });
 
-  // Simulated balances (fallback)
   const balances = {
     binance: { USDT: 1250, BTC: 0.02, ETH: 0.5 },
     kucoin: { USDT: 800, BTC: 0.015, ETH: 0.3 },
@@ -591,7 +597,6 @@ app.get('/api/balance/:exchange', async (req, res) => {
     whitebit: { USDT: 200, BTC: 0.003, ETH: 0.04 }
   };
   const exBal = balances[exchange.toLowerCase()] || { USDT: 0 };
-  // Try real balance if keys exist
   const ex = exchangeInstances[exchange.toLowerCase()];
   if (ex && ex.apiKey && ex.secret) {
     try {
@@ -620,8 +625,7 @@ app.post('/api/trade/execute', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Simulate execution – in production you'd place real orders via CCXT
-  // Simulate fees
+  // Simulate execution
   const tradeFeeRate = 0.001;
   const buyTradeFee = investment * tradeFeeRate;
   const sellTradeFee = (amount * sellPrice) * tradeFeeRate;
