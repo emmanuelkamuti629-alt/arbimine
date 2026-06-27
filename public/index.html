@@ -1,87 +1,768 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArbiMine | Intelligence Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0a0a0a; color: #e5e7eb; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .row-hover:hover { background: rgba(255, 255, 255, 0.05); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arbitrage Master</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0b0e14;
+      color: #e0e6ed;
+      font-family: 'Inter', sans-serif;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    .hidden { display: none !important; }
+    /* Login overlay */
+    #loginOverlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11,14,20,0.92);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(6px);
+    }
+    .login-card {
+      background: #1a1f2a;
+      padding: 40px 36px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      border: 1px solid #2a3140;
+    }
+    .login-card h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #f0b34b, #f7d875);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .login-card p { color: #7b8799; margin-bottom: 28px; }
+    .login-card input {
+      width: 100%;
+      padding: 14px 16px;
+      background: #10141c;
+      border: 1px solid #2a3140;
+      border-radius: 12px;
+      color: #e0e6ed;
+      font-size: 15px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .login-card input:focus { border-color: #f0b34b; }
+    .login-card button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #f0b34b, #e09d3a);
+      border: none;
+      border-radius: 12px;
+      color: #0b0e14;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .login-card button:hover { opacity: 0.9; }
+    .login-error { color: #f87171; margin-top: 12px; font-size: 14px; }
+
+    /* Dashboard */
+    #dashboard { padding-top: 10px; }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-left h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f0b34b, #f7d875);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-left .status {
+      font-size: 13px;
+      color: #4ade80;
+      background: #1a2e2a;
+      padding: 4px 12px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-left .status .dot {
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-right .user-badge {
+      background: #1f2633;
+      padding: 6px 16px 6px 12px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .header-right .user-badge .avatar {
+      background: #f0b34b;
+      color: #0b0e14;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .menu-btn {
+      background: none;
+      border: none;
+      color: #e0e6ed;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .menu-btn:hover { background: #1f2633; }
+
+    /* Sidebar (slide from right) */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 998;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.active { display: block; }
+    .sidebar {
+      position: fixed;
+      top: 0; right: -340px;
+      width: 320px;
+      height: 100%;
+      background: #141a24;
+      border-left: 1px solid #2a3140;
+      z-index: 999;
+      transition: right 0.3s ease;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar.open { right: 0; }
+    .sidebar .close-btn {
+      align-self: flex-end;
+      background: none;
+      border: none;
+      color: #7b8799;
+      font-size: 32px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    .sidebar .close-btn:hover { color: #e0e6ed; }
+    .sidebar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #232b38;
+      margin-bottom: 20px;
+    }
+    .sidebar .user-info .avatar-lg {
+      background: #f0b34b;
+      color: #0b0e14;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+    }
+    .sidebar .user-info .details .name { font-weight: 600; font-size: 16px; }
+    .sidebar .user-info .details .plan {
+      font-size: 13px;
+      color: #7b8799;
+      background: #1f2633;
+      padding: 2px 12px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .sidebar .menu-items {
+      flex: 1;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar .menu-items li {
+      padding: 14px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 15px;
+      transition: background 0.15s;
+      color: #b0baca;
+    }
+    .sidebar .menu-items li:hover {
+      background: #1f2633;
+      color: #e0e6ed;
+    }
+    .sidebar .menu-items li.active {
+      background: #1f2633;
+      color: #f0b34b;
+    }
+    .sidebar .menu-items li .icon { font-size: 20px; width: 28px; text-align: center; }
+    .sidebar .menu-items li.exit {
+      margin-top: auto;
+      border-top: 1px solid #232b38;
+      padding-top: 20px;
+      color: #f87171;
+    }
+    .sidebar .menu-items li.exit:hover { background: #2a1a1a; color: #f87171; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #161c26;
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 1px solid #232b38;
+    }
+    .stat-card .label { font-size: 13px; color: #7b8799; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    .stat-card .value.gold { color: #f0b34b; }
+    .stat-card .value.green { color: #4ade80; }
+    .stat-card .value.blue { color: #60a5fa; }
+
+    /* Table */
+    .table-wrap {
+      background: #161c26;
+      border-radius: 16px;
+      border: 1px solid #232b38;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      padding: 16px 20px;
+      background: #0f141e;
+      color: #7b8799;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #232b38;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #1e2633;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #1b232f; }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-low { background: #1a2e2a; color: #4ade80; }
+    .badge-medium { background: #2a2a1a; color: #fbbf24; }
+    .badge-high { background: #2a1a1a; color: #f87171; }
+    .badge-tradable { background: #1a2e2a; color: #4ade80; }
+    .badge-notradable { background: #2a1a1a; color: #f87171; }
+    .exchange-tag {
+      background: #232b38;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .clickable {
+      cursor: pointer;
+      color: #60a5fa;
+      text-decoration: none;
+    }
+    .clickable:hover { text-decoration: underline; }
+
+    /* Modal */
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #1a1f2a;
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 1px solid #2a3140;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    }
+    .modal-content h2 { margin-bottom: 16px; color: #f0b34b; }
+    .modal-content .close {
+      float: right;
+      background: none;
+      border: none;
+      color: #7b8799;
+      font-size: 28px;
+      cursor: pointer;
+    }
+    .modal-content .close:hover { color: #e0e6ed; }
+    .network-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .network-box {
+      background: #10141c;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #232b38;
+    }
+    .network-box h4 { color: #7b8799; font-weight: 600; margin-bottom: 8px; }
+    .network-item {
+      display: flex; justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #1e2633;
+      font-size: 13px;
+    }
+    .network-item:last-child { border-bottom: none; }
+    .status-ok { color: #4ade80; }
+    .status-fail { color: #f87171; }
+    .text-muted { color: #7b8799; font-size: 13px; }
+    .text-center { text-align: center; }
+    .flex { display: flex; align-items: center; gap: 8px; }
+
+    @media (max-width: 640px) {
+      .header-left h1 { font-size: 22px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .sidebar { width: 280px; right: -300px; }
+      .modal-content { padding: 20px; }
+      .network-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body class="p-6">
+<body>
+  <!-- Login Overlay -->
+  <div id="loginOverlay">
+    <div class="login-card">
+      <h1>⚡ Arbitrage Master</h1>
+      <p>Admin access only</p>
+      <input type="text" id="loginUser" placeholder="Username" value="admin">
+      <input type="password" id="loginPass" placeholder="Password">
+      <button id="loginBtn">Sign In</button>
+      <div id="loginError" class="login-error hidden"></div>
+    </div>
+  </div>
 
-    <!-- Header -->
-    <header class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">ArbiMine <span class="text-blue-500">Pro</span></h1>
-            <p class="text-gray-500">Global Arbitrage Intelligence System</p>
-        </div>
-        <div id="status" class="text-sm font-mono text-green-500">● System Operational</div>
-    </header>
-
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="glass p-4 rounded-xl">
-            <p class="text-gray-400 text-xs">Active Exchanges</p>
-            <p class="text-2xl font-bold">15+</p>
-        </div>
-        <div class="glass p-4 rounded-xl">
-            <p class="text-gray-400 text-xs">Live Opportunities</p>
-            <p id="opp-count" class="text-2xl font-bold">0</p>
-        </div>
-        <div class="glass p-4 rounded-xl">
-            <p class="text-gray-400 text-xs">Scan Latency</p>
-            <p class="text-2xl font-bold"><span id="latency">--</span>ms</p>
-        </div>
-        <div class="glass p-4 rounded-xl">
-            <p class="text-gray-400 text-xs">System Risk</p>
-            <p class="text-2xl font-bold text-green-400">Low</p>
-        </div>
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden">
+    <div class="header">
+      <div class="header-left">
+        <h1>⚡ Arbitrage Master</h1>
+        <div class="status"><span class="dot"></span> Data Stream Connected</div>
+      </div>
+      <div class="header-right">
+        <span class="user-badge">
+          <span class="avatar" id="userAvatar">A</span>
+          <span id="userName">Admin</span>
+        </span>
+        <button class="menu-btn" id="menuToggle">☰</button>
+      </div>
     </div>
 
-    <!-- Main Table -->
-    <div class="glass rounded-xl overflow-hidden">
-        <table class="w-full text-left">
-            <thead class="bg-white/5 uppercase text-[10px] tracking-widest text-gray-400">
-                <tr>
-                    <th class="p-4">Symbol</th>
-                    <th class="p-4">Buy Exchange</th>
-                    <th class="p-4">Sell Exchange</th>
-                    <th class="p-4">Spread</th>
-                    <th class="p-4">Liquidity</th>
-                    <th class="p-4">Risk</th>
-                </tr>
-            </thead>
-            <tbody id="opp-body" class="text-sm">
-                <!-- Data populated by JS -->
-            </tbody>
-        </table>
+    <!-- Stats -->
+    <div class="stats" id="statsContainer">
+      <div class="stat-card"><div class="label">Opportunities</div><div class="value gold" id="statCount">0</div></div>
+      <div class="stat-card"><div class="label">Top Spread</div><div class="value gold" id="statTopSpread">0%</div></div>
+      <div class="stat-card"><div class="label">Avg Spread</div><div class="value blue" id="statAvgSpread">0%</div></div>
+      <div class="stat-card"><div class="label">Tradable</div><div class="value green" id="statTradable">0</div></div>
     </div>
 
-    <script>
-        async function fetchOpps() {
-            const res = await fetch('/api/opportunities');
-            const data = await res.json();
-            const body = document.getElementById('opp-body');
-            document.getElementById('opp-count').innerText = data.count;
-            
-            body.innerHTML = data.opportunities.map(o => `
-                <tr class="border-t border-white/5 row-hover transition-colors">
-                    <td class="p-4 font-bold text-blue-400">${o.symbol}</td>
-                    <td class="p-4">${o.buyExchange}</td>
-                    <td class="p-4">${o.sellExchange}</td>
-                    <td class="p-4 text-green-400 font-mono">+${o.spread}%</td>
-                    <td class="p-4">$${parseInt(o.liquidity).toLocaleString()}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded-full text-[10px] ${o.risk === 'low' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}">${o.risk.toUpperCase()}</span></td>
-                </tr>
-            `).join('');
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Buy</th>
+            <th>Sell</th>
+            <th>Spread</th>
+            <th>Liquidity</th>
+            <th>Tradable</th>
+            <th>Risk</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="opportunityTable">
+          <tr><td colspan="8" class="text-center text-muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <button class="close-btn" id="sidebarClose">✕</button>
+    <div class="user-info">
+      <div class="avatar-lg" id="sidebarAvatar">A</div>
+      <div class="details">
+        <div class="name" id="sidebarName">Admin</div>
+        <span class="plan">FREE PLAN</span>
+      </div>
+    </div>
+    <ul class="menu-items">
+      <li class="active" data-view="dashboard"><span class="icon">📊</span> Dashboard</li>
+      <li data-view="scanner"><span class="icon">🔍</span> Scanner</li>
+      <li data-view="charts"><span class="icon">📈</span> Charts</li>
+      <li data-view="portfolio"><span class="icon">💼</span> Portfolio</li>
+      <li data-view="watchlist"><span class="icon">👁️</span> Watchlist</li>
+      <li data-view="notifications"><span class="icon">🔔</span> Notifications</li>
+      <li data-view="autobot"><span class="icon">🤖</span> AutoBot</li>
+      <li data-view="settings"><span class="icon">⚙️</span> Settings</li>
+      <li class="exit" id="sidebarExit"><span class="icon">🚪</span> Exit</li>
+    </ul>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <button class="close" id="modalClose">&times;</button>
+      <h2 id="modalTitle">Opportunity Details</h2>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- State ----------
+    let token = localStorage.getItem('adminToken');
+    let opportunities = [];
+    let refreshInterval = null;
+    let currentView = 'dashboard';
+    let adminUsername = 'Admin';
+
+    // DOM refs
+    const loginOverlay = document.getElementById('loginOverlay');
+    const dashboard = document.getElementById('dashboard');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+    const loginUser = document.getElementById('loginUser');
+    const loginPass = document.getElementById('loginPass');
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarExit = document.getElementById('sidebarExit');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    const sidebarName = document.getElementById('sidebarName');
+    const statCount = document.getElementById('statCount');
+    const statTopSpread = document.getElementById('statTopSpread');
+    const statAvgSpread = document.getElementById('statAvgSpread');
+    const statTradable = document.getElementById('statTradable');
+    const tableBody = document.getElementById('opportunityTable');
+    const detailModal = document.getElementById('detailModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+
+    // ---------- API Helpers ----------
+    async function apiFetch(url, opts = {}) {
+      const res = await fetch(url, {
+        ...opts,
+        headers: { ...opts.headers, 'Authorization': token }
+      });
+      if (res.status === 401) {
+        logout();
+        throw new Error('Unauthorized');
+      }
+      return res.json();
+    }
+
+    // ---------- Login ----------
+    async function login() {
+      const username = loginUser.value.trim();
+      const password = loginPass.value.trim();
+      if (!username || !password) { showError('Please fill in both fields'); return; }
+      try {
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          adminUsername = username;
+          loginOverlay.classList.add('hidden');
+          dashboard.classList.remove('hidden');
+          loginError.classList.add('hidden');
+          updateUserUI();
+          startDashboard();
+        } else {
+          showError('Invalid credentials');
         }
-        setInterval(fetchOpps, 30000);
-        fetchOpps();
-    </script>
+      } catch (e) {
+        showError('Network error');
+      }
+    }
+
+    function showError(msg) {
+      loginError.textContent = msg;
+      loginError.classList.remove('hidden');
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      token = null;
+      if (refreshInterval) clearInterval(refreshInterval);
+      dashboard.classList.add('hidden');
+      loginOverlay.classList.remove('hidden');
+      closeSidebar();
+    }
+
+    function updateUserUI() {
+      const initial = adminUsername.charAt(0).toUpperCase();
+      userAvatar.textContent = initial;
+      userName.textContent = adminUsername;
+      sidebarAvatar.textContent = initial;
+      sidebarName.textContent = adminUsername;
+    }
+
+    // ---------- Sidebar ----------
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      sidebarOverlay.classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    }
+
+    menuToggle.addEventListener('click', toggleSidebar);
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Menu item clicks
+    document.querySelectorAll('.menu-items li:not(.exit)').forEach(item => {
+      item.addEventListener('click', () => {
+        // Remove active from all
+        document.querySelectorAll('.menu-items li').forEach(li => li.classList.remove('active'));
+        item.classList.add('active');
+        const view = item.dataset.view;
+        currentView = view;
+        // For now, just close sidebar – we keep the same content
+        closeSidebar();
+        // Optionally update header or show placeholder
+        if (view === 'dashboard' || view === 'scanner') {
+          // Show the table (already visible)
+        } else {
+          // Could show a placeholder in the future
+        }
+      });
+    });
+
+    // Exit
+    sidebarExit.addEventListener('click', () => {
+      closeSidebar();
+      logout();
+    });
+
+    // ---------- Dashboard ----------
+    function startDashboard() {
+      fetchOpportunities();
+      refreshInterval = setInterval(fetchOpportunities, 60000);
+    }
+
+    async function fetchOpportunities() {
+      try {
+        const data = await apiFetch('/api/opportunities');
+        opportunities = data.opportunities || [];
+        renderStats(data);
+        renderTable(opportunities);
+        // last scan time could be shown if needed
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderStats(data) {
+      const opps = data.opportunities || [];
+      const count = opps.length;
+      statCount.textContent = count;
+      if (count === 0) {
+        statTopSpread.textContent = '0%';
+        statAvgSpread.textContent = '0%';
+        statTradable.textContent = '0';
+        return;
+      }
+      const spreads = opps.map(o => parseFloat(o.spread)).filter(s => !isNaN(s));
+      const top = spreads.length ? Math.max(...spreads) : 0;
+      const avg = spreads.length ? (spreads.reduce((a,b) => a+b, 0) / spreads.length) : 0;
+      statTopSpread.textContent = top.toFixed(2) + '%';
+      statAvgSpread.textContent = avg.toFixed(2) + '%';
+      const tradable = opps.filter(o => o.tradable === true).length;
+      statTradable.textContent = tradable;
+    }
+
+    function renderTable(opps) {
+      if (!opps || opps.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No opportunities found</td></tr>`;
+        return;
+      }
+      let html = '';
+      opps.forEach(opp => {
+        const riskClass = opp.risk === 'low' ? 'badge-low' : opp.risk === 'high' ? 'badge-high' : 'badge-medium';
+        const tradableText = opp.tradable ? '✅ Yes' : '❌ No';
+        const tradableClass = opp.tradable ? 'badge-tradable' : 'badge-notradable';
+        const liq = opp.liquidity ? '$' + Number(opp.liquidity).toLocaleString() : 'N/A';
+        html += `<tr>
+          <td><strong>${opp.symbol}</strong></td>
+          <td><span class="exchange-tag">${opp.buyExchange}</span> ${opp.buyPrice}</td>
+          <td><span class="exchange-tag">${opp.sellExchange}</span> ${opp.sellPrice}</td>
+          <td><strong>${opp.spread}%</strong></td>
+          <td>${liq}</td>
+          <td><span class="badge ${tradableClass}">${tradableText}</span></td>
+          <td><span class="badge ${riskClass}">${opp.risk}</span></td>
+          <td><a class="clickable" data-id="${opp.id}">Details</a></td>
+        </tr>`;
+      });
+      tableBody.innerHTML = html;
+      document.querySelectorAll('[data-id]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const id = e.target.dataset.id;
+          showDetail(id);
+        });
+      });
+    }
+
+    // ---------- Detail Modal ----------
+    async function showDetail(id) {
+      try {
+        const data = await apiFetch(`/api/opportunity/${id}/details`);
+        modalTitle.textContent = `${data.symbol} – ${data.buyExchange} ➔ ${data.sellExchange}`;
+        let html = `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+            <div><strong>Spread:</strong> ${data.spread}%</div>
+            <div><strong>Risk:</strong> <span class="badge ${data.risk === 'low' ? 'badge-low' : data.risk === 'high' ? 'badge-high' : 'badge-medium'}">${data.risk}</span></div>
+            <div><strong>Tradable:</strong> ${data.tradable ? '✅ Yes' : '❌ No'}</div>
+            <div><strong>Liquidity:</strong> $${Number(data.liquidity).toLocaleString()}</div>
+          </div>
+          <div class="network-grid">
+            <div class="network-box">
+              <h4>${data.buyExchange} – Withdraw</h4>
+              ${data.buyWithdraw ? '<span class="status-ok">✔ Withdraw enabled</span>' : '<span class="status-fail">✘ Withdraw disabled</span>'}
+              <div style="margin-top:10px;">
+                ${Object.entries(data.buyNetworks || {}).map(([name, info]) => `
+                  <div class="network-item">
+                    <span>${name}</span>
+                    <span>Fee: ${info.fee} ${info.feeUnit} ${info.withdraw ? '✅' : '❌'}</span>
+                  </div>
+                `).join('') || '<div class="text-muted">No network data</div>'}
+              </div>
+            </div>
+            <div class="network-box">
+              <h4>${data.sellExchange} – Deposit</h4>
+              ${data.sellDeposit ? '<span class="status-ok">✔ Deposit enabled</span>' : '<span class="status-fail">✘ Deposit disabled</span>'}
+              <div style="margin-top:10px;">
+                ${Object.entries(data.sellNetworks || {}).map(([name, info]) => `
+                  <div class="network-item">
+                    <span>${name}</span>
+                    <span>Fee: ${info.fee} ${info.feeUnit} ${info.deposit ? '✅' : '❌'}</span>
+                  </div>
+                `).join('') || '<div class="text-muted">No network data</div>'}
+              </div>
+            </div>
+          </div>
+        `;
+        modalBody.innerHTML = html;
+        detailModal.classList.add('active');
+      } catch (e) {
+        alert('Failed to load details');
+      }
+    }
+
+    modalClose.addEventListener('click', () => detailModal.classList.remove('active'));
+    detailModal.addEventListener('click', (e) => {
+      if (e.target === detailModal) detailModal.classList.remove('active');
+    });
+
+    // ---------- Login Event ----------
+    loginBtn.addEventListener('click', login);
+    loginPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+    // ---------- Auto-login ----------
+    if (token) {
+      fetch('/api/opportunities', { headers: { 'Authorization': token } })
+        .then(res => {
+          if (res.ok) {
+            loginOverlay.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            // We don't know username, default to Admin
+            adminUsername = 'Admin';
+            updateUserUI();
+            startDashboard();
+          } else {
+            logout();
+          }
+        })
+        .catch(() => logout());
+    }
+  </script>
 </body>
 </html>
-
