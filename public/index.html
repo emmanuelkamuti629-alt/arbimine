@@ -529,6 +529,10 @@
         logout();
         throw new Error('Unauthorized');
       }
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
       return res.json();
     }
 
@@ -543,6 +547,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
+        if (!res.ok) {
+          let msg = `Server returned ${res.status}`;
+          try {
+            const errorData = await res.json();
+            if (errorData.error) msg = errorData.error;
+          } catch (_) {}
+          showError(msg);
+          return;
+        }
         const data = await res.json();
         if (data.success) {
           token = data.token;
@@ -557,7 +570,7 @@
           showError('Invalid credentials');
         }
       } catch (e) {
-        showError('Network error');
+        showError('Network error – is the server running?');
       }
     }
 
@@ -598,26 +611,21 @@
     sidebarClose.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
 
-    // Menu item clicks
     document.querySelectorAll('.menu-items li:not(.exit)').forEach(item => {
       item.addEventListener('click', () => {
-        // Remove active from all
         document.querySelectorAll('.menu-items li').forEach(li => li.classList.remove('active'));
         item.classList.add('active');
-        const view = item.dataset.view;
-        currentView = view;
-        // For now, just close sidebar – we keep the same content
+        currentView = item.dataset.view;
         closeSidebar();
-        // Optionally update header or show placeholder
-        if (view === 'dashboard' || view === 'scanner') {
-          // Show the table (already visible)
+        // Optionally update content based on view (here we keep the same table)
+        if (currentView === 'dashboard' || currentView === 'scanner') {
+          // keep table visible
         } else {
-          // Could show a placeholder in the future
+          // Could add placeholder later
         }
       });
     });
 
-    // Exit
     sidebarExit.addEventListener('click', () => {
       closeSidebar();
       logout();
@@ -635,9 +643,8 @@
         opportunities = data.opportunities || [];
         renderStats(data);
         renderTable(opportunities);
-        // last scan time could be shown if needed
       } catch (e) {
-        console.error(e);
+        console.error('Fetch opportunities error:', e);
       }
     }
 
@@ -753,8 +760,7 @@
           if (res.ok) {
             loginOverlay.classList.add('hidden');
             dashboard.classList.remove('hidden');
-            // We don't know username, default to Admin
-            adminUsername = 'Admin';
+            adminUsername = 'Admin'; // default, you can fetch username later
             updateUserUI();
             startDashboard();
           } else {

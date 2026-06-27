@@ -2,21 +2,78 @@ require("dotenv").config();
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 const ccxt = require('ccxt');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ==================== CORS (optional, but safe) ====================
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+// ==================== MongoDB ====================
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB error:', err));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== Exchange API ====================
-const SUPPORTED_EXCHANGES = ['mexc', 'kucoin', 'binance', 'bingx', 'htx', 'gateio'];
+// ==================== Admin Auth ====================
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const adminTokens = new Set();
+
+// Health check (to confirm server is alive)
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+app.post('/admin/login', (req, res) => {
+  console.log('🔐 Login attempt:', req.body.username);
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    adminTokens.add(token);
+    console.log('✅ Login successful for', username);
+    res.json({ success: true, token });
+  } else {
+    console.log('❌ Login failed for', username);
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
+});
+
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// ==================== Exchange Integration (same as before) ====================
+const SUPPORTED_EXCHANGES = [
+  'binance', 'kucoin', 'mexc', 'gateio', 'htx', 'bingx',
+  'okx', 'bybit', 'bitget', 'bitmart', 'coinex', 'lbank',
+  'kraken', 'coinbase', 'whitebit'
+];
 
 function buildExchange(exchangeId, apiKey, secret) {
   const exchangeMap = {
-    binance: ccxt.binance, kucoin: ccxt.kucoin, htx: ccxt.huobi, gateio: ccxt.gateio,
-    mexc: ccxt.mexc, bingx: ccxt.bingx
+    binance: ccxt.binance, kucoin: ccxt.kucoin, htx: ccxt.huobi,
+    gateio: ccxt.gateio, mexc: ccxt.mexc, bingx: ccxt.bingx,
+    okx: ccxt.okx, bybit: ccxt.bybit, bitget: ccxt.bitget,
+    bitmart: ccxt.bitmart, coinex: ccxt.coinex, lbank: ccxt.lbank,
+    kraken: ccxt.kraken, coinbase: ccxt.coinbase, whitebit: ccxt.whitebit
   };
   const ExchangeClass = exchangeMap[exchangeId];
   if (!ExchangeClass) return null;
@@ -31,24 +88,25 @@ const EXCHANGE_CREDENTIALS = {
   htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
   gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
   mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
-  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET }
+  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET },
+  okx: { apiKey: process.env.OKX_API_KEY, secret: process.env.OKX_SECRET },
+  bybit: { apiKey: process.env.BYBIT_API_KEY, secret: process.env.BYBIT_SECRET },
+  bitget: { apiKey: process.env.BITGET_API_KEY, secret: process.env.BITGET_SECRET },
+  bitmart: { apiKey: process.env.BITMART_API_KEY, secret: process.env.BITMART_SECRET },
+  coinex: { apiKey: process.env.COINEX_API_KEY, secret: process.env.COINEX_SECRET },
+  lbank: { apiKey: process.env.LBANK_API_KEY, secret: process.env.LBANK_SECRET },
+  kraken: { apiKey: process.env.KRAKEN_API_KEY, secret: process.env.KRAKEN_SECRET },
+  coinbase: { apiKey: process.env.COINBASE_API_KEY, secret: process.env.COINBASE_SECRET },
+  whitebit: { apiKey: process.env.WHITEBIT_API_KEY, secret: process.env.WHITEBIT_SECRET }
 };
+
 const exchangeInstances = {};
 for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
   const ex = buildExchange(id, cred.apiKey, cred.secret);
   if (ex) exchangeInstances[id] = ex;
 }
 
-async function safeGet(url, name) {
-  try {
-    const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    return res.data;
-  } catch (e) {
-    console.log(`${name} FAILED:`, e.message);
-    return null;
-  }
-}
-
+// Public ticker endpoints
 const EXCHANGES = {
   mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
@@ -60,11 +118,20 @@ const EXCHANGES = {
   okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
   bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
   htx: 'https://api.huobi.pro/market/tickers',
-  bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
-  poloniex: 'https://api.poloniex.com/markets/ticker24h',
-  cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
-  upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
+  kraken: 'https://api.kraken.com/0/public/Ticker?pair=all',
+  coinbase: 'https://api.coinbase.com/v2/prices/USD-USD/spot',
+  whitebit: 'https://api.whitebit.com/api/v1/public/ticker'
 };
+
+async function safeGet(url, name) {
+  try {
+    const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    return res.data;
+  } catch (e) {
+    console.log(`${name} FAILED:`, e.message);
+    return null;
+  }
+}
 
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
@@ -80,9 +147,8 @@ function extractSymbol(exchange, symbol, t) {
     else if (exchange === 'okx' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volCcy24h; }
     else if (exchange === 'bybit') { sym = t.symbol?.replace('USDT', ''); price = +t.lastPrice; volume = +t.turnover24h; }
     else if (exchange === 'htx') { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
-    else if (exchange === 'bitfinex' && Array.isArray(t) && t[0]?.startsWith('t')) { sym = t[0].replace('t', '').replace('USD', ''); price = +t[7]; volume = +t[8]; }
-    else if (exchange === 'cryptocom') { const inst = t.i; if (inst?.includes('_USDT')) { sym = inst.replace('_USDT', ''); price = +t.a; volume = +t.v; } }
-    else if (exchange === 'upbit' && t.market?.startsWith('KRW-')) { sym = t.market.replace('KRW-', ''); price = +t.trade_price; volume = +t.acc_trade_price_24h; }
+    else if (exchange === 'kraken' && symbol) { sym = symbol.replace('USD', '').replace('USDT', ''); price = +t.c[0]; volume = +t.v[1]; }
+    else if (exchange === 'whitebit' && symbol) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.volume; }
     if (!sym || !price) return null;
     return { symbol: sym, price, volume: volume || 0 };
   } catch { return null; }
@@ -149,41 +215,6 @@ async function fetchLiquidity(exchangeId, symbol) {
   }
 }
 
-// Generate mock opportunities if real scan fails (for demo/fallback)
-function generateMockOpportunities() {
-  const coins = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOT', 'LINK', 'MATIC', 'UNI', 'ATOM'];
-  const exchanges = ['BINANCE', 'KUCOIN', 'MEXC', 'HTX', 'GATEIO', 'BYBIT', 'OKX'];
-  const mock = [];
-  for (let i = 0; i < 10; i++) {
-    const buyEx = exchanges[Math.floor(Math.random() * exchanges.length)];
-    let sellEx = exchanges[Math.floor(Math.random() * exchanges.length)];
-    while (sellEx === buyEx) sellEx = exchanges[Math.floor(Math.random() * exchanges.length)];
-    const price = 100 + Math.random() * 900;
-    const spread = (Math.random() * 8 + 0.5).toFixed(2);
-    const liquidity = Math.floor(Math.random() * 100000 + 10000);
-    const risk = ['low', 'medium', 'high'][Math.floor(Math.random() * 3)];
-    const tradable = Math.random() > 0.3;
-    const id = `${coins[i % coins.length]}-${buyEx}-${sellEx}`;
-    mock.push({
-      id,
-      symbol: coins[i % coins.length],
-      buyExchange: buyEx,
-      sellExchange: sellEx,
-      buyPrice: (price * (1 - spread / 200)).toFixed(8),
-      sellPrice: (price * (1 + spread / 200)).toFixed(8),
-      spread: spread,
-      liquidity: liquidity,
-      tradable,
-      risk,
-      buyWithdraw: Math.random() > 0.2,
-      sellDeposit: Math.random() > 0.2,
-      buyNetworks: Math.random() > 0.5 ? { TRC20: { name: 'TRC20', withdraw: true, deposit: true, fee: 1, feeUnit: 'USDT' } } : {},
-      sellNetworks: Math.random() > 0.5 ? { TRC20: { name: 'TRC20', withdraw: true, deposit: true, fee: 1, feeUnit: 'USDT' } } : {}
-    });
-  }
-  return mock;
-}
-
 async function fastScan() {
   console.log('🔄 Fast scan (prices)...');
   const start = Date.now();
@@ -203,10 +234,20 @@ async function fastScan() {
       else if (ex === 'okx') tickers = data.data || [];
       else if (ex === 'bybit') tickers = data.result?.list || [];
       else if (ex === 'htx') tickers = data.data || [];
-      else if (ex === 'bitfinex') tickers = data || [];
-      else if (ex === 'poloniex') tickers = data.data || [];
-      else if (ex === 'cryptocom') tickers = data.result?.data || [];
-      else if (ex === 'upbit') tickers = data || [];
+      else if (ex === 'kraken') {
+        if (data.result) {
+          for (const [pair, info] of Object.entries(data.result)) {
+            tickers.push({ symbol: pair, ...info });
+          }
+        }
+      }
+      else if (ex === 'whitebit') {
+        if (data.result) {
+          for (const [pair, info] of Object.entries(data.result)) {
+            tickers.push({ symbol: pair, ...info });
+          }
+        }
+      }
       for (const t of tickers) {
         const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
         const d = extractSymbol(ex, symKey, t);
@@ -244,16 +285,8 @@ async function fastScan() {
     cachedOpportunities = opportunities.sort((a,b) => +b.spread - +a.spread);
     lastFastScan = Date.now();
     console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
-    // If no opportunities, fill with mock data
-    if (cachedOpportunities.length === 0) {
-      console.log('⚠️ No opportunities found, using mock data');
-      cachedOpportunities = generateMockOpportunities();
-    }
   } catch (err) {
-    console.error('Fast scan failed:', err.message);
-    console.log('Using mock data as fallback');
-    cachedOpportunities = generateMockOpportunities();
-    lastFastScan = Date.now();
+    console.error('Fast scan failed:', err);
   }
 }
 
@@ -312,145 +345,62 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-// Initial scan with fallback
 fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
 setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
 
-// ==================== Global Market Data ====================
-async function getGlobalMarketData() {
-  try {
-    const [global, btc, eth, fear] = await Promise.all([
-      axios.get('https://api.coingecko.com/api/v3/global'),
-      axios.get('https://api.coingecko.com/api/v3/coins/bitcoin'),
-      axios.get('https://api.coingecko.com/api/v3/coins/ethereum'),
-      axios.get('https://api.alternative.me/fng/?limit=1')
-    ]);
-    return {
-      marketCap: global.data.data.total_market_cap.usd,
-      volume24h: global.data.data.total_volume.usd,
-      btcDominance: global.data.data.market_cap_percentage.btc,
-      btcPrice: btc.data.market_data.current_price.usd,
-      ethPrice: eth.data.market_data.current_price.usd,
-      fearGreed: fear.data.data[0]
-    };
-  } catch (e) {
-    console.log('Global market data error:', e.message);
-    return null;
-  }
-}
-
-app.get('/api/market/global', async (req, res) => {
-  const data = await getGlobalMarketData();
-  res.json(data || {});
+// ==================== Admin API Routes ====================
+app.get('/api/opportunities', adminAuth, (req, res) => {
+  const withDetails = cachedOpportunities.map(opp => {
+    const detailed = detailedCache.get(opp.id);
+    if (detailed) return detailed;
+    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
+  });
+  res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan, lastDetail: lastDetailScan });
 });
 
-app.get('/api/market/trending', async (req, res) => {
-  try {
-    const { data } = await axios.get('https://api.coingecko.com/api/v3/search/trending');
-    res.json(data.coins.map(c => c.item));
-  } catch (e) { res.json([]); }
+app.get('/api/opportunity/:id/details', adminAuth, async (req, res) => {
+  const { id } = req.params;
+  const cached = detailedCache.get(id);
+  if (cached) return res.json(cached);
+  const opp = cachedOpportunities.find(o => o.id === id);
+  if (!opp) return res.status(404).json({ error: 'Not found' });
+  const coin = opp.symbol;
+  const buyEx = opp.buyExchange.toLowerCase();
+  const sellEx = opp.sellExchange.toLowerCase();
+  const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+    fetchRealNetworks(buyEx, coin),
+    fetchRealNetworks(sellEx, coin),
+    fetchLiquidity(buyEx, opp.symbol),
+    fetchLiquidity(sellEx, opp.symbol)
+  ]);
+  const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+  const spreadNum = parseFloat(opp.spread);
+  let risk = 'medium';
+  if (!tradable) risk = 'high';
+  else if (spreadNum < 1) risk = 'low';
+  else if (spreadNum > 3) risk = 'high';
+  else risk = 'medium';
+  const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+  const result = {
+    ...opp,
+    liquidity: finalLiquidity,
+    sellLiquidity: sellLiq || opp.liquidity,
+    tradable,
+    risk,
+    buyNetworks: buyNet?.networks || {},
+    sellNetworks: sellNet?.networks || {},
+    buyWithdraw: buyNet?.canWithdraw || false,
+    sellDeposit: sellNet?.canDeposit || false
+  };
+  detailedCache.set(id, result);
+  res.json(result);
 });
 
-app.get('/api/market/recently_listed', async (req, res) => {
-  try {
-    const { data } = await axios.get('https://api.coingecko.com/api/v3/coins/list/new');
-    res.json(data);
-  } catch (e) { res.json([]); }
+// Admin page
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ==================== Crypto News ====================
-app.get('/api/crypto-news', async (req, res) => {
-  try {
-    const response = await axios.get('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
-    const articles = response.data.Data.slice(0, 10);
-    const news = articles.map(item => ({
-      title: item.title,
-      description: item.body.substring(0, 180) + '...',
-      source: item.source,
-      category: item.categories,
-      url: item.url
-    }));
-    res.json(news);
-  } catch (err) {
-    console.log(err.message);
-    res.json([]);
-  }
-});
-
-// ==================== Opportunities ====================
-app.get('/api/opportunities', (req, res) => {
-  try {
-    const withDetails = cachedOpportunities.map(opp => {
-      const detailed = detailedCache.get(opp.id);
-      if (detailed) return detailed;
-      return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
-    });
-    res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan });
-  } catch (err) {
-    console.error('Error in /api/opportunities:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/opportunity/:id/details', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const cached = detailedCache.get(id);
-    if (cached) return res.json(cached);
-    const opp = cachedOpportunities.find(o => o.id === id);
-    if (!opp) return res.status(404).json({ error: 'Not found' });
-    const coin = opp.symbol;
-    const buyEx = opp.buyExchange.toLowerCase();
-    const sellEx = opp.sellExchange.toLowerCase();
-    const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
-      fetchRealNetworks(buyEx, coin),
-      fetchRealNetworks(sellEx, coin),
-      fetchLiquidity(buyEx, opp.symbol),
-      fetchLiquidity(sellEx, opp.symbol)
-    ]);
-    const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
-    const spreadNum = parseFloat(opp.spread);
-    let risk = 'medium';
-    if (!tradable) risk = 'high';
-    else if (spreadNum < 1) risk = 'low';
-    else if (spreadNum > 3) risk = 'high';
-    else risk = 'medium';
-    const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
-    const result = {
-      ...opp,
-      liquidity: finalLiquidity,
-      sellLiquidity: sellLiq || opp.liquidity,
-      tradable,
-      risk,
-      buyNetworks: buyNet?.networks || {},
-      sellNetworks: sellNet?.networks || {},
-      buyWithdraw: buyNet?.canWithdraw || false,
-      sellDeposit: sellNet?.canDeposit || false
-    };
-    detailedCache.set(id, result);
-    res.json(result);
-  } catch (err) {
-    console.error('Error in /api/opportunity/:id/details:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ==================== Exchange Health ====================
-app.get('/api/exchange-health', async (req, res) => {
-  const health = {};
-  for (const [id, ex] of Object.entries(exchangeInstances)) {
-    const start = Date.now();
-    try {
-      await ex.loadMarkets();
-      health[id] = { latency: Date.now() - start, status: 'online', uptime: '99.9%' };
-    } catch (e) {
-      health[id] = { latency: null, status: 'offline', uptime: '0%' };
-    }
-  }
-  res.json(health);
-});
-
-// ==================== Start server ====================
-app.listen(PORT, () => console.log(`🚀 ArbiMine Pro running on ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Arbitrage Master running on ${PORT}`));
