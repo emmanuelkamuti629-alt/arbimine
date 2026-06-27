@@ -222,10 +222,48 @@ const EXCHANGE_CREDENTIALS = {
   whitebit: { apiKey: process.env.WHITEBIT_API_KEY, secret: process.env.WHITEBIT_SECRET }
 };
 
+// Log API key status for MEXC and KuCoin
+console.log('🔑 MEXC API Key:', process.env.MEXC_API_KEY ? '✅ Set' : '❌ Missing');
+console.log('🔑 KuCoin API Key:', process.env.KUCOIN_API_KEY ? '✅ Set' : '❌ Missing');
+
 const exchangeInstances = {};
 for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
   const ex = buildExchange(id, cred.apiKey, cred.secret);
   if (ex) exchangeInstances[id] = ex;
+}
+
+// ===== Network Name Mapping =====
+function mapNetwork(exchange, currency, network) {
+  const map = {
+    'kucoin': {
+      'USDT': {
+        'TRC20': 'TRC20',
+        'ERC20': 'ERC20',
+        'BEP20': 'BEP20',
+        'SOL': 'SOL'
+      },
+      'BTC': { 'BTC': 'BTC', 'BEP20': 'BEP20' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'mexc': {
+      'USDT': {
+        'TRC20': 'TRC20',
+        'ERC20': 'ERC20',
+        'BEP20': 'BEP20',
+        'SOL': 'SOL'
+      },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    }
+    // Add others as needed
+  };
+  const exMap = map[exchange.toLowerCase()];
+  if (!exMap) return network; // fallback
+  const currMap = exMap[currency.toUpperCase()];
+  if (!currMap) return network;
+  // Look for match (case-insensitive)
+  const key = Object.keys(currMap).find(k => k.toUpperCase() === network.toUpperCase());
+  return key ? currMap[key] : network;
 }
 
 // Public ticker endpoints (includes many exchanges; bybit may fail but safeGet handles it)
@@ -753,6 +791,8 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
 app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, async (req, res) => {
   const { exchange, currency, network } = req.params;
   const ex = exchangeInstances[exchange.toLowerCase()];
+  
+  // If no API keys, return simulated address
   if (!ex || !ex.apiKey || !ex.secret) {
     return res.json({
       address: '0x' + crypto.randomBytes(20).toString('hex'),
@@ -762,12 +802,17 @@ app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, asy
       simulated: true
     });
   }
+
+  // Map the network to the exchange's expected format
+  const mappedNetwork = mapNetwork(exchange, currency, network);
+  console.log(`🔍 Fetching deposit address for ${exchange} ${currency} ${network} -> ${mappedNetwork}`);
+
   try {
     await ex.loadMarkets();
-    const depositAddresses = await ex.fetchDepositAddress(currency, { network });
+    const depositAddresses = await ex.fetchDepositAddress(currency, { network: mappedNetwork });
     let addrData = null;
     if (Array.isArray(depositAddresses)) {
-      addrData = depositAddresses.find(a => a.network === network || a.info?.network === network);
+      addrData = depositAddresses.find(a => a.network === mappedNetwork || a.info?.network === mappedNetwork);
     } else if (depositAddresses && typeof depositAddresses === 'object') {
       addrData = depositAddresses;
     }
@@ -775,14 +820,15 @@ app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, asy
       return res.json({
         address: addrData.address,
         tag: addrData.tag || null,
-        network: addrData.network || network,
+        network: addrData.network || mappedNetwork,
         currency: addrData.currency || currency,
         simulated: false
       });
     }
     throw new Error('No address found');
   } catch (err) {
-    console.log(`Deposit address error ${exchange} ${currency} ${network}:`, err.message);
+    console.log(`Deposit address error ${exchange} ${currency} ${network} -> ${mappedNetwork}:`, err.message);
+    // Fallback to simulated address
     return res.json({
       address: '0x' + crypto.randomBytes(20).toString('hex'),
       tag: null,
@@ -811,13 +857,14 @@ app.get('/api/withdrawal-info/:exchange/:currency/:network', authMiddleware, asy
     const currencies = await ex.fetchCurrencies();
     const coinData = currencies[currency];
     if (!coinData || !coinData.networks) throw new Error('Currency data not available');
-    const netInfo = coinData.networks[network];
+    const mappedNetwork = mapNetwork(exchange, currency, network);
+    const netInfo = coinData.networks[mappedNetwork];
     if (!netInfo) throw new Error('Network not supported');
     return res.json({
       fee: netInfo.fee || 0,
       minAmount: netInfo.withdrawMin || 0,
       maxAmount: netInfo.withdrawMax || 0,
-      network: network,
+      network: mappedNetwork,
       currency: currency,
       simulated: false
     });
