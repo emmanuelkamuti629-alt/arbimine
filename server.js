@@ -125,11 +125,14 @@ function buildExchange(exchangeId, apiKey, secret) {
   if (!ExchangeClass) return null;
   const config = { enableRateLimit: true };
   if (apiKey && secret) { config.apiKey = apiKey; config.secret = secret; }
+  if (exchangeId === "kucoin" && process.env.KUCOIN_PASSPHRASE) {
+    config.password = process.env.KUCOIN_PASSPHRASE;
+  }
   return new ExchangeClass(config);
 }
 
 const EXCHANGE_CREDENTIALS = {
-  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
+  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET, password: process.env.KUCOIN_PASSPHRASE },
   htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
   gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
   mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
