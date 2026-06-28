@@ -156,7 +156,7 @@ const EXCHANGES = {
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
   htx: 'https://api.huobi.pro/market/tickers',
-  bingx: 'https://api.bingx.com/openApi/spot/v1/ticker/24hr?symbol=ALL'
+  bingx: 'https://api.bingx.com/api/v1/market/ticker?symbol=ALL'   // ✅ fixed
 };
 
 const MIN_PROFIT = 0.2;
@@ -170,16 +170,16 @@ function extractSymbol(exchange, symbol, t) {
     else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
     else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
     else if (exchange === 'bingx') {
-      // BingX returns symbol like "BTC-USDT"
-      if (symbol.includes('-USDT')) {
+      // BingX response: { symbol: "BTC-USDT", lastPrice: "...", quoteVolume: "..." }
+      if (symbol && symbol.includes('-USDT')) {
         sym = symbol.replace('-USDT', '');
         price = +t.lastPrice;
         volume = +t.quoteVolume;
       }
     }
-    if (!sym || !price) return null;
+    if (!sym || !price || isNaN(price)) return null;
     return { symbol: sym, price, volume: volume || 0 };
-  } catch { return null; }
+  } catch (e) { return null; }
 }
 
 let cachedOpportunities = [];
@@ -636,7 +636,7 @@ app.post('/api/pesapal/pay', async (req, res) => {
     }
     const cleanUsername = sanitizeReference(user.username);
     const reference = `arbimine_${cleanUsername}_${Date.now()}`;
-    const callbackUrl = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}/api/payment/callback`;
+    const callbackUrl = `${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}/api/payment/callback`;
     console.log(`💰 Initializing Paystack: ${reference} for ${user.email}`);
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
@@ -681,7 +681,7 @@ app.get('/api/transaction/:reference', async (req, res) => {
 
 app.get('/api/payment/callback', async (req, res) => {
   const { reference } = req.query;
-  if (!reference) return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+  if (!reference) return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
   try {
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     const verification = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -715,7 +715,7 @@ app.get('/api/payment/callback', async (req, res) => {
           );
         }
       }
-      return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=success&reference=${reference}`);
+      return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=success&reference=${reference}`);
     } else {
       const tx = await Transaction.findOne({ reference });
       if (tx && tx.user) {
@@ -728,11 +728,11 @@ app.get('/api/payment/callback', async (req, res) => {
           );
         }
       }
-      return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+      return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
     }
   } catch (err) {
     console.error('Verification error:', err);
-    return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+    return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
   }
 });
 

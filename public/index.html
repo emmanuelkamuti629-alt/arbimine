@@ -783,14 +783,29 @@
     const container = document.getElementById('opportunities');
     container.innerHTML = '<div class="loading-skeleton"></div><div class="loading-skeleton"></div>';
     try {
-      const res = await fetch('/api/opportunities', { headers: { Authorization: token } });
+      const res = await fetch('/api/opportunities', { 
+        headers: { Authorization: token } 
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          showToast('Session expired. Please login again.', 'error');
+          localStorage.removeItem('token');
+          token = null;
+          showLogin();
+          return;
+        }
+        throw new Error('HTTP ' + res.status);
+      }
       const data = await res.json();
       allOpportunities = data.opportunities || [];
+      console.log('✅ Loaded', allOpportunities.length, 'opportunities');
       updateStats(allOpportunities);
       applyFilters();
       document.getElementById('lastScanTime').innerText = new Date().toLocaleTimeString();
     } catch (e) {
-      container.innerHTML = '<div class="text-slate-400 text-center py-10">Failed to load. Try again.</div>';
+      console.error('Failed to load opportunities:', e);
+      container.innerHTML = '<div class="text-slate-400 text-center py-10">⚠️ Failed to load. <button class="btn btn-secondary mt-4" onclick="loadOpportunities()">Retry</button></div>';
+      showToast('Could not fetch opportunities. Check console.', 'error');
     }
   }
 
