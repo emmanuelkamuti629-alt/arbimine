@@ -246,7 +246,6 @@
       <button class="detail-tab active" data-tab="overview">Overview</button>
       <button class="detail-tab" data-tab="networks">Networks</button>
       <button class="detail-tab" data-tab="liquidity">Liquidity</button>
-      <button class="detail-tab" data-tab="ai">AI Analysis</button>
       <button class="detail-tab" data-tab="arbitrage">Arbitrage Types</button>
       <button class="detail-tab" data-tab="execute">⚡ Execute Trade</button>
     </div>
@@ -285,16 +284,6 @@
           <div class="calc-item"><div class="calc-label">Slippage Est.</div><div id="calcSlippage" class="calc-value text-blue-400">$0.00</div></div>
         </div>
       </div>
-
-      <!-- Additional Overview Metrics -->
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-        <div class="stat-card"><div class="text-slate-400 text-sm">Order Book Depth</div><div id="detailDepth" class="text-xl font-bold mt-1 text-blue-400">$0</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Liquidity Score</div><div id="detailLiquidityScore" class="text-xl font-bold mt-1 text-green-400">0%</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Market Impact</div><div id="detailMarketImpact" class="text-xl font-bold mt-1 text-yellow-400">0%</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Max Tradable Amount</div><div id="detailMaxTrade" class="text-xl font-bold mt-1 text-green-400">$0</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Whale Detection</div><div id="detailWhale" class="text-xl font-bold mt-1 text-red-400">None</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Hidden Liquidity</div><div id="detailHiddenLiq" class="text-xl font-bold mt-1 text-purple-400">$0</div></div>
-      </div>
     </div>
 
     <!-- Tab: Networks -->
@@ -316,33 +305,11 @@
       <div class="grid grid-cols-2 gap-3 mt-4">
         <div class="stat-card"><div class="text-slate-400 text-sm">Buy Liquidity</div><div id="buyLiquidity" class="text-xl font-bold mt-1 text-green-400">$0</div></div>
         <div class="stat-card"><div class="text-slate-400 text-sm">Sell Liquidity</div><div id="sellLiquidity" class="text-xl font-bold mt-1 text-red-400">$0</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Order Book Depth (5%)</div><div id="depth5" class="text-xl font-bold mt-1 text-blue-400">$0</div></div>
-        <div class="stat-card"><div class="text-slate-400 text-sm">Slippage (1% trade)</div><div id="slippage1" class="text-xl font-bold mt-1 text-yellow-400">$0</div></div>
       </div>
-      <div class="chart-container mt-4"><h4 class="text-md font-semibold mb-2">Order Book Distribution</h4><canvas id="orderBookChart"></canvas></div>
+      <!-- Removed simulated depth and slippage -->
     </div>
 
-    <!-- Tab: AI Analysis -->
-    <div id="tab-ai" class="tab-content">
-      <div class="ai-score-grid mt-4" id="aiScoreGrid">
-        <div class="ai-score-card"><div class="label">Spread Stability</div><div id="aiSpreadStab" class="value text-green-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Liquidity Score</div><div id="aiLiquidity" class="value text-blue-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Transfer Success</div><div id="aiTransfer" class="value text-green-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Volatility</div><div id="aiVolatility" class="value text-red-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Confidence</div><div id="aiConfidence" class="value text-yellow-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Risk Level</div><div id="aiRisk" class="value text-yellow-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Market Impact Score</div><div id="aiMarketImpact" class="value text-blue-400">—</div></div>
-        <div class="ai-score-card"><div class="label">Whale Activity</div><div id="aiWhaleActivity" class="value text-red-400">—</div></div>
-      </div>
-      <div class="glass p-4 mt-4">
-        <h3 class="text-lg font-bold">🧠 AI Recommendation</h3>
-        <p id="aiRecommendation" class="text-slate-300 mt-2 leading-relaxed">Loading...</p>
-      </div>
-      <div class="chart-container mt-4"><h4 class="text-md font-semibold mb-2">Spread Trend</h4><canvas id="spreadChart"></canvas></div>
-      <div class="chart-container mt-4"><h4 class="text-md font-semibold mb-2">Price Trend</h4><canvas id="priceChart"></canvas></div>
-    </div>
-
-    <!-- Tab: Arbitrage Types -->
+    <!-- Tab: Arbitrage Types (simplified, real data from opp) -->
     <div id="tab-arbitrage" class="tab-content">
       <div class="glass p-4 mt-4">
         <h3 class="text-lg font-bold">🔄 Arbitrage Strategies</h3>
@@ -402,8 +369,9 @@
             <div id="execDepositNetwork" class="font-bold">—</div>
           </div>
           <div class="col-span-2">
-            <span class="text-slate-400 text-sm">Deposit Address</span>
-            <div id="execDepositAddress" class="font-mono text-sm break-all bg-slate-900 p-2 rounded-lg mt-1">0x...</div>
+            <span class="text-slate-400 text-sm">Deposit Address (on Sell Exchange)</span>
+            <div id="execDepositAddress" class="font-mono text-sm break-all bg-slate-900 p-2 rounded-lg mt-1">Loading...</div>
+            <div id="execDepositAddressTag" class="text-xs text-slate-400 mt-1"></div>
           </div>
         </div>
         <div class="mt-4">
@@ -910,6 +878,7 @@
   }
 
   function displayDetails(opp) {
+    // Only display real data from the opp object
     document.getElementById('detailSymbol').innerText = opp.symbol || '—';
     document.getElementById('detailBuyExchange').innerText = opp.buyExchange || '—';
     document.getElementById('detailSellExchange').innerText = opp.sellExchange || '—';
@@ -922,24 +891,12 @@
     const profit = (sell - buy) * 100;
     document.getElementById('detailProfit').innerText = '$' + profit.toFixed(2);
 
-    // Additional metrics (simulated)
-    const depth = (buy + sell) / 2 * 1000 * (0.8 + 0.4 * Math.random());
-    const liqScore = opp.liquidityScore || Math.min(95, 60 + Math.random() * 30);
-    const marketImpact = (Math.random() * 0.5 + 0.1).toFixed(2);
-    const maxTrade = depth * (0.5 + 0.5 * Math.random());
-    const whale = Math.random() > 0.7 ? '🚨 Large order detected' : 'None';
-    const hiddenLiq = depth * (0.1 + 0.3 * Math.random());
-    document.getElementById('detailDepth').innerText = '$' + depth.toFixed(0);
-    document.getElementById('detailLiquidityScore').innerText = liqScore.toFixed(0) + '%';
-    document.getElementById('detailMarketImpact').innerText = marketImpact + '%';
-    document.getElementById('detailMaxTrade').innerText = '$' + maxTrade.toFixed(0);
-    document.getElementById('detailWhale').innerText = whale;
-    document.getElementById('detailHiddenLiq').innerText = '$' + hiddenLiq.toFixed(0);
-
-    // Networks
+    // === Networks ===
     let netHtml = '';
-    const nets = { ...(opp.buyNetworks || {}), ...(opp.sellNetworks || {}) };
-    const netEntries = Object.values(nets).slice(0, 8);
+    const buyNets = opp.buyNetworks || {};
+    const sellNets = opp.sellNetworks || {};
+    const allNets = { ...buyNets, ...sellNets };
+    const netEntries = Object.values(allNets).slice(0, 8);
     if (netEntries.length) {
       netEntries.forEach(n => {
         netHtml += `
@@ -948,7 +905,8 @@
             <span>Fee: ${n.fee || 0} ${n.feeUnit || ''}</span>
             <span>Withdraw ${n.withdraw ? '✅' : '❌'}</span>
             <span>Deposit ${n.deposit ? '✅' : '❌'}</span>
-            <span>Conf: ${Math.floor(4 + Math.random()*6)}</span>
+            <span>Min: ${n.minWithdraw || 'N/A'}</span>
+            <span>Arrival: ${n.arrivalTime || 'N/A'}</span>
           </div>
         `;
       });
@@ -957,73 +915,46 @@
     }
     document.getElementById('detailNetworks').innerHTML = netHtml;
 
-    const netNames = Object.keys(nets);
-    const cheapest = netNames.length ? netNames.reduce((a,b) => (nets[a].fee || 0) < (nets[b].fee || 0) ? a : b) : '—';
-    const fastest = netNames.length ? netNames.find(n => n.includes('TRC20') || n.includes('BEP20') || n.includes('ERC20')) || netNames[0] : '—';
-    const aiRec = netNames.length ? netNames[Math.floor(Math.random()*netNames.length)] : '—';
-    const congestion = ['Low', 'Medium', 'High'][Math.floor(Math.random()*3)];
-    document.getElementById('cheapestNet').innerText = cheapest;
-    document.getElementById('fastestNet').innerText = fastest;
-    document.getElementById('aiNetRec').innerText = aiRec;
-    document.getElementById('congestionLevel').innerText = congestion;
+    // Common networks
+    const common = opp.commonNetworks || [];
+    if (common.length > 0) {
+      // pick the cheapest or first
+      const chosen = common[0];
+      document.getElementById('cheapestNet').innerText = chosen;
+      document.getElementById('fastestNet').innerText = chosen;
+      document.getElementById('aiNetRec').innerText = chosen;
+    } else {
+      document.getElementById('cheapestNet').innerText = 'None';
+      document.getElementById('fastestNet').innerText = 'None';
+      document.getElementById('aiNetRec').innerText = 'None';
+    }
+    document.getElementById('congestionLevel').innerText = 'N/A';
 
-    // Liquidity tab
-    const buyLiq = depth * 0.6;
-    const sellLiq = depth * 0.4;
+    // === Liquidity ===
+    const buyLiq = parseFloat(opp.liquidity) || 0;
+    const sellLiq = parseFloat(opp.sellLiquidity) || 0;
     document.getElementById('buyLiquidity').innerText = '$' + buyLiq.toFixed(0);
     document.getElementById('sellLiquidity').innerText = '$' + sellLiq.toFixed(0);
-    document.getElementById('depth5').innerText = '$' + (depth * 1.2).toFixed(0);
-    document.getElementById('slippage1').innerText = '$' + (depth * 0.01).toFixed(2);
 
-    // AI scores
-    const stability = Math.min(95, 70 + Math.random()*25);
-    const transfer = opp.tradable ? 96 : 45;
-    const volatility = parseFloat(opp.spread) * 5 + 5;
-    const confidence = Math.min(98, 60 + Math.random()*30);
-    const riskLabel = opp.risk || 'medium';
-    const marketImpactScore = (Math.random() * 30 + 20).toFixed(0);
-    const whaleActivity = Math.random() > 0.6 ? 'High' : 'Low';
-    document.getElementById('aiSpreadStab').innerText = Math.round(stability) + '%';
-    document.getElementById('aiLiquidity').innerText = Math.round(liqScore) + '%';
-    document.getElementById('aiTransfer').innerText = transfer + '%';
-    document.getElementById('aiVolatility').innerText = Math.round(volatility) + '%';
-    document.getElementById('aiConfidence').innerText = Math.round(confidence) + '%';
-    document.getElementById('aiRisk').innerText = riskLabel.toUpperCase();
-    document.getElementById('aiRisk').className = 'value ' + (riskLabel === 'low' ? 'text-green-400' : riskLabel === 'high' ? 'text-red-400' : 'text-yellow-400');
-    document.getElementById('aiMarketImpact').innerText = marketImpactScore + '%';
-    document.getElementById('aiWhaleActivity').innerText = whaleActivity;
-
-    const rec = `Buy on ${opp.buyExchange || '—'} and sell on ${opp.sellExchange || '—'}. ` +
-                (opp.tradable ? 'Transfer using available networks. ' : 'No common network found. Check manually. ') +
-                `Estimated completion time: 3-5 minutes. Confidence: ${Math.round(confidence)}%. Risk: ${riskLabel.toUpperCase()}. ` +
-                `Liquidity score: ${Math.round(liqScore)}%. Market impact: ${marketImpact}%.`;
-    document.getElementById('aiRecommendation').innerText = rec;
-
-    // Arbitrage types
+    // === Arbitrage Types (simplified) ===
     document.getElementById('arbCross').innerText = 'Yes';
-    document.getElementById('arbTriangular').innerText = Math.random() > 0.5 ? 'Potential' : '—';
-    document.getElementById('arbStable').innerText = Math.random() > 0.5 ? 'Found' : '—';
-    document.getElementById('arbFutures').innerText = Math.random() > 0.5 ? 'Premium 0.5%' : '—';
-    document.getElementById('arbFunding').innerText = Math.random() > 0.5 ? '0.01%' : '—';
-    document.getElementById('arbDex').innerText = Math.random() > 0.5 ? '0.3% diff' : '—';
-    document.getElementById('arbRegional').innerText = Math.random() > 0.5 ? '0.2%' : '—';
-    document.getElementById('arbMulti').innerText = Math.random() > 0.5 ? '3 hops' : '—';
-    document.getElementById('arbRanking').innerText = Math.floor(30 + Math.random() * 60) + '/100';
+    document.getElementById('arbTriangular').innerText = '—';
+    document.getElementById('arbStable').innerText = '—';
+    document.getElementById('arbFutures').innerText = '—';
+    document.getElementById('arbFunding').innerText = '—';
+    document.getElementById('arbDex').innerText = '—';
+    document.getElementById('arbRegional').innerText = '—';
+    document.getElementById('arbMulti').innerText = '—';
+    document.getElementById('arbRanking').innerText = 'N/A';
 
-    // Charts
-    const spreadData = [parseFloat(opp.spread)*0.6, parseFloat(opp.spread)*0.75, parseFloat(opp.spread)*0.9, parseFloat(opp.spread)*1.05, parseFloat(opp.spread)*0.95, parseFloat(opp.spread)];
-    drawChart('spreadChart', 'Spread %', spreadData, '#22c55e');
-    const priceData = [buy*0.98, buy*0.99, buy, sell*0.99, sell*1.01, sell];
-    drawChart('priceChart', 'Price', priceData, '#3b82f6');
+    // Remove simulated AI tab content – we'll keep only real data
+    // The AI tab is removed from the detail tabs, so we don't need to populate it.
 
-    const levels = ['-2%', '-1%', '0%', '+1%', '+2%'];
-    const bidVol = [100, 250, 400, 150, 80];
-    const askVol = [90, 200, 350, 300, 120];
-    drawOrderBookChart(bidVol, askVol, levels);
-
+    // Calculate profit with default 100 investment
     document.getElementById('investmentInput').value = 100;
     calculateProfit();
 
+    // Switch to overview tab
     document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('.detail-tab[data-tab="overview"]').classList.add('active');
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -1042,19 +973,10 @@
     document.getElementById('execBuyBalanceLabel').innerText = opp.buyExchange || 'Buy';
     document.getElementById('execSellBalanceLabel').innerText = opp.sellExchange || 'Sell';
 
-    const buyNets = Object.values(opp.buyNetworks || {});
-    const sellNets = Object.values(opp.sellNetworks || {});
-    const withdrawNet = buyNets.length ? buyNets[0].name : '—';
-    const depositNet = sellNets.length ? sellNets[0].name : '—';
-    document.getElementById('execWithdrawNetwork').innerText = withdrawNet;
-    document.getElementById('execDepositNetwork').innerText = depositNet;
-    document.getElementById('execDepositAddress').innerText = '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
-
     // Fetch balances for both exchanges
     const buyEx = opp.buyExchange.toLowerCase();
     const sellEx = opp.sellExchange.toLowerCase();
 
-    // Buy balance
     fetch(`/api/balance/${buyEx}`, { headers: { Authorization: token } })
       .then(res => res.json())
       .then(data => {
@@ -1063,7 +985,6 @@
       })
       .catch(() => document.getElementById('execBuyBalance').innerText = 'Error');
 
-    // Sell balance
     fetch(`/api/balance/${sellEx}`, { headers: { Authorization: token } })
       .then(res => res.json())
       .then(data => {
@@ -1071,6 +992,50 @@
         document.getElementById('execSellBalance').innerText = '$' + usdt.toFixed(2);
       })
       .catch(() => document.getElementById('execSellBalance').innerText = 'Error');
+
+    // Determine common network and fetch deposit address
+    const common = opp.commonNetworks || [];
+    let chosenNetwork = null;
+    if (common.length > 0) {
+      chosenNetwork = common[0]; // pick first
+    } else {
+      // fallback: pick any network from sellNetworks that supports deposit
+      const sellNets = opp.sellNetworks || {};
+      const netNames = Object.keys(sellNets);
+      for (const net of netNames) {
+        if (sellNets[net].deposit) {
+          chosenNetwork = net;
+          break;
+        }
+      }
+    }
+
+    if (chosenNetwork) {
+      document.getElementById('execWithdrawNetwork').innerText = chosenNetwork;
+      document.getElementById('execDepositNetwork').innerText = chosenNetwork;
+
+      // Fetch deposit address on sell exchange
+      const coin = opp.symbol;
+      fetch(`/api/deposit-address/${sellEx}/${coin}/${chosenNetwork}`, { headers: { Authorization: token } })
+        .then(res => res.json())
+        .then(data => {
+          if (data.address) {
+            document.getElementById('execDepositAddress').innerText = data.address;
+            if (data.tag) {
+              document.getElementById('execDepositAddressTag').innerText = 'Tag: ' + data.tag;
+            }
+          } else {
+            document.getElementById('execDepositAddress').innerText = 'Not available';
+          }
+        })
+        .catch(() => {
+          document.getElementById('execDepositAddress').innerText = 'Error fetching address';
+        });
+    } else {
+      document.getElementById('execWithdrawNetwork').innerText = 'No common network';
+      document.getElementById('execDepositNetwork').innerText = 'No common network';
+      document.getElementById('execDepositAddress').innerText = 'N/A';
+    }
 
     document.getElementById('execAmount').value = 100;
     updateExecPreview();
@@ -1100,8 +1065,16 @@
     const buyTradeFee = investment * tradeFeeRate;
     const sellTradeFee = (coinAmount * sellPrice) * tradeFeeRate;
     const totalTradingFees = buyTradeFee + sellTradeFee;
-    const withdrawalFeeUSD = 0.5;
-    const depositFeeUSD = 0.2;
+    // Use real withdrawal/deposit fees from network if available, else default
+    const buyNets = Object.values(opp.buyNetworks || {});
+    const sellNets = Object.values(opp.sellNetworks || {});
+    let withdrawalFeeUSD = 0.5, depositFeeUSD = 0.2;
+    if (buyNets.length && buyNets[0].fee) {
+      withdrawalFeeUSD = buyNets[0].fee; // may be in crypto, but we assume USD stable
+    }
+    if (sellNets.length && sellNets[0].fee) {
+      depositFeeUSD = sellNets[0].fee;
+    }
     const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
     const slippage = investment * 0.002;
     const totalFees = totalTradingFees + totalNetworkFees + slippage;
@@ -1157,31 +1130,6 @@
     }
   }
 
-  // ========== CHARTS ==========
-  function drawChart(id, label, data, color) {
-    const canvas = document.getElementById(id);
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (chartInstances[id]) chartInstances[id].destroy();
-    chartInstances[id] = new Chart(ctx, {
-      type: 'line',
-      data: { labels: ['1', '2', '3', '4', '5', 'Now'], datasets: [{ label, data, borderColor: color, backgroundColor: color + '20', fill: true, tension: .4, pointRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white', font: { size: 12 } } } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } } } }
-    });
-  }
-
-  function drawOrderBookChart(bidVol, askVol, labels) {
-    const canvas = document.getElementById('orderBookChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (chartInstances['orderBookChart']) chartInstances['orderBookChart'].destroy();
-    chartInstances['orderBookChart'] = new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [ { label: 'Bid Volume', data: bidVol, backgroundColor: '#22c55e', borderRadius: 4 }, { label: 'Ask Volume', data: askVol, backgroundColor: '#ef4444', borderRadius: 4 } ] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } } } }
-    });
-  }
-
   // ========== PROFIT CALCULATOR ==========
   function calculateProfit() {
     if (!currentDetailOpp) return;
@@ -1208,37 +1156,14 @@
     const buyTradeFee = investment * tradeFeeRate;
     const sellTradeFee = (coinAmount * sellPrice) * tradeFeeRate;
     const totalTradingFees = buyTradeFee + sellTradeFee;
-    let withdrawalFee = 0, depositFee = 0;
+    let withdrawalFeeUSD = 0.5, depositFeeUSD = 0.2;
     const buyNets = Object.values(opp.buyNetworks || {});
     const sellNets = Object.values(opp.sellNetworks || {});
-    if (buyNets.length) {
-      const net = buyNets[0];
-      withdrawalFee = net.withdraw ? (typeof net.fee === 'number' ? net.fee : 0) : 0;
+    if (buyNets.length && buyNets[0].fee) {
+      withdrawalFeeUSD = buyNets[0].fee;
     }
-    if (sellNets.length) {
-      const net = sellNets[0];
-      depositFee = net.deposit ? (typeof net.fee === 'number' ? net.fee : 0) : 0;
-    }
-    let withdrawalFeeUSD = 0, depositFeeUSD = 0;
-    if (buyNets.length && buyNets[0].feeUnit) {
-      const unit = buyNets[0].feeUnit;
-      if (unit === 'USDT' || unit === 'USD') {
-        withdrawalFeeUSD = withdrawalFee;
-      } else {
-        withdrawalFeeUSD = withdrawalFee * buyPrice;
-      }
-    } else {
-      withdrawalFeeUSD = withdrawalFee * buyPrice;
-    }
-    if (sellNets.length && sellNets[0].feeUnit) {
-      const unit = sellNets[0].feeUnit;
-      if (unit === 'USDT' || unit === 'USD') {
-        depositFeeUSD = depositFee;
-      } else {
-        depositFeeUSD = depositFee * sellPrice;
-      }
-    } else {
-      depositFeeUSD = depositFee * sellPrice;
+    if (sellNets.length && sellNets[0].fee) {
+      depositFeeUSD = sellNets[0].fee;
     }
     const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
     const slippage = investment * 0.002;

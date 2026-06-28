@@ -185,7 +185,7 @@ let cachedOpportunities = [];
 let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
-const FAST_SCAN_INTERVAL = 120000; // ✅ 2 minutes
+const FAST_SCAN_INTERVAL = 120000; // 2 minutes
 const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 
@@ -213,6 +213,7 @@ async function fetchRealNetworks(exchangeId, coin) {
         fee: netInfo.fee || 0,
         feeUnit: feeUnit,
         minWithdraw: netInfo.withdrawMin || 0,
+        // arrivalTime is not provided by exchanges, we map by network name
         arrivalTime: netName === 'TRC20' ? '2-5 min' : (netName === 'BEP20' ? '3-8 min' : '10-20 min')
       };
     }
@@ -310,6 +311,17 @@ function computeTradable(buyNetworks, sellNetworks) {
   return false;
 }
 
+function getCommonNetworks(buyNetworks, sellNetworks) {
+  if (!buyNetworks || !sellNetworks) return [];
+  const common = [];
+  for (const [netName, netInfo] of Object.entries(buyNetworks)) {
+    if (sellNetworks[netName] && netInfo.withdraw === true && sellNetworks[netName].deposit === true) {
+      common.push(netName);
+    }
+  }
+  return common;
+}
+
 async function detailScan() {
   console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
   const start = Date.now();
@@ -327,6 +339,7 @@ async function detailScan() {
         fetchLiquidity(sellEx, opp.symbol)
       ]);
       const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+      const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
       const spreadNum = parseFloat(opp.spread);
       let risk = 'medium';
       if (!tradable) risk = 'high';
@@ -342,6 +355,7 @@ async function detailScan() {
         risk,
         buyNetworks: buyNet?.networks || {},
         sellNetworks: sellNet?.networks || {},
+        commonNetworks,
         buyWithdraw: buyNet?.canWithdraw || false,
         sellDeposit: sellNet?.canDeposit || false
       });
@@ -381,6 +395,29 @@ app.get('/api/balance/:exchange', async (req, res) => {
   } catch (err) {
     console.error(`Balance error for ${exchange}:`, err.message);
     res.status(500).json({ error: 'Failed to fetch balance', message: err.message });
+  }
+});
+
+// ==================== Deposit Address Route ====================
+app.get('/api/deposit-address/:exchange/:coin/:network', async (req, res) => {
+  const { exchange, coin, network } = req.params;
+  const key = exchange.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) {
+    return res.status(400).json({ error: 'Unsupported exchange' });
+  }
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const depositAddress = await ex.fetchDepositAddress(coin, network);
+    res.json({ address: depositAddress.address, tag: depositAddress.tag, network: depositAddress.network });
+  } catch (err) {
+    console.error(`Deposit address error for ${exchange} ${coin} ${network}:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch deposit address', message: err.message });
   }
 });
 
@@ -594,7 +631,7 @@ app.get('/api/opportunities', (req, res) => {
   const withDetails = cachedOpportunities.map(opp => {
     const detailed = detailedCache.get(opp.id);
     if (detailed) return detailed;
-    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
+    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, commonNetworks: [], buyWithdraw: false, sellDeposit: false };
   });
   res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan });
 });
@@ -615,6 +652,7 @@ app.get('/api/opportunity/:id/details', async (req, res) => {
     fetchLiquidity(sellEx, opp.symbol)
   ]);
   const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+  const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
   const spreadNum = parseFloat(opp.spread);
   let risk = 'medium';
   if (!tradable) risk = 'high';
@@ -630,6 +668,7 @@ app.get('/api/opportunity/:id/details', async (req, res) => {
     risk,
     buyNetworks: buyNet?.networks || {},
     sellNetworks: sellNet?.networks || {},
+    commonNetworks,
     buyWithdraw: buyNet?.canWithdraw || false,
     sellDeposit: sellNet?.canDeposit || false
   };
