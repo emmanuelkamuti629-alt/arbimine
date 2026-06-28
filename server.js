@@ -140,7 +140,7 @@ const EXCHANGE_CREDENTIALS = {
 };
 const exchangeInstances = {};
 for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
-  const ex = buildExchange(id, cred.apiKey, cred.secret);
+  const ex = buildExchange(id, cred);
   if (ex) exchangeInstances[id] = ex;
 }
 
