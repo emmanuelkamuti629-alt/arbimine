@@ -20,16 +20,156 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== Email (optional) ====================
-// ... (keep email config same as before) ...
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+
+let transporter = null;
+if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+  console.log('✅ Email transporter configured');
+} else {
+  console.log('⚠️ Email not configured – skipping notifications');
+}
+
+async function sendEmail(to, subject, html) {
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
+    console.log(`📧 Email sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error('Email error:', err.message);
+    return false;
+  }
+}
+
+function sendEmailAsync(to, subject, html) {
+  sendEmail(to, subject, html).catch(() => {});
+}
 
 // ==================== Schemas ====================
-// ... (keep all schemas unchanged) ...
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  mpesa: { type: String, required: true },
+  passwordHash: { type: String, required: true },
+  subscription: {
+    active: { type: Boolean, default: false },
+    plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
+    expiresAt: { type: Date, default: null }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+const sessionSchema = new mongoose.Schema({
+  token: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: '7d' }
+});
+const transactionSchema = new mongoose.Schema({
+  reference: { type: String, required: true, unique: true },
+  user: { type: String, required: true },
+  plan: { type: String, enum: ['weekly', 'monthly'] },
+  amount: Number,
+  status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
+  paystackResponse: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now }
+});
+const messageSchema = new mongoose.Schema({
+  user: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const blockedUserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  blockedAt: { type: Date, default: Date.now }
+});
+const tradeSchema = new mongoose.Schema({
+  user: { type: String, required: true },
+  symbol: { type: String, required: true },
+  buyExchange: { type: String, required: true },
+  sellExchange: { type: String, required: true },
+  buyPrice: Number,
+  sellPrice: Number,
+  amount: Number,
+  investment: Number,
+  grossProfit: Number,
+  tradingFees: Number,
+  withdrawalFees: Number,
+  depositFees: Number,
+  totalFees: Number,
+  netProfit: Number,
+  roi: Number,
+  status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+  txId: { type: String, unique: true, sparse: true },
+  createdAt: { type: Date, default: Date.now }
+});
 
-// ==================== Admin & Auth ====================
-// ... (keep admin and auth middleware same as before) ...
+const User = mongoose.model('User', userSchema);
+const Session = mongoose.model('Session', sessionSchema);
+const Transaction = mongoose.model('Transaction', transactionSchema);
+const Message = mongoose.model('Message', messageSchema);
+const BlockedUser = mongoose.model('BlockedUser', blockedUserSchema);
+const Trade = mongoose.model('Trade', tradeSchema);
 
-// ==================== Exchange Integration (6 Exchanges) ====================
-const SUPPORTED_EXCHANGES = ['binance', 'kucoin', 'mexc', 'gateio', 'htx', 'bingx'];
+const hashPassword = p => crypto.createHash('sha256').update(p).digest('hex');
+const generateToken = () => crypto.randomBytes(32).toString('hex');
+
+// ==================== Admin Auth ====================
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const adminTokens = new Set();
+
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    adminTokens.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
+});
+
+// ==================== Combined Auth ====================
+async function authMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+
+  if (adminTokens.has(token)) {
+    req.user = 'admin';
+    return next();
+  }
+
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    req.user = session.username;
+    next();
+  } catch (err) {
+    console.error('Auth error:', err);
+    res.status(500).json({ error: 'Auth error' });
+  }
+}
+
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// ==================== Exchange Integration (5 Exchanges – removed BingX) ====================
+const SUPPORTED_EXCHANGES = ['binance', 'kucoin', 'mexc', 'gateio', 'htx'];
 
 function buildExchange(exchangeId, apiKey, secret) {
   const exchangeMap = {
@@ -37,8 +177,7 @@ function buildExchange(exchangeId, apiKey, secret) {
     kucoin: ccxt.kucoin,
     htx: ccxt.huobi,
     gateio: ccxt.gateio,
-    mexc: ccxt.mexc,
-    bingx: ccxt.bingx
+    mexc: ccxt.mexc
   };
   const ExchangeClass = exchangeMap[exchangeId];
   if (!ExchangeClass) return null;
@@ -60,8 +199,7 @@ const EXCHANGE_CREDENTIALS = {
   kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
   htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
   gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
-  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
-  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET }
+  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET }
 };
 
 const exchangeInstances = {};
@@ -71,20 +209,53 @@ for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
   console.log(`🔌 ${id} initialized${cred.apiKey ? ' with API keys' : ' (public only)'}`);
 }
 
-// ===== Network Name Mapping (unchanged) =====
-function mapNetwork(exchange, currency, network) { /* ... same as before ... */ }
+// ===== Network Name Mapping =====
+function mapNetwork(exchange, currency, network) {
+  const map = {
+    'kucoin': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
+      'BTC': { 'BTC': 'BTC', 'BEP20': 'BEP20' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'mexc': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'binance': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
+      'BTC': { 'BTC': 'BTC', 'BEP20': 'BEP20' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'gateio': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'htx': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    }
+  };
+  const exMap = map[exchange.toLowerCase()];
+  if (!exMap) return network;
+  const currMap = exMap[currency.toUpperCase()];
+  if (!currMap) return network;
+  const key = Object.keys(currMap).find(k => k.toUpperCase() === network.toUpperCase());
+  return key ? currMap[key] : network;
+}
 
-// ===== Public ticker endpoints – only used as fallback =====
+// Public ticker endpoints – only used as fallback
 const EXCHANGES_FALLBACK = {
   binance: 'https://api.binance.com/api/v3/ticker/24hr',
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
   mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
-  htx: 'https://api.huobi.pro/market/tickers',
-  bingx: 'https://api.bingx.com/api/v1/market/ticker/24hr'
+  htx: 'https://api.huobi.pro/market/tickers'
 };
 
-// ===== Symbol blacklist =====
+// Symbol blacklist
 const SYMBOL_BLACKLIST = new Set([
   'US', 'USD', 'MEA', 'SCA', 'AVAIL', 'HOME', 'GUA', 'ESPORTS', 'KRL',
   'SIREN', 'STG', 'VANRY', 'PRCL', 'DGB', 'SWEAT', 'NAVX', 'TAIKO',
@@ -107,7 +278,6 @@ async function safeGet(url, name) {
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
-// Enhanced extractSymbol (unchanged)
 function extractSymbol(exchange, symbol, t) {
   let sym = null, price = null, volume = null;
   try {
@@ -131,10 +301,6 @@ function extractSymbol(exchange, symbol, t) {
       sym = symbol.replace('usdt', '').toUpperCase();
       price = +t.close;
       volume = +t.vol;
-    } else if (exchange === 'bingx' && symbol.includes('-USDT')) {
-      sym = symbol.split('-USDT')[0];
-      price = +t.lastPrice;
-      volume = +t.quoteVolume;
     } else {
       // fallback
       const possibleSymbols = [t.symbol, t.currency_pair, t.instId, t.market, t.i];
@@ -162,59 +328,72 @@ const FAST_SCAN_INTERVAL = 60000;
 const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 
-// ==================== NEW: Authenticated Fast Scan ====================
+// ==================== OPTIMIZED FAST SCAN (PARALLEL) ====================
 async function fastScan() {
   console.log('🔄 Fast scan (using authenticated APIs)...');
   const start = Date.now();
   const allData = {};
 
-  // Iterate over each supported exchange
-  for (const exchangeId of SUPPORTED_EXCHANGES) {
+  // Fetch tickers from all exchanges in parallel
+  const exchangeFetchPromises = SUPPORTED_EXCHANGES.map(async (exchangeId) => {
     const ex = exchangeInstances[exchangeId];
     if (!ex) {
       console.log(`⚠️ No instance for ${exchangeId}, skipping`);
-      continue;
+      return { exchangeId, data: null };
     }
-    allData[exchangeId] = {};
 
     try {
-      // Try to fetch tickers using authenticated instance
-      await ex.loadMarkets(); // ensure markets are loaded
+      // Authenticated fetch
+      await ex.loadMarkets();
       const tickers = await ex.fetchTickers();
-      // tickers is an object mapping symbol -> ticker
+      const extracted = {};
       for (const [symbol, ticker] of Object.entries(tickers)) {
         const d = extractSymbol(exchangeId, symbol, ticker);
         if (d) {
-          allData[exchangeId][d.symbol] = { price: d.price, volume: d.volume };
+          extracted[d.symbol] = { price: d.price, volume: d.volume };
         }
       }
-      console.log(`✅ ${exchangeId} tickers fetched (${Object.keys(tickers).length} pairs)`);
+      console.log(`✅ ${exchangeId} tickers fetched (${Object.keys(extracted).length} extracted)`);
+      return { exchangeId, data: extracted };
     } catch (err) {
       console.log(`⚠️ Authenticated fetch failed for ${exchangeId}:`, err.message);
       // Fallback to public endpoint
       const url = EXCHANGES_FALLBACK[exchangeId];
-      if (!url) continue;
-      const data = await safeGet(url, exchangeId);
-      if (!data) continue;
-      let tickers = [];
-      if (exchangeId === 'binance') tickers = data;
-      else if (exchangeId === 'kucoin') tickers = data.data?.ticker || [];
-      else if (exchangeId === 'mexc') tickers = data;
-      else if (exchangeId === 'gateio') tickers = data;
-      else if (exchangeId === 'htx') tickers = data.data || [];
-      else if (exchangeId === 'bingx') tickers = data.data || [];
-      for (const t of tickers) {
-        const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
-        const d = extractSymbol(exchangeId, symKey, t);
-        if (d) {
-          allData[exchangeId][d.symbol] = { price: d.price, volume: d.volume };
+      if (!url) return { exchangeId, data: null };
+      try {
+        const response = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        let tickers = [];
+        if (exchangeId === 'binance') tickers = response.data;
+        else if (exchangeId === 'kucoin') tickers = response.data.data?.ticker || [];
+        else if (exchangeId === 'mexc') tickers = response.data;
+        else if (exchangeId === 'gateio') tickers = response.data;
+        else if (exchangeId === 'htx') tickers = response.data.data || [];
+        const extracted = {};
+        for (const t of tickers) {
+          const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+          const d = extractSymbol(exchangeId, symKey, t);
+          if (d) {
+            extracted[d.symbol] = { price: d.price, volume: d.volume };
+          }
         }
+        console.log(`✅ ${exchangeId} fallback tickers fetched (${Object.keys(extracted).length} extracted)`);
+        return { exchangeId, data: extracted };
+      } catch (fallbackErr) {
+        console.log(`❌ ${exchangeId} fallback failed:`, fallbackErr.message);
+        return { exchangeId, data: null };
       }
-      console.log(`✅ ${exchangeId} fallback tickers fetched (${tickers.length} pairs)`);
+    }
+  });
+
+  // Wait for all exchanges to complete
+  const results = await Promise.all(exchangeFetchPromises);
+  for (const result of results) {
+    if (result.data) {
+      allData[result.exchangeId] = result.data;
     }
   }
 
-  // Now compute opportunities from allData (same as before)
+  // Compute opportunities
   const symbols = new Set();
   Object.values(allData).forEach(ex => Object.keys(ex).forEach(s => symbols.add(s)));
   const opportunities = [];
@@ -248,8 +427,7 @@ async function fastScan() {
   console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
 }
 
-// ==================== fetchRealNetworks, fetchLiquidity, detailScan ====================
-// (These already use authenticated instances – unchanged)
+// ==================== fetchRealNetworks, fetchLiquidity, computeTradable ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const key = exchangeId.toLowerCase();
   if (!SUPPORTED_EXCHANGES.includes(key)) return null;
@@ -305,6 +483,7 @@ function computeTradable(buyNetworks, sellNetworks) {
   return false;
 }
 
+// ==================== DETAIL SCAN (FIXED FILTER) ====================
 async function detailScan() {
   console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
   const start = Date.now();
@@ -371,9 +550,361 @@ setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
 setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
 
-// ==================== REST OF THE SERVER (Routes, Auth, etc.) ====================
-// ... (keep all your existing routes: auth, messaging, admin, opportunities, balance, deposit address, withdrawal info, trade execute, trade history, payment, etc.) ...
-// They are the same as the previous version, using authMiddleware and the exchangeInstances.
+// ==================== Auth Routes ====================
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, mpesa, password } = req.body;
+    if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
+    const existing = await User.findOne({ $or: [{ username }, { email }] });
+    if (existing) return res.status(409).json({ error: 'Username or email already exists' });
+    const user = new User({ username, email, mpesa, passwordHash: hashPassword(password) });
+    await user.save();
+    const token = generateToken();
+    await new Session({ token, username }).save();
+    sendEmailAsync(email, 'Welcome to ArbiMine!', `<h2>Welcome ${username}!</h2><p>You can now start scanning.</p>`);
+    res.json({ success: true, token, username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const user = await User.findOne({ email });
+    if (!user || user.passwordHash !== hashPassword(password))
+      return res.status(401).json({ error: 'Invalid credentials' });
+    const token = generateToken();
+    await new Session({ token, username: user.username }).save();
+    sendEmailAsync(email, '🔐 New login', `<p>Login at ${new Date().toLocaleString()}</p>`);
+    res.json({ success: true, token, username: user.username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    res.json({ username: user.username, email: user.email, mpesa: user.mpesa });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/user/subscription', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    const now = new Date();
+    const isActive = user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > now;
+    res.json({ active: isActive, plan: user.subscription.plan, expiresAt: user.subscription.expiresAt });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Messaging ====================
+app.post('/api/messages', authMiddleware, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
+    const blocked = await BlockedUser.findOne({ username: req.user });
+    if (blocked) return res.status(403).json({ error: 'You have been blocked' });
+    const msg = new Message({ user: req.user, isAdmin: false, content: content.trim() });
+    await msg.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/messages', authMiddleware, async (req, res) => {
+  try {
+    const messages = await Message.find({ user: req.user }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Admin Endpoints ====================
+app.get('/admin/users', adminAuth, async (req, res) => {
+  const users = await User.find({}, '-passwordHash');
+  res.json(users);
+});
+
+app.get('/admin/messages', adminAuth, async (req, res) => {
+  const messages = await Message.find().sort({ createdAt: -1 });
+  res.json(messages);
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  const transactions = await Transaction.find().sort({ createdAt: -1 });
+  res.json(transactions);
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const days = plan === 'weekly' ? 7 : 30;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  await BlockedUser.findOneAndUpdate({ username: req.params.username }, { username: req.params.username }, { upsert: true });
+  res.json({ success: true });
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  await BlockedUser.deleteOne({ username: req.params.username });
+  res.json({ success: true });
+});
+
+// ==================== Opportunities ====================
+app.get('/api/opportunities', authMiddleware, (req, res) => {
+  console.log(`📊 /api/opportunities called by ${req.user}, cached: ${cachedOpportunities.length}`);
+  const withDetails = cachedOpportunities.map(opp => {
+    const detailed = detailedCache.get(opp.id);
+    if (detailed) return detailed;
+    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
+  });
+  const scanning = cachedOpportunities.length === 0 && Date.now() - lastFastScan > 5000;
+  res.json({
+    count: withDetails.length,
+    opportunities: withDetails,
+    lastScan: lastFastScan,
+    lastDetail: lastDetailScan,
+    scanning
+  });
+});
+
+app.get('/api/opportunity/:id/details', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const cached = detailedCache.get(id);
+  if (cached) return res.json(cached);
+  const opp = cachedOpportunities.find(o => o.id === id);
+  if (!opp) return res.status(404).json({ error: 'Not found' });
+  const coin = opp.symbol;
+  const buyEx = opp.buyExchange.toLowerCase();
+  const sellEx = opp.sellExchange.toLowerCase();
+  const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+    fetchRealNetworks(buyEx, coin),
+    fetchRealNetworks(sellEx, coin),
+    fetchLiquidity(buyEx, opp.symbol),
+    fetchLiquidity(sellEx, opp.symbol)
+  ]);
+  const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+  const spreadNum = parseFloat(opp.spread);
+  let risk = 'medium';
+  if (!tradable) risk = 'high';
+  else if (spreadNum < 1) risk = 'low';
+  else if (spreadNum > 3) risk = 'high';
+  else risk = 'medium';
+  const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+  const result = {
+    ...opp,
+    liquidity: finalLiquidity,
+    sellLiquidity: sellLiq || opp.liquidity,
+    tradable,
+    risk,
+    buyNetworks: buyNet?.networks || {},
+    sellNetworks: sellNet?.networks || {},
+    buyWithdraw: buyNet?.canWithdraw || false,
+    sellDeposit: sellNet?.canDeposit || false
+  };
+  detailedCache.set(id, result);
+  res.json(result);
+});
+
+// ==================== Balance ====================
+app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
+  const { exchange } = req.params;
+  const ex = exchangeInstances[exchange.toLowerCase()];
+  if (!ex || !ex.apiKey || !ex.secret) {
+    // Fallback simulated balances
+    const balances = {
+      binance: { USDT: 1250, BTC: 0.02, ETH: 0.5 },
+      kucoin: { USDT: 800, BTC: 0.015, ETH: 0.3 },
+      mexc: { USDT: 700, BTC: 0.012, ETH: 0.25 },
+      gateio: { USDT: 900, BTC: 0.018, ETH: 0.35 },
+      htx: { USDT: 600, BTC: 0.01, ETH: 0.2 }
+    };
+    return res.json(balances[exchange.toLowerCase()] || { USDT: 0 });
+  }
+  try {
+    const balance = await ex.fetchBalance();
+    const nonZero = {};
+    for (const [currency, amount] of Object.entries(balance.free)) {
+      if (amount > 0) nonZero[currency] = amount;
+    }
+    res.json(nonZero);
+  } catch (err) {
+    console.log(`Balance fetch error for ${exchange}:`, err.message);
+    res.json({ USDT: 0 });
+  }
+});
+
+// ==================== Deposit Address ====================
+app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, async (req, res) => {
+  const { exchange, currency, network } = req.params;
+  const ex = exchangeInstances[exchange.toLowerCase()];
+  if (!ex || !ex.apiKey || !ex.secret) {
+    return res.json({
+      address: '0x' + crypto.randomBytes(20).toString('hex'),
+      tag: null,
+      network: network,
+      currency: currency,
+      simulated: true
+    });
+  }
+
+  const mappedNetwork = mapNetwork(exchange, currency, network);
+  console.log(`🔍 Fetching deposit address for ${exchange} ${currency} ${network} -> ${mappedNetwork}`);
+
+  try {
+    await ex.loadMarkets();
+    const depositAddresses = await ex.fetchDepositAddress(currency, { network: mappedNetwork });
+    let addrData = null;
+    if (Array.isArray(depositAddresses)) {
+      addrData = depositAddresses.find(a => a.network === mappedNetwork || a.info?.network === mappedNetwork);
+    } else if (depositAddresses && typeof depositAddresses === 'object') {
+      addrData = depositAddresses;
+    }
+    if (addrData && addrData.address) {
+      return res.json({
+        address: addrData.address,
+        tag: addrData.tag || null,
+        network: addrData.network || mappedNetwork,
+        currency: addrData.currency || currency,
+        simulated: false
+      });
+    }
+    throw new Error('No address found');
+  } catch (err) {
+    console.log(`Deposit address error ${exchange} ${currency} ${network} -> ${mappedNetwork}:`, err.message);
+    return res.json({
+      address: '0x' + crypto.randomBytes(20).toString('hex'),
+      tag: null,
+      network: network,
+      currency: currency,
+      simulated: true
+    });
+  }
+});
+
+// ==================== Withdrawal Info ====================
+app.get('/api/withdrawal-info/:exchange/:currency/:network', authMiddleware, async (req, res) => {
+  const { exchange, currency, network } = req.params;
+  const ex = exchangeInstances[exchange.toLowerCase()];
+  if (!ex || !ex.apiKey || !ex.secret) {
+    return res.json({ fee: 0.5, minAmount: 10, network: network, currency: currency, simulated: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const currencies = await ex.fetchCurrencies();
+    const coinData = currencies[currency];
+    if (!coinData || !coinData.networks) throw new Error('Currency data not available');
+    const mappedNetwork = mapNetwork(exchange, currency, network);
+    const netInfo = coinData.networks[mappedNetwork];
+    if (!netInfo) throw new Error('Network not supported');
+    return res.json({
+      fee: netInfo.fee || 0,
+      minAmount: netInfo.withdrawMin || 0,
+      maxAmount: netInfo.withdrawMax || 0,
+      network: mappedNetwork,
+      currency: currency,
+      simulated: false
+    });
+  } catch (err) {
+    console.log(`Withdrawal info error ${exchange} ${currency} ${network}:`, err.message);
+    return res.json({ fee: 0.5, minAmount: 10, network: network, currency: currency, simulated: true });
+  }
+});
+
+// ==================== Execute Trade ====================
+app.post('/api/trade/execute', authMiddleware, async (req, res) => {
+  const { symbol, buyExchange, sellExchange, buyPrice, sellPrice, amount, investment } = req.body;
+  if (!symbol || !buyExchange || !sellExchange || !buyPrice || !sellPrice || !amount || !investment) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Simulate trade execution (replace with real CCXT orders later)
+  const tradeFeeRate = 0.001;
+  const buyTradeFee = investment * tradeFeeRate;
+  const sellTradeFee = (amount * sellPrice) * tradeFeeRate;
+  const totalTradingFees = buyTradeFee + sellTradeFee;
+  const withdrawalFeeUSD = 0.5;
+  const depositFeeUSD = 0.2;
+  const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
+  const slippage = investment * 0.002;
+  const totalFees = totalTradingFees + totalNetworkFees + slippage;
+  const grossProfit = (sellPrice - buyPrice) * amount;
+  const netProfit = grossProfit - totalFees;
+  const roi = (netProfit / investment) * 100;
+
+  const trade = new Trade({
+    user: req.user,
+    symbol,
+    buyExchange,
+    sellExchange,
+    buyPrice,
+    sellPrice,
+    amount,
+    investment,
+    grossProfit,
+    tradingFees: totalTradingFees,
+    withdrawalFees: withdrawalFeeUSD,
+    depositFees: depositFeeUSD,
+    totalFees,
+    netProfit,
+    roi,
+    status: 'completed',
+    txId: '0x' + crypto.randomBytes(16).toString('hex')
+  });
+  await trade.save();
+
+  res.json({
+    success: true,
+    trade: {
+      id: trade._id,
+      txId: trade.txId,
+      netProfit,
+      roi,
+      status: trade.status,
+      createdAt: trade.createdAt
+    }
+  });
+});
+
+// ==================== Trade History ====================
+app.get('/api/trades', authMiddleware, async (req, res) => {
+  const trades = await Trade.find({ user: req.user }).sort({ createdAt: -1 });
+  res.json(trades);
+});
+
+// ==================== Payment (Paystack) – keep your existing routes ====================
+// (Your payment routes go here – they should already use authMiddleware)
 
 // ==================== Admin page ====================
 app.get('/admin', (req, res) => {
