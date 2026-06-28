@@ -172,7 +172,7 @@
     <div class="stat-card"><div class="text-slate-400 text-sm">Total Opportunities</div><div id="oppCount" class="text-3xl font-bold mt-2 text-green-400">0</div></div>
     <div class="stat-card"><div class="text-slate-400 text-sm">Highest Spread</div><div id="bestSpread" class="text-3xl font-bold mt-2 text-green-400">0%</div></div>
     <div class="stat-card"><div class="text-slate-400 text-sm">Tradable</div><div id="tradableCount" class="text-3xl font-bold mt-2 text-green-400">0</div></div>
-    <div class="stat-card"><div class="text-slate-400 text-sm">Connected Exchanges</div><div class="text-3xl font-bold mt-2">14</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Connected Exchanges</div><div class="text-3xl font-bold mt-2">5</div></div>
   </div>
 
   <!-- More Stats -->
@@ -186,16 +186,14 @@
   <div class="mt-6 space-y-3">
     <input id="searchInput" class="search-input" placeholder="🔍 Search coin (e.g., BTC)" oninput="applyFilters()">
     <div class="flex flex-wrap gap-2">
-      <!-- Exchange multi-select buttons -->
+      <!-- Exchange filter buttons – only 5 exchanges -->
       <div id="exchangeFilterContainer" class="flex flex-wrap gap-1">
         <button class="exchange-filter-btn active" data-exchange="all" onclick="toggleExchangeFilter('all')"><span class="check">✔ </span>All</button>
-        <button class="exchange-filter-btn" data-exchange="binance" onclick="toggleExchangeFilter('binance')"><span class="check">✔ </span>Binance</button>
         <button class="exchange-filter-btn" data-exchange="kucoin" onclick="toggleExchangeFilter('kucoin')"><span class="check">✔ </span>KuCoin</button>
+        <button class="exchange-filter-btn" data-exchange="mexc" onclick="toggleExchangeFilter('mexc')"><span class="check">✔ </span>MEXC</button>
         <button class="exchange-filter-btn" data-exchange="htx" onclick="toggleExchangeFilter('htx')"><span class="check">✔ </span>HTX</button>
         <button class="exchange-filter-btn" data-exchange="gateio" onclick="toggleExchangeFilter('gateio')"><span class="check">✔ </span>Gate.io</button>
-        <button class="exchange-filter-btn" data-exchange="mexc" onclick="toggleExchangeFilter('mexc')"><span class="check">✔ </span>MEXC</button>
-        <button class="exchange-filter-btn" data-exchange="bybit" onclick="toggleExchangeFilter('bybit')"><span class="check">✔ </span>Bybit</button>
-        <button class="exchange-filter-btn" data-exchange="okx" onclick="toggleExchangeFilter('okx')"><span class="check">✔ </span>OKX</button>
+        <button class="exchange-filter-btn" data-exchange="bingx" onclick="toggleExchangeFilter('bingx')"><span class="check">✔ </span>BingX</button>
       </div>
       <select id="riskFilter" class="search-input w-auto flex-1 min-w-[120px]" onchange="applyFilters()">
         <option value="all">All Risk</option>
@@ -1365,18 +1363,14 @@
 
   // ========== SETTINGS ==========
   function resetSettings() {
-    // Reset all select inputs to default values
     document.getElementById('settingTheme').value = 'dark';
     document.getElementById('settingNotification').value = 'all';
     document.getElementById('settingCurrency').value = 'USDT';
-
-    // Show success message
     const savedDiv = document.getElementById('settingsSaved');
     savedDiv.classList.remove('hidden');
     setTimeout(() => {
       savedDiv.classList.add('hidden');
     }, 4000);
-
     showToast('✅ Settings reset to default', 'success');
   }
 
