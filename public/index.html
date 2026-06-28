@@ -370,7 +370,20 @@
           <div><span class="text-slate-400 text-sm">Buy Price</span><div id="execBuyPrice" class="font-bold">$0</div></div>
           <div><span class="text-slate-400 text-sm">Sell Price</span><div id="execSellPrice" class="font-bold">$0</div></div>
         </div>
-        <div class="space-y-1">
+
+        <!-- Balances for both exchanges -->
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <span class="text-slate-400 text-sm">Balance on <span id="execBuyBalanceLabel">Buy</span></span>
+            <div id="execBuyBalance" class="font-bold text-green-400">—</div>
+          </div>
+          <div>
+            <span class="text-slate-400 text-sm">Balance on <span id="execSellBalanceLabel">Sell</span></span>
+            <div id="execSellBalance" class="font-bold text-red-400">—</div>
+          </div>
+        </div>
+
+        <div class="space-y-1 mt-3">
           <div class="fee-row"><span class="label">Trading Fees (0.1%)</span><span id="execTradingFees" class="value">$0.00</span></div>
           <div class="fee-row"><span class="label">Withdrawal Fee</span><span id="execWithdrawFee" class="value">$0.00</span></div>
           <div class="fee-row"><span class="label">Deposit Fee</span><span id="execDepositFee" class="value">$0.00</span></div>
@@ -391,10 +404,6 @@
           <div class="col-span-2">
             <span class="text-slate-400 text-sm">Deposit Address</span>
             <div id="execDepositAddress" class="font-mono text-sm break-all bg-slate-900 p-2 rounded-lg mt-1">0x...</div>
-          </div>
-          <div class="col-span-2">
-            <span class="text-slate-400 text-sm">Available Balance (USDT)</span>
-            <div id="execBalance" class="font-bold text-blue-400 text-lg">—</div>
           </div>
         </div>
         <div class="mt-4">
@@ -1029,6 +1038,10 @@
     document.getElementById('execBuyPrice').innerText = '$' + (opp.buyPrice || '0');
     document.getElementById('execSellPrice').innerText = '$' + (opp.sellPrice || '0');
 
+    // Set labels
+    document.getElementById('execBuyBalanceLabel').innerText = opp.buyExchange || 'Buy';
+    document.getElementById('execSellBalanceLabel').innerText = opp.sellExchange || 'Sell';
+
     const buyNets = Object.values(opp.buyNetworks || {});
     const sellNets = Object.values(opp.sellNetworks || {});
     const withdrawNet = buyNets.length ? buyNets[0].name : '—';
@@ -1037,14 +1050,27 @@
     document.getElementById('execDepositNetwork').innerText = depositNet;
     document.getElementById('execDepositAddress').innerText = '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
 
+    // Fetch balances for both exchanges
     const buyEx = opp.buyExchange.toLowerCase();
+    const sellEx = opp.sellExchange.toLowerCase();
+
+    // Buy balance
     fetch(`/api/balance/${buyEx}`, { headers: { Authorization: token } })
       .then(res => res.json())
       .then(data => {
-        const usdtBalance = data.USDT || 0;
-        document.getElementById('execBalance').innerText = '$' + usdtBalance.toFixed(2);
+        const usdt = data.USDT || 0;
+        document.getElementById('execBuyBalance').innerText = '$' + usdt.toFixed(2);
       })
-      .catch(() => document.getElementById('execBalance').innerText = 'Error');
+      .catch(() => document.getElementById('execBuyBalance').innerText = 'Error');
+
+    // Sell balance
+    fetch(`/api/balance/${sellEx}`, { headers: { Authorization: token } })
+      .then(res => res.json())
+      .then(data => {
+        const usdt = data.USDT || 0;
+        document.getElementById('execSellBalance').innerText = '$' + usdt.toFixed(2);
+      })
+      .catch(() => document.getElementById('execSellBalance').innerText = 'Error');
 
     document.getElementById('execAmount').value = 100;
     updateExecPreview();

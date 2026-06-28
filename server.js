@@ -156,7 +156,7 @@ const EXCHANGES = {
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
   htx: 'https://api.huobi.pro/market/tickers',
-  bingx: 'https://api.bingx.com/api/v1/market/ticker?symbol=ALL'   // ✅ fixed
+  bingx: 'https://api.bingx.com/api/v1/market/ticker?symbol=ALL'
 };
 
 const MIN_PROFIT = 0.2;
@@ -170,7 +170,6 @@ function extractSymbol(exchange, symbol, t) {
     else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
     else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
     else if (exchange === 'bingx') {
-      // BingX response: { symbol: "BTC-USDT", lastPrice: "...", quoteVolume: "..." }
       if (symbol && symbol.includes('-USDT')) {
         sym = symbol.replace('-USDT', '');
         price = +t.lastPrice;
@@ -186,7 +185,7 @@ let cachedOpportunities = [];
 let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
-const FAST_SCAN_INTERVAL = 60000;
+const FAST_SCAN_INTERVAL = 120000; // ✅ 2 minutes
 const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 
@@ -360,6 +359,30 @@ fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
 setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
+
+// ==================== Balance Route ====================
+app.get('/api/balance/:exchange', async (req, res) => {
+  const { exchange } = req.params;
+  const key = exchange.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) {
+    return res.status(400).json({ error: 'Unsupported exchange' });
+  }
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const balance = await ex.fetchBalance();
+    const usdt = balance.total.USDT || 0;
+    res.json({ USDT: usdt, balance });
+  } catch (err) {
+    console.error(`Balance error for ${exchange}:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch balance', message: err.message });
+  }
+});
 
 // ==================== Auth Routes ====================
 app.post('/api/register', async (req, res) => {
