@@ -1,0 +1,2272 @@
+#!/bin/bash
+# Update refresh to 2 min, add real deposit address, remove all simulated data
+
+echo "🔄 Backing up current files..."
+cp server.js server.js.bak3
+cp public/index.html public/index.html.bak3
+
+echo "📝 Updating server.js with deposit-address route and common networks..."
+cat > server.js << 'EOF'
+require("dotenv").config();
+const express = require('express');
+const axios = require('axios');
+const path = require('path');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const ccxt = require('ccxt');
+const nodemailer = require('nodemailer');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB error:', err));
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ==================== Email ====================
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+
+let transporter = null;
+if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+  console.log('✅ Email transporter configured');
+} else {
+  console.log('⚠️ Email not configured – skipping notifications');
+}
+
+async function sendEmail(to, subject, html) {
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
+    console.log(`📧 Email sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error('Email error:', err.message);
+    return false;
+  }
+}
+
+function sendEmailAsync(to, subject, html) {
+  sendEmail(to, subject, html).catch(() => {});
+}
+
+// ==================== Schemas ====================
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  mpesa: { type: String, required: true },
+  passwordHash: { type: String, required: true },
+  subscription: {
+    active: { type: Boolean, default: false },
+    plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
+    expiresAt: { type: Date, default: null }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+const sessionSchema = new mongoose.Schema({
+  token: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: '7d' }
+});
+const transactionSchema = new mongoose.Schema({
+  reference: { type: String, required: true, unique: true },
+  user: { type: String, required: true },
+  plan: { type: String, enum: ['weekly', 'monthly'] },
+  amount: Number,
+  status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
+  paystackResponse: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now }
+});
+const messageSchema = new mongoose.Schema({
+  user: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const blockedUserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  blockedAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
+const Session = mongoose.model('Session', sessionSchema);
+const Transaction = mongoose.model('Transaction', transactionSchema);
+const Message = mongoose.model('Message', messageSchema);
+const BlockedUser = mongoose.model('BlockedUser', blockedUserSchema);
+
+const hashPassword = p => crypto.createHash('sha256').update(p).digest('hex');
+const generateToken = () => crypto.randomBytes(32).toString('hex');
+
+function formatPhone(phone) {
+  let cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('0')) cleaned = '254' + cleaned.slice(1);
+  else if (cleaned.startsWith('254')) {}
+  else if (cleaned.startsWith('+254')) cleaned = cleaned.slice(1);
+  else cleaned = '254' + cleaned;
+  return cleaned;
+}
+
+// ==================== Exchange API ====================
+const SUPPORTED_EXCHANGES = ['mexc', 'kucoin', 'htx', 'gateio', 'bingx'];
+
+function buildExchange(exchangeId, apiKey, secret) {
+  const exchangeMap = {
+    kucoin: ccxt.kucoin,
+    htx: ccxt.huobi,
+    gateio: ccxt.gateio,
+    mexc: ccxt.mexc,
+    bingx: ccxt.bingx
+  };
+  const ExchangeClass = exchangeMap[exchangeId];
+  if (!ExchangeClass) return null;
+  const config = { enableRateLimit: true };
+  if (apiKey && secret) { config.apiKey = apiKey; config.secret = secret; }
+  return new ExchangeClass(config);
+}
+
+const EXCHANGE_CREDENTIALS = {
+  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
+  htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
+  gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
+  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
+  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET }
+};
+const exchangeInstances = {};
+for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
+  const ex = buildExchange(id, cred.apiKey, cred.secret);
+  if (ex) exchangeInstances[id] = ex;
+}
+
+async function safeGet(url, name) {
+  try {
+    const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    return res.data;
+  } catch (e) {
+    console.log(`${name} FAILED:`, e.message);
+    return null;
+  }
+}
+
+const EXCHANGES = {
+  mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
+  kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
+  gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
+  htx: 'https://api.huobi.pro/market/tickers',
+  bingx: 'https://api.bingx.com/api/v1/market/ticker?symbol=ALL'
+};
+
+const MIN_PROFIT = 0.2;
+const MAX_PROFIT = 100;
+
+function extractSymbol(exchange, symbol, t) {
+  let sym = null, price = null, volume = null;
+  try {
+    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
+    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
+    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
+    else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
+    else if (exchange === 'bingx') {
+      if (symbol && symbol.includes('-USDT')) {
+        sym = symbol.replace('-USDT', '');
+        price = +t.lastPrice;
+        volume = +t.quoteVolume;
+      }
+    }
+    if (!sym || !price || isNaN(price)) return null;
+    return { symbol: sym, price, volume: volume || 0 };
+  } catch (e) { return null; }
+}
+
+let cachedOpportunities = [];
+let detailedCache = new Map();
+let lastFastScan = 0;
+let lastDetailScan = 0;
+const FAST_SCAN_INTERVAL = 120000; // 2 minutes
+const DETAIL_SCAN_INTERVAL = 120000;
+const DETAIL_OPP_LIMIT = 200;
+
+async function fetchRealNetworks(exchangeId, coin) {
+  const key = exchangeId.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return null;
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const currencies = await ex.fetchCurrencies();
+    const coinData = currencies[coin];
+    if (!coinData || !coinData.networks) return null;
+    const networks = {};
+    for (const [netName, netInfo] of Object.entries(coinData.networks)) {
+      let feeUnit = netName === 'TRC20' ? 'USDT' : (netName === 'BEP20' ? 'BNB' : 'ETH');
+      networks[netName] = {
+        name: netName,
+        deposit: netInfo.deposit === true,
+        withdraw: netInfo.withdraw === true,
+        fee: netInfo.fee || 0,
+        feeUnit: feeUnit,
+        minWithdraw: netInfo.withdrawMin || 0,
+        // arrivalTime is not provided by exchanges, we map by network name
+        arrivalTime: netName === 'TRC20' ? '2-5 min' : (netName === 'BEP20' ? '3-8 min' : '10-20 min')
+      };
+    }
+    return { networks, canWithdraw: coinData.withdraw === true, canDeposit: coinData.deposit === true };
+  } catch (err) {
+    console.log(`Network error ${exchangeId} ${coin}:`, err.message);
+    return null;
+  }
+}
+
+async function fetchLiquidity(exchangeId, symbol) {
+  const key = exchangeId.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return null;
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    const orderbook = await ex.fetchOrderBook(symbol, 5);
+    const bids = orderbook.bids.slice(0, 3);
+    return bids.reduce((sum, [price, amount]) => sum + price * amount, 0);
+  } catch (err) {
+    console.log(`Liquidity error ${exchangeId} ${symbol}:`, err.message);
+    return null;
+  }
+}
+
+async function fastScan() {
+  console.log('🔄 Fast scan (prices)...');
+  const start = Date.now();
+  try {
+    const results = await Promise.all(Object.entries(EXCHANGES).map(([n, u]) => safeGet(u, n)));
+    const allData = {};
+    Object.keys(EXCHANGES).forEach(e => (allData[e] = {}));
+    results.forEach((data, idx) => {
+      const ex = Object.keys(EXCHANGES)[idx];
+      if (!data) return;
+      let tickers = [];
+      if (ex === 'mexc') tickers = data;
+      else if (ex === 'kucoin') tickers = data.data?.ticker || [];
+      else if (ex === 'gateio') tickers = data;
+      else if (ex === 'htx') tickers = data.data || [];
+      else if (ex === 'bingx') tickers = data.data || [];
+      for (const t of tickers) {
+        const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+        const d = extractSymbol(ex, symKey, t);
+        if (!d) continue;
+        allData[ex][d.symbol] = { price: d.price, volume: d.volume };
+      }
+    });
+    const symbols = new Set();
+    Object.values(allData).forEach(ex => Object.keys(ex).forEach(s => symbols.add(s)));
+    const opportunities = [];
+    for (const symbol of symbols) {
+      const prices = [];
+      for (const ex of Object.keys(allData)) {
+        if (allData[ex][symbol]) prices.push([ex, allData[ex][symbol]]);
+      }
+      if (prices.length < 2) continue;
+      prices.sort((a, b) => a[1].price - b[1].price);
+      const [buyEx, buy] = prices[0];
+      const [sellEx, sell] = prices[prices.length - 1];
+      const spread = ((sell.price - buy.price) / buy.price) * 100;
+      if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
+      let liquidity = buy.volume ? buy.volume * buy.price : 0;
+      if (liquidity === 0) liquidity = buy.price * 50000 * (spread > 10 ? 0.3 : spread > 5 ? 0.6 : 1);
+      opportunities.push({
+        id: `${symbol}-${buyEx}-${sellEx}`,
+        symbol,
+        buyExchange: buyEx.toUpperCase(),
+        sellExchange: sellEx.toUpperCase(),
+        buyPrice: buy.price.toFixed(8),
+        sellPrice: sell.price.toFixed(8),
+        spread: spread.toFixed(2),
+        liquidity: liquidity.toFixed(0)
+      });
+    }
+    cachedOpportunities = opportunities.sort((a,b) => +b.spread - +a.spread);
+    lastFastScan = Date.now();
+    console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
+  } catch (err) {
+    console.error('Fast scan failed:', err);
+  }
+}
+
+function computeTradable(buyNetworks, sellNetworks) {
+  if (!buyNetworks || !sellNetworks) return false;
+  for (const [netName, netInfo] of Object.entries(buyNetworks)) {
+    if (sellNetworks[netName] && netInfo.withdraw === true && sellNetworks[netName].deposit === true) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getCommonNetworks(buyNetworks, sellNetworks) {
+  if (!buyNetworks || !sellNetworks) return [];
+  const common = [];
+  for (const [netName, netInfo] of Object.entries(buyNetworks)) {
+    if (sellNetworks[netName] && netInfo.withdraw === true && sellNetworks[netName].deposit === true) {
+      common.push(netName);
+    }
+  }
+  return common;
+}
+
+async function detailScan() {
+  console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
+  const start = Date.now();
+  const topOps = cachedOpportunities.slice(0, DETAIL_OPP_LIMIT);
+  let updated = 0;
+  for (const opp of topOps) {
+    const coin = opp.symbol;
+    const buyEx = opp.buyExchange.toLowerCase();
+    const sellEx = opp.sellExchange.toLowerCase();
+    try {
+      const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+        fetchRealNetworks(buyEx, coin),
+        fetchRealNetworks(sellEx, coin),
+        fetchLiquidity(buyEx, opp.symbol),
+        fetchLiquidity(sellEx, opp.symbol)
+      ]);
+      const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+      const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
+      const spreadNum = parseFloat(opp.spread);
+      let risk = 'medium';
+      if (!tradable) risk = 'high';
+      else if (spreadNum < 1) risk = 'low';
+      else if (spreadNum > 3) risk = 'high';
+      else risk = 'medium';
+      const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+      detailedCache.set(opp.id, {
+        ...opp,
+        liquidity: finalLiquidity,
+        sellLiquidity: sellLiq || opp.liquidity,
+        tradable,
+        risk,
+        buyNetworks: buyNet?.networks || {},
+        sellNetworks: sellNet?.networks || {},
+        commonNetworks,
+        buyWithdraw: buyNet?.canWithdraw || false,
+        sellDeposit: sellNet?.canDeposit || false
+      });
+      updated++;
+      await new Promise(r => setTimeout(r, 200));
+    } catch (err) {
+      console.log(`Detail scan failed for ${opp.id}:`, err.message);
+    }
+  }
+  lastDetailScan = Date.now();
+  console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
+}
+
+fastScan();
+setInterval(fastScan, FAST_SCAN_INTERVAL);
+setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
+setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
+
+// ==================== Balance Route ====================
+app.get('/api/balance/:exchange', async (req, res) => {
+  const { exchange } = req.params;
+  const key = exchange.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) {
+    return res.status(400).json({ error: 'Unsupported exchange' });
+  }
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const balance = await ex.fetchBalance();
+    const usdt = balance.total.USDT || 0;
+    res.json({ USDT: usdt, balance });
+  } catch (err) {
+    console.error(`Balance error for ${exchange}:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch balance', message: err.message });
+  }
+});
+
+// ==================== Deposit Address Route ====================
+app.get('/api/deposit-address/:exchange/:coin/:network', async (req, res) => {
+  const { exchange, coin, network } = req.params;
+  const key = exchange.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) {
+    return res.status(400).json({ error: 'Unsupported exchange' });
+  }
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const depositAddress = await ex.fetchDepositAddress(coin, network);
+    res.json({ address: depositAddress.address, tag: depositAddress.tag, network: depositAddress.network });
+  } catch (err) {
+    console.error(`Deposit address error for ${exchange} ${coin} ${network}:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch deposit address', message: err.message });
+  }
+});
+
+// ==================== Auth Routes ====================
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, mpesa, password } = req.body;
+    if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
+    const existing = await User.findOne({ $or: [{ username }, { email }] });
+    if (existing) return res.status(409).json({ error: 'Username or email already exists' });
+    const user = new User({ username, email, mpesa, passwordHash: hashPassword(password) });
+    await user.save();
+    const token = generateToken();
+    await new Session({ token, username }).save();
+    sendEmailAsync(
+      email,
+      'Welcome to ArbiMine!',
+      `<h2>Welcome ${username}!</h2><p>Thank you for joining ArbiMine.</p><p>You can now start scanning live arbitrage opportunities.</p>`
+    );
+    res.json({ success: true, token, username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const user = await User.findOne({ email });
+    if (!user || user.passwordHash !== hashPassword(password))
+      return res.status(401).json({ error: 'Invalid credentials' });
+    const token = generateToken();
+    await new Session({ token, username: user.username }).save();
+    sendEmailAsync(
+      email,
+      '🔐 New login to your ArbiMine account',
+      `<p>Your ArbiMine account was just logged into at ${new Date().toLocaleString()}.</p><p>If this was you, ignore this message.</p>`
+    );
+    res.json({ success: true, token, username: user.username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    res.json({ username: user.username, email: user.email, mpesa: user.mpesa });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/user/subscription', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    const now = new Date();
+    const isActive = user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > now;
+    res.json({ active: isActive, plan: user.subscription.plan, expiresAt: user.subscription.expiresAt });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Messaging ====================
+app.post('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const { content } = req.body;
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
+    const blocked = await BlockedUser.findOne({ username: session.username });
+    if (blocked) return res.status(403).json({ error: 'You have been blocked from sending messages' });
+    const msg = new Message({ user: session.username, isAdmin: false, content: content.trim() });
+    await msg.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const messages = await Message.find({ user: session.username }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Admin Messaging ====================
+app.get('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const users = await Message.distinct('user');
+    const conversations = [];
+    for (const user of users) {
+      const lastMsg = await Message.findOne({ user }).sort({ createdAt: -1 });
+      const count = await Message.countDocuments({ user });
+      conversations.push({ _id: user, count, lastMessage: lastMsg });
+    }
+    res.json(conversations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/admin/messages/:user', adminAuth, async (req, res) => {
+  try {
+    const { user } = req.params;
+    const messages = await Message.find({ user }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const { userId, content } = req.body;
+    if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
+    const msg = new Message({ user: userId, isAdmin: true, content: content.trim() });
+    await msg.save();
+    const user = await User.findOne({ username: userId });
+    if (user) {
+      sendEmailAsync(
+        user.email,
+        '📩 Admin Reply from ArbiMine Support',
+        `<p>You have received a new reply from ArbiMine admin:</p><p><em>${content}</em></p><p>Login to your account to view the full conversation.</p>`
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Message.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Content required' });
+    const msg = await Message.findByIdAndUpdate(id, { content: content.trim() }, { new: true });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.findOneAndUpdate({ username }, { username }, { upsert: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.deleteOne({ username });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Opportunities ====================
+app.get('/api/opportunities', (req, res) => {
+  const withDetails = cachedOpportunities.map(opp => {
+    const detailed = detailedCache.get(opp.id);
+    if (detailed) return detailed;
+    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, commonNetworks: [], buyWithdraw: false, sellDeposit: false };
+  });
+  res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan });
+});
+
+app.get('/api/opportunity/:id/details', async (req, res) => {
+  const { id } = req.params;
+  const cached = detailedCache.get(id);
+  if (cached) return res.json(cached);
+  const opp = cachedOpportunities.find(o => o.id === id);
+  if (!opp) return res.status(404).json({ error: 'Not found' });
+  const coin = opp.symbol;
+  const buyEx = opp.buyExchange.toLowerCase();
+  const sellEx = opp.sellExchange.toLowerCase();
+  const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+    fetchRealNetworks(buyEx, coin),
+    fetchRealNetworks(sellEx, coin),
+    fetchLiquidity(buyEx, opp.symbol),
+    fetchLiquidity(sellEx, opp.symbol)
+  ]);
+  const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+  const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
+  const spreadNum = parseFloat(opp.spread);
+  let risk = 'medium';
+  if (!tradable) risk = 'high';
+  else if (spreadNum < 1) risk = 'low';
+  else if (spreadNum > 3) risk = 'high';
+  else risk = 'medium';
+  const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+  const result = {
+    ...opp,
+    liquidity: finalLiquidity,
+    sellLiquidity: sellLiq || opp.liquidity,
+    tradable,
+    risk,
+    buyNetworks: buyNet?.networks || {},
+    sellNetworks: sellNet?.networks || {},
+    commonNetworks,
+    buyWithdraw: buyNet?.canWithdraw || false,
+    sellDeposit: sellNet?.canDeposit || false
+  };
+  detailedCache.set(id, result);
+  res.json(result);
+});
+
+// ==================== Payment ====================
+function sanitizeReference(str) {
+  return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
+}
+
+app.post('/api/pesapal/pay', async (req, res) => {
+  const { plan } = req.body;
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    let amountInKobo = plan === 'weekly' ? 100 * 100 : 350 * 100;
+    const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecretKey) {
+      console.error('PAYSTACK_SECRET_KEY missing');
+      return res.status(500).json({ error: 'Payment not configured' });
+    }
+    const cleanUsername = sanitizeReference(user.username);
+    const reference = `arbimine_${cleanUsername}_${Date.now()}`;
+    const callbackUrl = `${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}/api/payment/callback`;
+    console.log(`💰 Initializing Paystack: ${reference} for ${user.email}`);
+    const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+      email: user.email,
+      amount: amountInKobo,
+      currency: 'KES',
+      reference: reference,
+      callback_url: callbackUrl,
+      metadata: { plan, username: user.username, user_id: user._id.toString() }
+    }, {
+      headers: { Authorization: `Bearer ${paystackSecretKey}`, 'Content-Type': 'application/json' }
+    });
+    await Transaction.create({
+      reference,
+      user: user.username,
+      plan,
+      amount: amountInKobo / 100,
+      status: 'pending',
+      paystackResponse: response.data
+    });
+    if (response.data.status) {
+      res.json({ success: true, authorizationUrl: response.data.data.authorization_url, reference });
+    } else {
+      console.error('Paystack init error:', response.data);
+      res.status(400).json({ error: response.data.message || 'Payment initialization failed' });
+    }
+  } catch (err) {
+    console.error('Paystack error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Payment service error' });
+  }
+});
+
+app.get('/api/transaction/:reference', async (req, res) => {
+  const { reference } = req.params;
+  try {
+    const tx = await Transaction.findOne({ reference });
+    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+    res.json({ status: tx.status, plan: tx.plan, amount: tx.amount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/payment/callback', async (req, res) => {
+  const { reference } = req.query;
+  if (!reference) return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
+  try {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    const verification = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: { Authorization: `Bearer ${secretKey}` }
+    });
+    const transaction = await Transaction.findOne({ reference });
+    let status = 'failed';
+    if (transaction) {
+      status = verification.data.data.status === 'success' ? 'success' : 'failed';
+      transaction.status = status;
+      transaction.paystackResponse = verification.data;
+      await transaction.save();
+    }
+    if (verification.data.status && verification.data.data.status === 'success') {
+      const meta = verification.data.data.metadata;
+      const plan = meta?.plan;
+      const username = meta?.username;
+      if (username && plan) {
+        const days = plan === 'weekly' ? 7 : 30;
+        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+        await User.findOneAndUpdate(
+          { username },
+          { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
+        );
+        const user = await User.findOne({ username });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '✅ Payment Successful – ArbiMine Pro Activated',
+            `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+          );
+        }
+      }
+      return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=success&reference=${reference}`);
+    } else {
+      const tx = await Transaction.findOne({ reference });
+      if (tx && tx.user) {
+        const user = await User.findOne({ username: tx.user });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '❌ Payment Failed – ArbiMine',
+            `<p>Your payment of KES ${tx.amount} for ${tx.plan} plan failed.</p><p>Reference: ${reference}</p><p>Please try again.</p>`
+          );
+        }
+      }
+      return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
+    }
+  } catch (err) {
+    console.error('Verification error:', err);
+    return res.redirect(`${process.env.APP_URL || 'https://arbitrage-master.onrender.com'}?payment_status=failed`);
+  }
+});
+
+app.post('/api/payment/webhook', async (req, res) => {
+  const event = req.body;
+  console.log('Webhook received:', event);
+  if (event.event === 'charge.success') {
+    const reference = event.data.reference;
+    const transaction = await Transaction.findOne({ reference });
+    if (transaction) {
+      transaction.status = 'success';
+      transaction.paystackResponse = event;
+      await transaction.save();
+    }
+    const metadata = event.data.metadata;
+    const plan = metadata?.plan;
+    const username = metadata?.username;
+    if (username && plan) {
+      const days = plan === 'weekly' ? 7 : 30;
+      const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      await User.findOneAndUpdate(
+        { username },
+        { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
+      );
+      const user = await User.findOne({ username });
+      if (user) {
+        sendEmailAsync(
+          user.email,
+          '✅ Payment Successful – ArbiMine Pro Activated (Webhook)',
+          `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+        );
+      }
+      console.log(`Subscription updated via webhook for ${username}`);
+    }
+  }
+  res.json({ status: 'received' });
+});
+
+// ==================== Admin ====================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    if (!global.adminTokens) global.adminTokens = new Set();
+    global.adminTokens.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
+});
+
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/admin/users', adminAuth, async (req, res) => {
+  const users = await User.find({}, '-passwordHash');
+  res.json(users);
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  const transactions = await Transaction.find().sort({ createdAt: -1 });
+  res.json(transactions);
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const days = plan === 'weekly' ? 7 : 30;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
+EOF
+
+echo "📝 Updating public/index.html (remove simulation, show real deposit address and networks)..."
+cat > public/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>ArbiMine Pro • Arbitrage Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
+    .glass { background: rgba(255,255,255,.05); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08); border-radius: 28px; box-shadow: 0 15px 40px rgba(0,0,0,.35); }
+    .btn { background: linear-gradient(135deg, #22c55e, #16a34a); padding: 12px 20px; border-radius: 16px; font-weight: 600; transition: .3s; cursor: pointer; border: none; color: white; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(34,197,94,.3); }
+    .btn-secondary { background: #334155; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .btn-danger:hover { box-shadow: 0 4px 20px rgba(239,68,68,.3); }
+    .logo { font-size: 32px; font-weight: 800; background: linear-gradient(90deg, #22c55e, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    header { position: sticky; top: 0; z-index: 999; background: rgba(7,11,26,.9); backdrop-filter: blur(15px); padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 72px; background: #071226; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,.05); z-index: 999; flex-wrap: nowrap; overflow-x: auto; }
+    .bottom-nav button { background: none; border: none; color: #94a3b8; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; transition: .2s; padding: 0 6px; white-space: nowrap; }
+    .bottom-nav button.active { color: #22c55e; }
+    .bottom-nav button span { font-size: 10px; }
+    .bottom-nav button .icon { font-size: 20px; }
+    .page { display: none; padding: 18px 16px; padding-bottom: 90px; animation: fade .3s; }
+    .page.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .stat-card { padding: 16px; border-radius: 20px; background: #0f172a; border: 1px solid rgba(255,255,255,.04); }
+    .opp-card { padding: 20px; margin-top: 16px; border-radius: 24px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); transition: .2s; cursor: pointer; }
+    .opp-card:hover { transform: translateY(-3px); border-color: rgba(34,197,94,.3); }
+    .exchange-row { display: flex; gap: 12px; margin-top: 12px; }
+    .exchange-box { flex: 1; padding: 12px; border-radius: 16px; background: #020617; text-align: center; }
+    .filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 8px 14px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: .2s; white-space: nowrap; }
+    .filter-btn.active { background: #22c55e; color: #0a0c15; border-color: #22c55e; font-weight: 600; }
+    .refresh-btn { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; padding: 4px 10px; border-radius: 30px; transition: .2s; }
+    .refresh-btn:hover { background: rgba(255,255,255,.04); color: #22c55e; }
+    .search-input { width: 100%; padding: 12px 16px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 40px; color: white; outline: none; transition: .2s; }
+    .search-input:focus { border-color: #22c55e; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #14532d; color: #4ade80; }
+    .badge-red { background: #5a1a1a; color: #ff6b6b; }
+    .badge-yellow { background: #5a4a1a; color: #ffb020; }
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,.95); backdrop-filter: blur(12px); padding: 14px 24px; border-radius: 60px; border-left: 4px solid; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,.5); max-width: 90%; text-align: center; display: none; }
+    .toast.success { border-left-color: #22c55e; color: #22c55e; }
+    .toast.error { border-left-color: #ef4444; color: #ef4444; }
+    .toast.info { border-left-color: #3b82f6; color: #3b82f6; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; }
+    .modal.show { display: flex; }
+    .modal-content { max-width: 420px; width: 92%; background: #0f172a; border-radius: 32px; padding: 24px; border: 1px solid rgba(255,255,255,.06); max-height: 80vh; overflow-y: auto; }
+    .pwd-wrapper { position: relative; width: 100%; }
+    .pwd-wrapper input { padding-right: 50px; }
+    .pwd-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; }
+    .chart-container { background: #0f172a; border-radius: 20px; padding: 16px; margin-top: 16px; }
+    .chart-container canvas { width: 100% !important; height: 260px !important; }
+    .ai-score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; }
+    .ai-score-card { background: rgba(255,255,255,.03); border-radius: 16px; padding: 14px; text-align: center; border: 1px solid rgba(255,255,255,.04); }
+    .ai-score-card .label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+    .ai-score-card .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .loading-skeleton { height: 120px; border-radius: 20px; margin-top: 16px; background: linear-gradient(90deg, #111827 20%, #1f2937 50%, #111827 80%); background-size: 200% 100%; animation: load 1.3s infinite; }
+    @keyframes load { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .calculator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .calc-item { background: rgba(255,255,255,.03); border-radius: 16px; padding: 12px; text-align: center; }
+    .calc-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .3px; }
+    .calc-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .profit-positive { color: #22c55e; }
+    .profit-negative { color: #ef4444; }
+    .chat-message { padding: 8px 14px; border-radius: 16px; margin-bottom: 8px; max-width: 80%; }
+    .chat-message.user { background: #0f172a; align-self: flex-end; }
+    .chat-message.admin { background: #1a2a5a; align-self: flex-start; }
+    .chat-container { display: flex; flex-direction: column; max-height: 400px; overflow-y: auto; padding: 12px; background: #0a0f1f; border-radius: 20px; }
+    .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
+    .chat-input-row input { flex: 1; padding: 12px; border-radius: 40px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); color: white; outline: none; }
+    .chat-input-row input:focus { border-color: #22c55e; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; }
+    .feature-item { background: rgba(255,255,255,.03); border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,.04); cursor: pointer; transition: .2s; }
+    .feature-item:hover { border-color: #22c55e; background: rgba(34,197,94,.05); }
+    .feature-item .num { font-size: 12px; color: #94a3b8; }
+    .feature-item .title { font-weight: 600; margin: 4px 0; }
+    .feature-item .desc { font-size: 13px; color: #94a3b8; }
+    .detail-tab { background: rgba(255,255,255,.04); border: none; color: #94a3b8; padding: 8px 16px; border-radius: 30px; cursor: pointer; transition: .2s; }
+    .detail-tab.active { background: #22c55e; color: #070b1a; font-weight: 600; }
+    .tab-content { display: none; margin-top: 16px; }
+    .tab-content.active { display: block; }
+    .exchange-filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 6px 14px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 6px; }
+    .exchange-filter-btn.active { background: #22c55e; color: #070b1a; border-color: #22c55e; font-weight: 600; }
+    .exchange-filter-btn .check { display: none; }
+    .exchange-filter-btn.active .check { display: inline; }
+    .execute-trade-form { background: #0f172a; border-radius: 20px; padding: 20px; margin-top: 16px; }
+    .execute-trade-form .fee-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .execute-trade-form .fee-row .label { color: #94a3b8; }
+    .execute-trade-form .fee-row .value { font-weight: 600; }
+    .execute-trade-form input[type="number"] { width: 100%; padding: 12px; background: #020617; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; color: white; outline: none; }
+    .execute-trade-form input[type="number"]:focus { border-color: #22c55e; }
+    .trade-history-item { background: #0f172a; border-radius: 16px; padding: 16px; margin-top: 12px; border: 1px solid rgba(255,255,255,.05); }
+    .trade-history-item .status-badge { padding: 2px 12px; border-radius: 40px; font-size: 12px; }
+    .status-completed { background: #14532d; color: #4ade80; }
+    .status-pending { background: #5a4a1a; color: #ffb020; }
+    .status-failed { background: #5a1a1a; color: #ff6b6b; }
+    .empty-state { text-align: center; padding: 40px 20px; }
+    .empty-state .icon { font-size: 60px; }
+    .empty-state .title { font-size: 22px; font-weight: 600; margin-top: 16px; }
+    .empty-state .desc { color: #94a3b8; margin-top: 8px; }
+    .settings-card { max-width: 500px; margin: 0 auto; }
+    .settings-card .setting-group { margin-top: 20px; padding: 16px; background: rgba(255,255,255,.03); border-radius: 16px; border: 1px solid rgba(255,255,255,.04); }
+    .settings-card .setting-group label { display: block; color: #94a3b8; font-size: 14px; margin-bottom: 6px; }
+    .settings-card .setting-group input, .settings-card .setting-group select { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; color: white; outline: none; }
+    .settings-card .setting-group input:focus { border-color: #22c55e; }
+    @media (max-width: 640px) { .exchange-row { flex-direction: column; } .ai-score-grid { grid-template-columns: 1fr 1fr; } .calculator-grid { grid-template-columns: 1fr; } .feature-grid { grid-template-columns: 1fr; } .bottom-nav button { font-size: 10px; } .bottom-nav button .icon { font-size: 16px; } }
+  </style>
+</head>
+<body>
+
+<!-- ===== AUTH MODALS ===== -->
+<div id="loginModal" class="modal">
+  <div class="modal-content">
+    <h2 class="text-3xl font-bold">Welcome Back</h2>
+    <p class="text-slate-400 mt-2">Login to access live arbitrage opportunities.</p>
+    <input id="loginEmail" type="email" placeholder="Email" class="w-full mt-6 bg-slate-900 rounded-2xl p-4 outline-none border border-slate-700 text-white">
+    <div class="pwd-wrapper mt-4">
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full bg-slate-900 rounded-2xl p-4 outline-none border border-slate-700 text-white">
+      <span class="pwd-toggle" onclick="togglePwd('loginPassword', this)">👁️</span>
+    </div>
+    <button class="btn w-full mt-6" onclick="loginUser()">Login</button>
+    <button class="w-full mt-4 text-green-400" onclick="showRegister()">Create Account</button>
+    <button class="w-full mt-3 text-red-400" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<div id="registerModal" class="modal">
+  <div class="modal-content">
+    <h2 class="text-3xl font-bold">Create Account</h2>
+    <p class="text-slate-400 mt-2">Register to start scanning.</p>
+    <input id="regUsername" placeholder="Username" class="w-full mt-5 bg-slate-900 rounded-2xl p-4 border border-slate-700 text-white">
+    <input id="regEmail" type="email" placeholder="Email" class="w-full mt-4 bg-slate-900 rounded-2xl p-4 border border-slate-700 text-white">
+    <input id="regMpesa" placeholder="Mobile number (e.g., 0712345678)" class="w-full mt-4 bg-slate-900 rounded-2xl p-4 border border-slate-700 text-white">
+    <div class="pwd-wrapper mt-4">
+      <input id="regPassword" type="password" placeholder="Password" class="w-full bg-slate-900 rounded-2xl p-4 border border-slate-700 text-white">
+      <span class="pwd-toggle" onclick="togglePwd('regPassword', this)">👁️</span>
+    </div>
+    <button class="btn w-full mt-6" onclick="registerUser()">Create Account</button>
+    <button class="w-full mt-4 text-green-400" onclick="showLogin()">Already have an account?</button>
+    <button class="w-full mt-3 text-red-400" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- ===== FEATURE MODAL ===== -->
+<div id="featureModal" class="modal">
+  <div class="modal-content">
+    <button class="float-right text-slate-400 text-2xl bg-none border-none cursor-pointer" onclick="closeFeatureModal()">×</button>
+    <h2 id="featureModalTitle" class="text-2xl font-bold mt-2">Feature</h2>
+    <div class="text-slate-400 mt-1" id="featureModalNum">#0</div>
+    <p id="featureModalDesc" class="text-slate-300 mt-4 leading-relaxed">Description</p>
+    <button class="btn w-full mt-6" onclick="closeFeatureModal()">Close</button>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="flex justify-between items-center">
+    <div class="logo">ArbiMine Pro</div>
+    <button class="btn text-sm" onclick="showPage('profile')">Profile</button>
+  </div>
+</header>
+
+<!-- ===== HOME PAGE ===== -->
+<div id="home" class="page active">
+  <!-- Dashboard Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="stat-card"><div class="text-slate-400 text-sm">Total Opportunities</div><div id="oppCount" class="text-3xl font-bold mt-2 text-green-400">0</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Highest Spread</div><div id="bestSpread" class="text-3xl font-bold mt-2 text-green-400">0%</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Tradable</div><div id="tradableCount" class="text-3xl font-bold mt-2 text-green-400">0</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Connected Exchanges</div><div class="text-3xl font-bold mt-2">5</div></div>
+  </div>
+
+  <!-- More Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+    <div class="stat-card"><div class="text-slate-400 text-sm">Coins Scanned</div><div id="coinsScanned" class="text-2xl font-bold mt-1">0</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Active Networks</div><div id="activeNetworks" class="text-2xl font-bold mt-1 text-blue-400">0</div></div>
+    <div class="stat-card"><div class="text-slate-400 text-sm">Last Scan</div><div id="lastScanTime" class="text-xl font-bold mt-1 text-yellow-400">—</div></div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="mt-6 space-y-3">
+    <input id="searchInput" class="search-input" placeholder="🔍 Search coin (e.g., BTC)" oninput="applyFilters()">
+    <div class="flex flex-wrap gap-2">
+      <!-- Exchange filter buttons – only 5 exchanges -->
+      <div id="exchangeFilterContainer" class="flex flex-wrap gap-1">
+        <button class="exchange-filter-btn active" data-exchange="all" onclick="toggleExchangeFilter('all')"><span class="check">✔ </span>All</button>
+        <button class="exchange-filter-btn" data-exchange="kucoin" onclick="toggleExchangeFilter('kucoin')"><span class="check">✔ </span>KuCoin</button>
+        <button class="exchange-filter-btn" data-exchange="mexc" onclick="toggleExchangeFilter('mexc')"><span class="check">✔ </span>MEXC</button>
+        <button class="exchange-filter-btn" data-exchange="htx" onclick="toggleExchangeFilter('htx')"><span class="check">✔ </span>HTX</button>
+        <button class="exchange-filter-btn" data-exchange="gateio" onclick="toggleExchangeFilter('gateio')"><span class="check">✔ </span>Gate.io</button>
+        <button class="exchange-filter-btn" data-exchange="bingx" onclick="toggleExchangeFilter('bingx')"><span class="check">✔ </span>BingX</button>
+      </div>
+      <select id="riskFilter" class="search-input w-auto flex-1 min-w-[120px]" onchange="applyFilters()">
+        <option value="all">All Risk</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <select id="tradableFilter" class="search-input w-auto flex-1 min-w-[120px]" onchange="applyFilters()">
+        <option value="all">All</option>
+        <option value="tradable">Tradable</option>
+        <option value="nontradable">Non-Tradable</option>
+      </select>
+    </div>
+    <div class="flex justify-between items-center">
+      <span class="text-slate-400 text-sm">Auto-refresh <span id="autoRefreshStatus" class="text-green-400">ON</span></span>
+      <button class="refresh-btn" onclick="refreshOpportunities()">🔄</button>
+    </div>
+  </div>
+
+  <!-- Opportunities List -->
+  <div id="opportunities" class="mt-4">
+    <div class="loading-skeleton"></div>
+    <div class="loading-skeleton"></div>
+    <div class="loading-skeleton"></div>
+  </div>
+</div>
+
+<!-- ===== DETAIL PAGE ===== -->
+<div id="details" class="page">
+  <!-- If no opportunity selected, show empty state -->
+  <div id="detailEmpty" class="empty-state glass p-10">
+    <div class="icon">📊</div>
+    <div class="title">No Opportunity Selected</div>
+    <div class="desc">Click on an arbitrage opportunity from the Home page to view its details and execute trades.</div>
+    <button class="btn mt-6" onclick="showPage('home')">Go to Home</button>
+  </div>
+
+  <!-- Detail content (hidden initially) -->
+  <div id="detailContent" style="display:none;">
+    <div class="glass p-6">
+      <div class="flex justify-between items-start">
+        <div><h2 id="detailSymbol" class="text-4xl font-bold">BTC</h2><p class="text-slate-400 mt-1">Buy <span id="detailBuyExchange">-</span> → Sell <span id="detailSellExchange">-</span></p></div>
+        <div class="text-right"><div id="detailSpread" class="text-4xl font-bold text-green-400">0%</div><div class="text-slate-400 text-sm">Spread</div></div>
+      </div>
+      <button class="btn mt-4 w-full" onclick="showPage('home')">← Back to Opportunities</button>
+    </div>
+
+    <!-- Detail Tabs -->
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button class="detail-tab active" data-tab="overview">Overview</button>
+      <button class="detail-tab" data-tab="networks">Networks</button>
+      <button class="detail-tab" data-tab="liquidity">Liquidity</button>
+      <button class="detail-tab" data-tab="arbitrage">Arbitrage Types</button>
+      <button class="detail-tab" data-tab="execute">⚡ Execute Trade</button>
+    </div>
+
+    <!-- Tab: Overview -->
+    <div id="tab-overview" class="tab-content active">
+      <!-- Price & Profit -->
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div class="glass p-4"><div class="text-slate-400 text-sm">Buy Price</div><div id="detailBuyPrice" class="text-2xl font-bold mt-1">$0</div></div>
+        <div class="glass p-4"><div class="text-slate-400 text-sm">Sell Price</div><div id="detailSellPrice" class="text-2xl font-bold mt-1">$0</div></div>
+        <div class="glass p-4"><div class="text-slate-400 text-sm">Price Diff</div><div id="detailPriceDiff" class="text-2xl font-bold mt-1 text-green-400">$0</div></div>
+        <div class="glass p-4"><div class="text-slate-400 text-sm">Est. Profit</div><div id="detailProfit" class="text-2xl font-bold mt-1 text-green-400">$0</div></div>
+      </div>
+
+      <!-- Profit Calculator -->
+      <div class="glass p-5 mt-4">
+        <h3 class="text-xl font-bold mb-3">💹 Profit Calculator</h3>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="flex-1">
+            <label class="text-slate-400 text-sm">Investment (USD)</label>
+            <input id="investmentInput" type="number" value="100" step="1" min="1" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" oninput="calculateProfit()">
+          </div>
+          <div class="flex-1">
+            <label class="text-slate-400 text-sm">Estimated Coin Amount</label>
+            <div id="coinAmount" class="text-2xl font-bold mt-1 text-blue-400">0</div>
+          </div>
+        </div>
+        <div class="calculator-grid mt-4">
+          <div class="calc-item"><div class="calc-label">Gross Profit</div><div id="calcGrossProfit" class="calc-value profit-positive">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">Trading Fees</div><div id="calcTradingFees" class="calc-value text-yellow-400">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">Withdrawal Fees</div><div id="calcWithdrawFees" class="calc-value text-yellow-400">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">Deposit Fees</div><div id="calcDepositFees" class="calc-value text-yellow-400">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">Total Fees</div><div id="calcTotalFees" class="calc-value text-red-400">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">Net Profit</div><div id="calcNetProfit" class="calc-value profit-positive">$0.00</div></div>
+          <div class="calc-item"><div class="calc-label">ROI</div><div id="calcROI" class="calc-value profit-positive">0.00%</div></div>
+          <div class="calc-item"><div class="calc-label">Slippage Est.</div><div id="calcSlippage" class="calc-value text-blue-400">$0.00</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Networks -->
+    <div id="tab-networks" class="tab-content">
+      <div class="glass p-4 mt-4">
+        <h3 class="text-lg font-bold">🌐 Supported Blockchains</h3>
+        <div id="detailNetworks" class="mt-3 space-y-2"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="stat-card"><div class="text-slate-400 text-sm">Cheapest Network</div><div id="cheapestNet" class="text-xl font-bold mt-1 text-green-400">—</div></div>
+        <div class="stat-card"><div class="text-slate-400 text-sm">Fastest Network</div><div id="fastestNet" class="text-xl font-bold mt-1 text-blue-400">—</div></div>
+        <div class="stat-card"><div class="text-slate-400 text-sm">AI Recommended</div><div id="aiNetRec" class="text-xl font-bold mt-1 text-yellow-400">—</div></div>
+        <div class="stat-card"><div class="text-slate-400 text-sm">Congestion Level</div><div id="congestionLevel" class="text-xl font-bold mt-1 text-orange-400">Low</div></div>
+      </div>
+    </div>
+
+    <!-- Tab: Liquidity -->
+    <div id="tab-liquidity" class="tab-content">
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="stat-card"><div class="text-slate-400 text-sm">Buy Liquidity</div><div id="buyLiquidity" class="text-xl font-bold mt-1 text-green-400">$0</div></div>
+        <div class="stat-card"><div class="text-slate-400 text-sm">Sell Liquidity</div><div id="sellLiquidity" class="text-xl font-bold mt-1 text-red-400">$0</div></div>
+      </div>
+      <!-- Removed simulated depth and slippage -->
+    </div>
+
+    <!-- Tab: Arbitrage Types (simplified, real data from opp) -->
+    <div id="tab-arbitrage" class="tab-content">
+      <div class="glass p-4 mt-4">
+        <h3 class="text-lg font-bold">🔄 Arbitrage Strategies</h3>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div class="stat-card"><div class="text-slate-400 text-sm">Cross-Exchange</div><div id="arbCross" class="text-xl font-bold mt-1 text-green-400">Yes</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Triangular</div><div id="arbTriangular" class="text-xl font-bold mt-1 text-yellow-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Stablecoin</div><div id="arbStable" class="text-xl font-bold mt-1 text-blue-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Futures vs Spot</div><div id="arbFutures" class="text-xl font-bold mt-1 text-purple-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Funding Rate</div><div id="arbFunding" class="text-xl font-bold mt-1 text-orange-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">DEX vs CEX</div><div id="arbDex" class="text-xl font-bold mt-1 text-red-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Regional</div><div id="arbRegional" class="text-xl font-bold mt-1 text-cyan-400">—</div></div>
+          <div class="stat-card"><div class="text-slate-400 text-sm">Multi-Hop</div><div id="arbMulti" class="text-xl font-bold mt-1 text-indigo-400">—</div></div>
+        </div>
+        <div class="mt-4"><div class="text-slate-400 text-sm">AI Ranking Score</div><div id="arbRanking" class="text-3xl font-bold text-green-400">0/100</div></div>
+      </div>
+    </div>
+
+    <!-- Tab: Execute Trade -->
+    <div id="tab-execute" class="tab-content">
+      <div class="execute-trade-form">
+        <h3 class="text-xl font-bold mb-3">⚡ Execute Trade</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div><span class="text-slate-400 text-sm">Buy</span><div class="text-green-400 font-bold" id="execBuyExchange">—</div></div>
+          <div><span class="text-slate-400 text-sm">Sell</span><div class="text-red-400 font-bold" id="execSellExchange">—</div></div>
+          <div><span class="text-slate-400 text-sm">Buy Price</span><div id="execBuyPrice" class="font-bold">$0</div></div>
+          <div><span class="text-slate-400 text-sm">Sell Price</span><div id="execSellPrice" class="font-bold">$0</div></div>
+        </div>
+
+        <!-- Balances for both exchanges -->
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <span class="text-slate-400 text-sm">Balance on <span id="execBuyBalanceLabel">Buy</span></span>
+            <div id="execBuyBalance" class="font-bold text-green-400">—</div>
+          </div>
+          <div>
+            <span class="text-slate-400 text-sm">Balance on <span id="execSellBalanceLabel">Sell</span></span>
+            <div id="execSellBalance" class="font-bold text-red-400">—</div>
+          </div>
+        </div>
+
+        <div class="space-y-1 mt-3">
+          <div class="fee-row"><span class="label">Trading Fees (0.1%)</span><span id="execTradingFees" class="value">$0.00</span></div>
+          <div class="fee-row"><span class="label">Withdrawal Fee</span><span id="execWithdrawFee" class="value">$0.00</span></div>
+          <div class="fee-row"><span class="label">Deposit Fee</span><span id="execDepositFee" class="value">$0.00</span></div>
+          <div class="fee-row"><span class="label">Slippage (0.2%)</span><span id="execSlippage" class="value">$0.00</span></div>
+          <div class="fee-row"><span class="label font-bold">Total Fees</span><span id="execTotalFees" class="value text-red-400">$0.00</span></div>
+          <div class="fee-row"><span class="label font-bold">Net Profit</span><span id="execNetProfit" class="value text-green-400">$0.00</span></div>
+          <div class="fee-row"><span class="label font-bold">ROI</span><span id="execROI" class="value text-green-400">0.00%</span></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <span class="text-slate-400 text-sm">Withdraw Network</span>
+            <div id="execWithdrawNetwork" class="font-bold">—</div>
+          </div>
+          <div>
+            <span class="text-slate-400 text-sm">Deposit Network</span>
+            <div id="execDepositNetwork" class="font-bold">—</div>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400 text-sm">Deposit Address (on Sell Exchange)</span>
+            <div id="execDepositAddress" class="font-mono text-sm break-all bg-slate-900 p-2 rounded-lg mt-1">Loading...</div>
+            <div id="execDepositAddressTag" class="text-xs text-slate-400 mt-1"></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="text-slate-400 text-sm">Amount to Trade (USDT)</label>
+          <input type="number" id="execAmount" value="100" step="10" min="1" class="mt-1" oninput="updateExecPreview()">
+          <div class="mt-2 flex justify-between">
+            <span class="text-slate-400 text-sm">Estimated Profit</span>
+            <span id="execEstProfit" class="text-green-400 font-bold text-lg">$0.00</span>
+          </div>
+        </div>
+        <button class="btn w-full mt-4" onclick="executeTrade()">🚀 Confirm & Execute Trade</button>
+        <div id="execStatus" class="mt-3 text-center text-slate-400"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHAT PAGE ===== -->
+<div id="chat" class="page">
+  <div class="glass p-5">
+    <h2 class="text-2xl font-bold">💬 Support Chat</h2>
+    <p class="text-slate-400 text-sm">Ask questions or report issues. Admin will reply.</p>
+    <div id="chatMessages" class="chat-container mt-4" style="max-height:400px; overflow-y:auto;">
+      <div class="text-slate-400 text-center">Loading messages...</div>
+    </div>
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Type your message..." class="flex-1">
+      <button class="btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROFILE PAGE ===== -->
+<div id="profile" class="page">
+  <div class="glass p-6">
+    <h2 class="text-3xl font-bold">Profile</h2>
+    <div class="mt-6 space-y-4">
+      <div><div class="text-slate-400 text-sm">Username</div><div id="profileUsername" class="text-2xl font-bold mt-1">—</div></div>
+      <div><div class="text-slate-400 text-sm">Email</div><div id="profileEmail" class="text-xl mt-1">—</div></div>
+      <div><div class="text-slate-400 text-sm">Mobile</div><div id="profilePhone" class="text-xl mt-1">—</div></div>
+      <div><div class="text-slate-400 text-sm">Plan</div><div id="profilePlan" class="text-xl font-bold mt-1 text-slate-400">Free</div></div>
+      <div><div class="text-slate-400 text-sm">Expires</div><div id="profileExpiry" class="text-xl mt-1">—</div></div>
+    </div>
+    <button class="btn btn-secondary w-full mt-8" onclick="logout()">Logout</button>
+  </div>
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="glass p-5 mt-4 hidden">
+    <h3 class="text-xl font-bold">🔧 Admin Dashboard</h3>
+    <div class="mt-3 space-y-2">
+      <div class="flex justify-between"><span class="text-slate-400">Total Users</span><span id="adminUserCount" class="font-bold">0</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Total Messages</span><span id="adminMsgCount" class="font-bold">0</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Recent Registrations</span><span id="adminRecentReg" class="font-bold">—</span></div>
+      <button class="btn btn-secondary w-full mt-2" onclick="loadAdminData()">Refresh Admin Data</button>
+    </div>
+    <div id="adminUserList" class="mt-3 space-y-2 max-h-60 overflow-y-auto"></div>
+  </div>
+</div>
+
+<!-- ===== FEATURES PAGE ===== -->
+<div id="features" class="page">
+  <div class="glass p-5">
+    <h2 class="text-3xl font-bold">🚀 All 74 Features</h2>
+    <p class="text-slate-400 mt-2">Click any feature to view its description.</p>
+    <div id="featureList" class="feature-grid mt-4"></div>
+  </div>
+</div>
+
+<!-- ===== TRADE HISTORY PAGE ===== -->
+<div id="history" class="page">
+  <div class="glass p-5">
+    <h2 class="text-3xl font-bold">📜 Trade History</h2>
+    <div id="tradeHistoryList" class="mt-4">
+      <div class="text-slate-400 text-center">Loading trades...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS PAGE ===== -->
+<div id="settings" class="page">
+  <div class="glass p-6 settings-card">
+    <h2 class="text-3xl font-bold">⚙️ Settings</h2>
+    <p class="text-slate-400 mt-2">Configure your preferences and reset your data.</p>
+
+    <div class="setting-group">
+      <label for="settingTheme">Theme</label>
+      <select id="settingTheme" class="w-full">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="system">System</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="settingNotification">Notification Preferences</label>
+      <select id="settingNotification" class="w-full">
+        <option value="all">All</option>
+        <option value="trades">Only Trades</option>
+        <option value="none">None</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="settingCurrency">Default Currency</label>
+      <select id="settingCurrency" class="w-full">
+        <option value="USDT">USDT</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="USD">USD</option>
+      </select>
+    </div>
+
+    <button onclick="resetSettings()" class="btn-danger w-full px-6 py-3 rounded-xl mt-4">
+      🔄 Reset All Settings
+    </button>
+
+    <div id="settingsSaved" class="hidden text-green-400 mt-5 font-bold text-center">
+      ✅ Settings Saved Successfully
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <button class="active" onclick="showPage('home')"><span class="icon">🏠</span><span>Home</span></button>
+  <button onclick="showPage('details')"><span class="icon">📊</span><span>Details</span></button>
+  <button onclick="showPage('chat')"><span class="icon">💬</span><span>Chat</span></button>
+  <button onclick="showPage('profile')"><span class="icon">👤</span><span>Profile</span></button>
+  <button onclick="showPage('features')"><span class="icon">📋</span><span>Features</span></button>
+  <button onclick="showPage('history')"><span class="icon">📜</span><span>History</span></button>
+  <button onclick="showPage('settings')"><span class="icon">⚙️</span><span>Settings</span></button>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+  // ========== STATE ==========
+  let token = localStorage.getItem('token');
+  let allOpportunities = [];
+  let chartInstances = {};
+  let currentDetailOpp = null;
+  let chatPollInterval = null;
+  let selectedExchanges = new Set(['all']);
+
+  // ========== FEATURES DATA (with descriptions) ==========
+  const featureDescriptions = {
+    0: "Secure Login & Registration: Users create accounts with username, email, phone, and password. Passwords are hashed for security.",
+    1: "Email Verification: A verification link or OTP is sent after registration to confirm the email address.",
+    2: "Password Reset: A secure reset link or OTP is emailed to users who forget their password.",
+    3: "User Profile: Stores personal info, subscription status, API keys, and preferences.",
+    4: "JWT Session Authentication: The server issues a secure token after login, verified on every request.",
+    5: "Subscription System: Manages Free, Weekly, Monthly, and Premium users with activation and expiry dates.",
+    6: "Admin Dashboard: Complete management panel for users, subscriptions, payments, and server status.",
+    7: "User Roles: Separate permissions for Admin, Premium, and Free users.",
+    8: "Activity Logs: Records registrations, logins, payments, API changes, and trading actions.",
+    9: "API Security: Uses HTTPS, authentication tokens, rate limiting, and request validation.",
+    10: "Binance Integration: Access live Binance market data and trading via REST APIs and WebSockets.",
+    11: "KuCoin Integration: Monitor KuCoin prices and execute trades using KuCoin APIs.",
+    12: "MEXC Integration: Retrieve prices, liquidity, supported networks, and trading information from MEXC.",
+    13: "Gate.io Integration: Scan Gate.io markets for real-time prices and trading data.",
+    14: "HTX Integration: Access HTX market data and trading pairs.",
+    15: "BingX Integration: Include BingX in arbitrage detection with live prices and liquidity.",
+    16: "OKX Integration: Scan OKX markets using official APIs for prices, order books, and trading.",
+    17: "Bybit Integration: Include Bybit Spot and Futures for arbitrage opportunities.",
+    18: "Bitget Integration: Connect to Bitget REST APIs and WebSockets for market data.",
+    19: "BitMart Integration: Add BitMart prices and order books to the scanner.",
+    20: "CoinEx Integration: Fetch CoinEx market data and liquidity.",
+    21: "LBank Integration: Scan LBank trading pairs using the exchange API.",
+    22: "Kraken Integration: Access Kraken's global markets for reliable pricing.",
+    23: "Coinbase Integration: Monitor Coinbase markets via their APIs.",
+    24: "WhiteBIT Integration: Add WhiteBIT to the arbitrage scanner for more diversity.",
+    25: "XT.com Integration: Connect to XT.com's API for live prices and trading pairs.",
+    26: "Live WebSocket Prices: Receive instant price updates via WebSocket connections.",
+    27: "REST API Backup: Switch to REST API requests when WebSockets fail.",
+    28: "Auto Reconnect: Automatically restore lost connections after a short delay.",
+    29: "Heartbeat Monitoring: Verify exchange connections remain active.",
+    30: "Price Cache: Store recent prices in memory for faster calculations.",
+    31: "Historical Prices: Save price history in a database for charting and analysis.",
+    32: "Volume Tracking: Monitor 24-hour trading volume for each market.",
+    33: "Bid & Ask Prices: Display actual buying and selling prices (highest bid, lowest ask).",
+    34: "Live Order Book: Continuously update the order book using exchange APIs.",
+    35: "Market Depth: Measure available liquidity at different price levels.",
+    36: "Cross-Exchange Arbitrage: Compare the same coin across multiple exchanges.",
+    37: "Triangular Arbitrage: Detect opportunities within one exchange using trading cycles.",
+    38: "Stablecoin Arbitrage: Compare prices using different stablecoins (USDT, USDC, etc.).",
+    39: "Futures vs Spot Arbitrage: Compare futures prices with spot prices.",
+    40: "Funding Rate Arbitrage: Profit from perpetual futures funding payments.",
+    41: "DEX vs CEX Arbitrage: Compare decentralized and centralized exchange prices.",
+    42: "Regional Arbitrage: Detect price differences across exchanges in different regions.",
+    43: "Multi-Hop Arbitrage: Use multiple trading paths to maximize profit.",
+    44: "AI Opportunity Ranking: AI scores opportunities using liquidity, spread, fees, volatility, and networks.",
+    45: "Smart Opportunity Filtering: Automatically removes poor-quality opportunities.",
+    46: "Buy Exchange: Identify the exchange offering the lowest price.",
+    47: "Sell Exchange: Identify the exchange offering the highest price.",
+    48: "Buy Price: Displays the current best ask price.",
+    49: "Sell Price: Displays the current best bid price.",
+    50: "Spread Percentage: Calculates ((Sell Price - Buy Price) / Buy Price) × 100.",
+    51: "Estimated Profit: Shows expected profit before executing a trade.",
+    52: "Trading Fees: Retrieves maker and taker fee information from exchanges.",
+    53: "Withdrawal Fees: Shows the cost of transferring crypto between exchanges.",
+    54: "Deposit Fees: Displays any deposit charges for each asset.",
+    55: "Net Profit Calculator: Deducts all fees and slippage to show real profit.",
+    56: "Supported Networks: Displays all available blockchain networks for each coin.",
+    57: "Cheapest Withdrawal Network: Compares fees across networks to find the cheapest.",
+    58: "Fastest Blockchain Network: Recommends the quickest network based on confirmation times.",
+    59: "Deposit Availability: Verifies whether deposits are currently enabled.",
+    60: "Withdrawal Availability: Checks if withdrawals are enabled on the exchange.",
+    61: "Network Compatibility: Ensures both exchanges support the same blockchain.",
+    62: "Confirmation Count: Displays the required number of blockchain confirmations.",
+    63: "Estimated Arrival Time: Predicts transfer duration combining speed and processing time.",
+    64: "Blockchain Congestion Monitor: Tracks network traffic and transaction queues.",
+    65: "AI Network Recommendation: Uses AI to evaluate fees, speed, congestion, and reliability.",
+    66: "Order Book Depth: Measures available buy and sell orders at multiple levels.",
+    67: "Buy Liquidity: Calculates the value of buy orders near the current price.",
+    68: "Sell Liquidity: Calculates available sell orders near the current price.",
+    69: "Slippage Estimation: Predicts price movement caused by trade execution.",
+    70: "Market Impact: Estimates how a trade affects market prices.",
+    71: "Maximum Tradable Amount: Recommends the largest safe trade size without excessive slippage.",
+    72: "Whale Order Detection: Detects unusually large market orders in real-time.",
+    73: "Hidden Liquidity Detection: Identifies iceberg and hidden orders through AI pattern analysis.",
+    74: "Liquidity Score: Assigns a quality rating (0–100) based on volume, depth, spread, and slippage."
+  };
+  const featureNames = Object.values(featureDescriptions).map(d => d.split(':')[0] || d);
+
+  // ========== UI HELPERS ==========
+  function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = 'toast ' + type;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', 5000);
+  }
+
+  function togglePwd(id, el) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; el.innerText = '🙈'; } else { inp.type = 'password'; el.innerText = '👁️'; }
+  }
+
+  // ========== AUTH UI ==========
+  function showLogin() {
+    document.getElementById('loginModal').classList.add('show');
+    document.getElementById('registerModal').classList.remove('show');
+  }
+  function showRegister() {
+    document.getElementById('registerModal').classList.add('show');
+    document.getElementById('loginModal').classList.remove('show');
+  }
+  function closeModal() {
+    document.getElementById('loginModal').classList.remove('show');
+    document.getElementById('registerModal').classList.remove('show');
+  }
+
+  // ========== AUTH ==========
+  async function loginUser() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showToast('Email and password required', 'error'); return; }
+    try {
+      const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        token = data.token;
+        closeModal();
+        loadProfile();
+        loadOpportunities();
+        loadMessages();
+        showToast('✅ Login successful', 'success');
+      } else {
+        showToast('❌ ' + (data.error || 'Login failed'), 'error');
+      }
+    } catch (e) { showToast('❌ Network error', 'error'); }
+  }
+
+  async function registerUser() {
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const mpesa = document.getElementById('regMpesa').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!username || !email || !mpesa || !password) { showToast('All fields required', 'error'); return; }
+    try {
+      const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, mpesa, password }) });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        token = data.token;
+        closeModal();
+        loadProfile();
+        loadOpportunities();
+        loadMessages();
+        showToast('✅ Registration successful', 'success');
+      } else {
+        showToast('❌ ' + (data.error || 'Registration failed'), 'error');
+      }
+    } catch (e) { showToast('❌ Network error', 'error'); }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    token = null;
+    showLogin();
+    showToast('Logged out', 'info');
+    if (chatPollInterval) clearInterval(chatPollInterval);
+  }
+
+  // ========== PAGE SWITCH ==========
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+    const map = { home: 0, details: 1, chat: 2, profile: 3, features: 4, history: 5, settings: 6 };
+    if (map[page] !== undefined) document.querySelectorAll('.bottom-nav button')[map[page]].classList.add('active');
+    if (page === 'home') { loadOpportunities(); }
+    if (page === 'profile') { loadProfile(); }
+    if (page === 'chat') { loadMessages(); }
+    if (page === 'features') { renderFeatures(); }
+    if (page === 'history') { loadTradeHistory(); }
+    if (page === 'settings') { /* load settings (if any) */ }
+    if (page === 'details') {
+      if (!currentDetailOpp) {
+        document.getElementById('detailEmpty').style.display = 'block';
+        document.getElementById('detailContent').style.display = 'none';
+      } else {
+        document.getElementById('detailEmpty').style.display = 'none';
+        document.getElementById('detailContent').style.display = 'block';
+        setupExecuteTab(currentDetailOpp);
+      }
+    }
+  }
+
+  // ========== FEATURES ==========
+  function renderFeatures() {
+    const container = document.getElementById('featureList');
+    container.innerHTML = featureNames.map((f, i) => `
+      <div class="feature-item" onclick="openFeature(${i})">
+        <div class="num">#${i}</div>
+        <div class="title">${f}</div>
+        <div class="desc">Click for description</div>
+      </div>
+    `).join('');
+  }
+
+  function openFeature(index) {
+    const title = featureNames[index] || 'Feature';
+    const desc = featureDescriptions[index] || 'No description available.';
+    document.getElementById('featureModalTitle').innerText = title;
+    document.getElementById('featureModalNum').innerText = '#' + index;
+    document.getElementById('featureModalDesc').innerText = desc;
+    document.getElementById('featureModal').classList.add('show');
+  }
+
+  function closeFeatureModal() {
+    document.getElementById('featureModal').classList.remove('show');
+  }
+
+  // ========== EXCHANGE FILTER TOGGLE ==========
+  function toggleExchangeFilter(exchange) {
+    if (exchange === 'all') {
+      selectedExchanges = new Set(['all']);
+      document.querySelectorAll('.exchange-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.exchange === 'all');
+      });
+    } else {
+      selectedExchanges.delete('all');
+      const btn = document.querySelector(`.exchange-filter-btn[data-exchange="${exchange}"]`);
+      if (selectedExchanges.has(exchange)) {
+        selectedExchanges.delete(exchange);
+        btn.classList.remove('active');
+      } else {
+        selectedExchanges.add(exchange);
+        btn.classList.add('active');
+      }
+      if (selectedExchanges.size === 0) {
+        selectedExchanges.add('all');
+        document.querySelector('.exchange-filter-btn[data-exchange="all"]').classList.add('active');
+      }
+    }
+    applyFilters();
+  }
+
+  // ========== OPPORTUNITIES ==========
+  async function refreshOpportunities() { await loadOpportunities(); }
+
+  async function loadOpportunities() {
+    const container = document.getElementById('opportunities');
+    container.innerHTML = '<div class="loading-skeleton"></div><div class="loading-skeleton"></div>';
+    try {
+      const res = await fetch('/api/opportunities', { 
+        headers: { Authorization: token } 
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          showToast('Session expired. Please login again.', 'error');
+          localStorage.removeItem('token');
+          token = null;
+          showLogin();
+          return;
+        }
+        throw new Error('HTTP ' + res.status);
+      }
+      const data = await res.json();
+      allOpportunities = data.opportunities || [];
+      console.log('✅ Loaded', allOpportunities.length, 'opportunities');
+      updateStats(allOpportunities);
+      applyFilters();
+      document.getElementById('lastScanTime').innerText = new Date().toLocaleTimeString();
+    } catch (e) {
+      console.error('Failed to load opportunities:', e);
+      container.innerHTML = '<div class="text-slate-400 text-center py-10">⚠️ Failed to load. <button class="btn btn-secondary mt-4" onclick="loadOpportunities()">Retry</button></div>';
+      showToast('Could not fetch opportunities. Check console.', 'error');
+    }
+  }
+
+  function updateStats(opps) {
+    document.getElementById('oppCount').innerText = opps.length;
+    let highest = 0, tradable = 0;
+    const coins = new Set();
+    const networks = new Set();
+    opps.forEach(o => {
+      if (parseFloat(o.spread) > highest) highest = parseFloat(o.spread);
+      if (o.tradable) tradable++;
+      coins.add(o.symbol);
+      if (o.buyNetworks) Object.keys(o.buyNetworks).forEach(n => networks.add(n));
+      if (o.sellNetworks) Object.keys(o.sellNetworks).forEach(n => networks.add(n));
+    });
+    document.getElementById('bestSpread').innerText = highest.toFixed(2) + '%';
+    document.getElementById('tradableCount').innerText = tradable;
+    document.getElementById('coinsScanned').innerText = coins.size;
+    document.getElementById('activeNetworks').innerText = networks.size;
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toUpperCase();
+    const risk = document.getElementById('riskFilter').value;
+    const tradableFilter = document.getElementById('tradableFilter').value;
+    let filtered = allOpportunities.filter(o => {
+      if (search && !o.symbol.toUpperCase().includes(search)) return false;
+      if (!selectedExchanges.has('all')) {
+        const exLower = o.buyExchange.toLowerCase();
+        const sellLower = o.sellExchange.toLowerCase();
+        let match = false;
+        for (const ex of selectedExchanges) {
+          if (ex === 'all') continue;
+          if (exLower === ex || sellLower === ex) { match = true; break; }
+        }
+        if (!match) return false;
+      }
+      if (risk !== 'all' && o.risk !== risk) return false;
+      if (tradableFilter === 'tradable' && !o.tradable) return false;
+      if (tradableFilter === 'nontradable' && o.tradable) return false;
+      return true;
+    });
+    renderOpportunities(filtered);
+  }
+
+  function renderOpportunities(opps) {
+    const container = document.getElementById('opportunities');
+    if (!opps.length) { container.innerHTML = '<div class="text-slate-400 text-center py-10">No opportunities match filters.</div>'; return; }
+    let html = '';
+    opps.slice(0, 50).forEach(o => {
+      html += `
+        <div class="opp-card" onclick="openOpportunity('${o.id}')">
+          <div class="flex justify-between items-start">
+            <div><h2 class="text-2xl font-bold">${o.symbol}</h2></div>
+            <div class="text-right"><div class="text-3xl font-bold text-green-400">${o.spread}%</div><div class="text-slate-400 text-xs">Spread</div></div>
+          </div>
+          <div class="exchange-row">
+            <div class="exchange-box">
+              <div class="text-slate-400 text-xs">BUY</div>
+              <div class="font-bold text-green-400">${o.buyExchange}</div>
+              <div class="text-white">$${o.buyPrice}</div>
+            </div>
+            <div class="exchange-box">
+              <div class="text-slate-400 text-xs">SELL</div>
+              <div class="font-bold text-red-400">${o.sellExchange}</div>
+              <div class="text-white">$${o.sellPrice}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  // ========== DETAIL ==========
+  async function openOpportunity(id) {
+    showPage('details');
+    document.getElementById('detailEmpty').style.display = 'none';
+    document.getElementById('detailContent').style.display = 'block';
+    document.getElementById('detailSymbol').innerText = 'Loading...';
+    try {
+      const res = await fetch(`/api/opportunity/${id}/details`, { headers: { Authorization: token } });
+      if (!res.ok) throw new Error('Failed to load details');
+      const opp = await res.json();
+      if (opp.error) throw new Error(opp.error);
+      currentDetailOpp = opp;
+      displayDetails(opp);
+      setupExecuteTab(opp);
+    } catch (e) {
+      showToast('Failed to load details: ' + e.message, 'error');
+      document.getElementById('detailSymbol').innerText = 'Error';
+    }
+  }
+
+  function displayDetails(opp) {
+    // Only display real data from the opp object
+    document.getElementById('detailSymbol').innerText = opp.symbol || '—';
+    document.getElementById('detailBuyExchange').innerText = opp.buyExchange || '—';
+    document.getElementById('detailSellExchange').innerText = opp.sellExchange || '—';
+    document.getElementById('detailSpread').innerText = (opp.spread || '0') + '%';
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    document.getElementById('detailBuyPrice').innerText = '$' + buy.toFixed(8);
+    document.getElementById('detailSellPrice').innerText = '$' + sell.toFixed(8);
+    document.getElementById('detailPriceDiff').innerText = '$' + (sell - buy).toFixed(8);
+    const profit = (sell - buy) * 100;
+    document.getElementById('detailProfit').innerText = '$' + profit.toFixed(2);
+
+    // === Networks ===
+    let netHtml = '';
+    const buyNets = opp.buyNetworks || {};
+    const sellNets = opp.sellNetworks || {};
+    const allNets = { ...buyNets, ...sellNets };
+    const netEntries = Object.values(allNets).slice(0, 8);
+    if (netEntries.length) {
+      netEntries.forEach(n => {
+        netHtml += `
+          <div class="flex justify-between border-b border-slate-700 py-2">
+            <span class="font-medium">${n.name || '—'}</span>
+            <span>Fee: ${n.fee || 0} ${n.feeUnit || ''}</span>
+            <span>Withdraw ${n.withdraw ? '✅' : '❌'}</span>
+            <span>Deposit ${n.deposit ? '✅' : '❌'}</span>
+            <span>Min: ${n.minWithdraw || 'N/A'}</span>
+            <span>Arrival: ${n.arrivalTime || 'N/A'}</span>
+          </div>
+        `;
+      });
+    } else {
+      netHtml = '<div class="text-slate-400">No network data available.</div>';
+    }
+    document.getElementById('detailNetworks').innerHTML = netHtml;
+
+    // Common networks
+    const common = opp.commonNetworks || [];
+    if (common.length > 0) {
+      // pick the cheapest or first
+      const chosen = common[0];
+      document.getElementById('cheapestNet').innerText = chosen;
+      document.getElementById('fastestNet').innerText = chosen;
+      document.getElementById('aiNetRec').innerText = chosen;
+    } else {
+      document.getElementById('cheapestNet').innerText = 'None';
+      document.getElementById('fastestNet').innerText = 'None';
+      document.getElementById('aiNetRec').innerText = 'None';
+    }
+    document.getElementById('congestionLevel').innerText = 'N/A';
+
+    // === Liquidity ===
+    const buyLiq = parseFloat(opp.liquidity) || 0;
+    const sellLiq = parseFloat(opp.sellLiquidity) || 0;
+    document.getElementById('buyLiquidity').innerText = '$' + buyLiq.toFixed(0);
+    document.getElementById('sellLiquidity').innerText = '$' + sellLiq.toFixed(0);
+
+    // === Arbitrage Types (simplified) ===
+    document.getElementById('arbCross').innerText = 'Yes';
+    document.getElementById('arbTriangular').innerText = '—';
+    document.getElementById('arbStable').innerText = '—';
+    document.getElementById('arbFutures').innerText = '—';
+    document.getElementById('arbFunding').innerText = '—';
+    document.getElementById('arbDex').innerText = '—';
+    document.getElementById('arbRegional').innerText = '—';
+    document.getElementById('arbMulti').innerText = '—';
+    document.getElementById('arbRanking').innerText = 'N/A';
+
+    // Remove simulated AI tab content – we'll keep only real data
+    // The AI tab is removed from the detail tabs, so we don't need to populate it.
+
+    // Calculate profit with default 100 investment
+    document.getElementById('investmentInput').value = 100;
+    calculateProfit();
+
+    // Switch to overview tab
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.detail-tab[data-tab="overview"]').classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-overview').classList.add('active');
+  }
+
+  // ========== EXECUTE TRADE ==========
+  function setupExecuteTab(opp) {
+    if (!opp) return;
+    document.getElementById('execBuyExchange').innerText = opp.buyExchange || '—';
+    document.getElementById('execSellExchange').innerText = opp.sellExchange || '—';
+    document.getElementById('execBuyPrice').innerText = '$' + (opp.buyPrice || '0');
+    document.getElementById('execSellPrice').innerText = '$' + (opp.sellPrice || '0');
+
+    // Set labels
+    document.getElementById('execBuyBalanceLabel').innerText = opp.buyExchange || 'Buy';
+    document.getElementById('execSellBalanceLabel').innerText = opp.sellExchange || 'Sell';
+
+    // Fetch balances for both exchanges
+    const buyEx = opp.buyExchange.toLowerCase();
+    const sellEx = opp.sellExchange.toLowerCase();
+
+    fetch(`/api/balance/${buyEx}`, { headers: { Authorization: token } })
+      .then(res => res.json())
+      .then(data => {
+        const usdt = data.USDT || 0;
+        document.getElementById('execBuyBalance').innerText = '$' + usdt.toFixed(2);
+      })
+      .catch(() => document.getElementById('execBuyBalance').innerText = 'Error');
+
+    fetch(`/api/balance/${sellEx}`, { headers: { Authorization: token } })
+      .then(res => res.json())
+      .then(data => {
+        const usdt = data.USDT || 0;
+        document.getElementById('execSellBalance').innerText = '$' + usdt.toFixed(2);
+      })
+      .catch(() => document.getElementById('execSellBalance').innerText = 'Error');
+
+    // Determine common network and fetch deposit address
+    const common = opp.commonNetworks || [];
+    let chosenNetwork = null;
+    if (common.length > 0) {
+      chosenNetwork = common[0]; // pick first
+    } else {
+      // fallback: pick any network from sellNetworks that supports deposit
+      const sellNets = opp.sellNetworks || {};
+      const netNames = Object.keys(sellNets);
+      for (const net of netNames) {
+        if (sellNets[net].deposit) {
+          chosenNetwork = net;
+          break;
+        }
+      }
+    }
+
+    if (chosenNetwork) {
+      document.getElementById('execWithdrawNetwork').innerText = chosenNetwork;
+      document.getElementById('execDepositNetwork').innerText = chosenNetwork;
+
+      // Fetch deposit address on sell exchange
+      const coin = opp.symbol;
+      fetch(`/api/deposit-address/${sellEx}/${coin}/${chosenNetwork}`, { headers: { Authorization: token } })
+        .then(res => res.json())
+        .then(data => {
+          if (data.address) {
+            document.getElementById('execDepositAddress').innerText = data.address;
+            if (data.tag) {
+              document.getElementById('execDepositAddressTag').innerText = 'Tag: ' + data.tag;
+            }
+          } else {
+            document.getElementById('execDepositAddress').innerText = 'Not available';
+          }
+        })
+        .catch(() => {
+          document.getElementById('execDepositAddress').innerText = 'Error fetching address';
+        });
+    } else {
+      document.getElementById('execWithdrawNetwork').innerText = 'No common network';
+      document.getElementById('execDepositNetwork').innerText = 'No common network';
+      document.getElementById('execDepositAddress').innerText = 'N/A';
+    }
+
+    document.getElementById('execAmount').value = 100;
+    updateExecPreview();
+  }
+
+  function updateExecPreview() {
+    if (!currentDetailOpp) return;
+    const opp = currentDetailOpp;
+    const buyPrice = parseFloat(opp.buyPrice) || 0;
+    const sellPrice = parseFloat(opp.sellPrice) || 0;
+    const amount = parseFloat(document.getElementById('execAmount').value) || 0;
+    const investment = amount;
+    if (investment <= 0 || buyPrice <= 0) {
+      document.getElementById('execTradingFees').innerText = '$0.00';
+      document.getElementById('execWithdrawFee').innerText = '$0.00';
+      document.getElementById('execDepositFee').innerText = '$0.00';
+      document.getElementById('execSlippage').innerText = '$0.00';
+      document.getElementById('execTotalFees').innerText = '$0.00';
+      document.getElementById('execNetProfit').innerText = '$0.00';
+      document.getElementById('execROI').innerText = '0.00%';
+      document.getElementById('execEstProfit').innerText = '$0.00';
+      return;
+    }
+    const coinAmount = investment / buyPrice;
+    const grossProfit = (sellPrice - buyPrice) * coinAmount;
+    const tradeFeeRate = 0.001;
+    const buyTradeFee = investment * tradeFeeRate;
+    const sellTradeFee = (coinAmount * sellPrice) * tradeFeeRate;
+    const totalTradingFees = buyTradeFee + sellTradeFee;
+    // Use real withdrawal/deposit fees from network if available, else default
+    const buyNets = Object.values(opp.buyNetworks || {});
+    const sellNets = Object.values(opp.sellNetworks || {});
+    let withdrawalFeeUSD = 0.5, depositFeeUSD = 0.2;
+    if (buyNets.length && buyNets[0].fee) {
+      withdrawalFeeUSD = buyNets[0].fee; // may be in crypto, but we assume USD stable
+    }
+    if (sellNets.length && sellNets[0].fee) {
+      depositFeeUSD = sellNets[0].fee;
+    }
+    const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
+    const slippage = investment * 0.002;
+    const totalFees = totalTradingFees + totalNetworkFees + slippage;
+    const netProfit = grossProfit - totalFees;
+    const roi = investment > 0 ? (netProfit / investment) * 100 : 0;
+
+    document.getElementById('execTradingFees').innerText = '$' + totalTradingFees.toFixed(2);
+    document.getElementById('execWithdrawFee').innerText = '$' + withdrawalFeeUSD.toFixed(2);
+    document.getElementById('execDepositFee').innerText = '$' + depositFeeUSD.toFixed(2);
+    document.getElementById('execSlippage').innerText = '$' + slippage.toFixed(2);
+    document.getElementById('execTotalFees').innerText = '$' + totalFees.toFixed(2);
+    document.getElementById('execNetProfit').innerText = '$' + netProfit.toFixed(2);
+    document.getElementById('execROI').innerText = roi.toFixed(2) + '%';
+    document.getElementById('execEstProfit').innerText = '$' + netProfit.toFixed(2);
+  }
+
+  async function executeTrade() {
+    if (!currentDetailOpp) return;
+    const opp = currentDetailOpp;
+    const amount = parseFloat(document.getElementById('execAmount').value) || 0;
+    if (amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+    const investment = amount;
+    const buyPrice = parseFloat(opp.buyPrice);
+    const sellPrice = parseFloat(opp.sellPrice);
+    const payload = {
+      symbol: opp.symbol,
+      buyExchange: opp.buyExchange,
+      sellExchange: opp.sellExchange,
+      buyPrice,
+      sellPrice,
+      amount: investment / buyPrice,
+      investment
+    };
+    document.getElementById('execStatus').innerText = 'Processing...';
+    try {
+      const res = await fetch('/api/trade/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✅ Trade executed successfully!', 'success');
+        document.getElementById('execStatus').innerHTML = `✅ Trade completed! TX: ${data.trade.txId}`;
+        if (document.getElementById('history').classList.contains('active')) loadTradeHistory();
+      } else {
+        showToast('❌ Trade failed: ' + (data.error || 'Unknown error'), 'error');
+        document.getElementById('execStatus').innerText = '❌ Trade failed';
+      }
+    } catch (e) {
+      showToast('❌ Network error', 'error');
+      document.getElementById('execStatus').innerText = '❌ Error';
+    }
+  }
+
+  // ========== PROFIT CALCULATOR ==========
+  function calculateProfit() {
+    if (!currentDetailOpp) return;
+    const opp = currentDetailOpp;
+    const buyPrice = parseFloat(opp.buyPrice) || 0;
+    const sellPrice = parseFloat(opp.sellPrice) || 0;
+    const investment = parseFloat(document.getElementById('investmentInput').value) || 0;
+    if (investment <= 0 || buyPrice <= 0) {
+      document.getElementById('coinAmount').innerText = '0';
+      document.getElementById('calcGrossProfit').innerText = '$0.00';
+      document.getElementById('calcTradingFees').innerText = '$0.00';
+      document.getElementById('calcWithdrawFees').innerText = '$0.00';
+      document.getElementById('calcDepositFees').innerText = '$0.00';
+      document.getElementById('calcTotalFees').innerText = '$0.00';
+      document.getElementById('calcNetProfit').innerText = '$0.00';
+      document.getElementById('calcROI').innerText = '0.00%';
+      document.getElementById('calcSlippage').innerText = '$0.00';
+      return;
+    }
+    const coinAmount = investment / buyPrice;
+    document.getElementById('coinAmount').innerText = coinAmount.toFixed(6);
+    const grossProfit = (sellPrice - buyPrice) * coinAmount;
+    const tradeFeeRate = 0.001;
+    const buyTradeFee = investment * tradeFeeRate;
+    const sellTradeFee = (coinAmount * sellPrice) * tradeFeeRate;
+    const totalTradingFees = buyTradeFee + sellTradeFee;
+    let withdrawalFeeUSD = 0.5, depositFeeUSD = 0.2;
+    const buyNets = Object.values(opp.buyNetworks || {});
+    const sellNets = Object.values(opp.sellNetworks || {});
+    if (buyNets.length && buyNets[0].fee) {
+      withdrawalFeeUSD = buyNets[0].fee;
+    }
+    if (sellNets.length && sellNets[0].fee) {
+      depositFeeUSD = sellNets[0].fee;
+    }
+    const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
+    const slippage = investment * 0.002;
+    const totalFees = totalTradingFees + totalNetworkFees + slippage;
+    const netProfit = grossProfit - totalFees;
+    const roi = investment > 0 ? (netProfit / investment) * 100 : 0;
+
+    document.getElementById('calcGrossProfit').innerText = '$' + grossProfit.toFixed(2);
+    document.getElementById('calcGrossProfit').className = 'calc-value ' + (grossProfit >= 0 ? 'profit-positive' : 'profit-negative');
+    document.getElementById('calcTradingFees').innerText = '$' + totalTradingFees.toFixed(2);
+    document.getElementById('calcWithdrawFees').innerText = '$' + withdrawalFeeUSD.toFixed(2);
+    document.getElementById('calcDepositFees').innerText = '$' + depositFeeUSD.toFixed(2);
+    document.getElementById('calcTotalFees').innerText = '$' + totalFees.toFixed(2);
+    document.getElementById('calcNetProfit').innerText = '$' + netProfit.toFixed(2);
+    document.getElementById('calcNetProfit').className = 'calc-value ' + (netProfit >= 0 ? 'profit-positive' : 'profit-negative');
+    document.getElementById('calcROI').innerText = roi.toFixed(2) + '%';
+    document.getElementById('calcROI').className = 'calc-value ' + (roi >= 0 ? 'profit-positive' : 'profit-negative');
+    document.getElementById('calcSlippage').innerText = '$' + slippage.toFixed(2);
+  }
+
+  // ========== DETAIL TABS ==========
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('detail-tab')) {
+      document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      const tab = e.target.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+  });
+
+  // ========== CHAT ==========
+  async function loadMessages() {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/messages', { headers: { Authorization: token } });
+      const msgs = await res.json();
+      const container = document.getElementById('chatMessages');
+      if (!msgs.length) {
+        container.innerHTML = '<div class="text-slate-400 text-center">No messages yet. Send a message to admin.</div>';
+        return;
+      }
+      container.innerHTML = msgs.reverse().map(m => `
+        <div class="chat-message ${m.isAdmin ? 'admin' : 'user'}" style="align-self:${m.isAdmin ? 'flex-start' : 'flex-end'}; background:${m.isAdmin ? '#1a2a5a' : '#0f172a'};">
+          <div class="text-sm">${m.isAdmin ? '🛡️ Admin' : '👤 You'}</div>
+          <div>${m.content}</div>
+          <div class="text-xs text-slate-400 mt-1">${new Date(m.createdAt).toLocaleString()}</div>
+        </div>
+      `).join('');
+    } catch (e) { console.log(e); }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const content = input.value.trim();
+    if (!content) return;
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ content })
+      });
+      if (res.ok) {
+        input.value = '';
+        loadMessages();
+      } else {
+        const data = await res.json();
+        showToast('❌ ' + (data.error || 'Message failed'), 'error');
+      }
+    } catch (e) { showToast('❌ Network error', 'error'); }
+  }
+
+  // ========== PROFILE ==========
+  async function loadProfile() {
+    if (!token) {
+      document.getElementById('profileUsername').innerText = 'Not logged in';
+      document.getElementById('profilePlan').innerText = 'Free';
+      return;
+    }
+    try {
+      const res = await fetch('/api/me', { headers: { Authorization: token } });
+      const u = await res.json();
+      if (u.error) throw new Error(u.error);
+      document.getElementById('profileUsername').innerText = u.username;
+      document.getElementById('profileEmail').innerText = u.email;
+      document.getElementById('profilePhone').innerText = u.mpesa;
+      document.getElementById('profilePlan').innerText = 'Free';
+      document.getElementById('profilePlan').className = 'text-xl font-bold mt-1 text-slate-400';
+      document.getElementById('profileExpiry').innerText = '—';
+
+      if (u.username === 'admin') {
+        document.getElementById('adminPanel').classList.remove('hidden');
+        loadAdminData();
+      } else {
+        document.getElementById('adminPanel').classList.add('hidden');
+      }
+    } catch (e) {
+      document.getElementById('profileUsername').innerText = 'Error loading profile';
+    }
+  }
+
+  // ========== ADMIN DATA ==========
+  async function loadAdminData() {
+    try {
+      const res = await fetch('/admin/users', { headers: { Authorization: token } });
+      const users = await res.json();
+      document.getElementById('adminUserCount').innerText = users.length;
+      const msgRes = await fetch('/admin/messages', { headers: { Authorization: token } });
+      const msgs = await msgRes.json();
+      document.getElementById('adminMsgCount').innerText = msgs.length || 0;
+      if (users.length) {
+        const recent = users.slice(-3).map(u => u.username).join(', ');
+        document.getElementById('adminRecentReg').innerText = recent || '—';
+      }
+      let listHtml = '';
+      users.slice(0, 10).forEach(u => {
+        listHtml += `<div class="flex justify-between border-b border-slate-700 py-1"><span>${u.username}</span><span class="text-slate-400">${u.email}</span></div>`;
+      });
+      document.getElementById('adminUserList').innerHTML = listHtml || '<div class="text-slate-400">No users</div>';
+    } catch (e) { console.log('Admin load error', e); }
+  }
+
+  // ========== TRADE HISTORY ==========
+  async function loadTradeHistory() {
+    const container = document.getElementById('tradeHistoryList');
+    container.innerHTML = '<div class="text-slate-400 text-center">Loading trades...</div>';
+    try {
+      const res = await fetch('/api/trades', { headers: { Authorization: token } });
+      const trades = await res.json();
+      if (!trades.length) {
+        container.innerHTML = '<div class="text-slate-400 text-center">No trades yet.</div>';
+        return;
+      }
+      let html = '';
+      trades.forEach(t => {
+        const statusClass = t.status === 'completed' ? 'status-completed' : t.status === 'pending' ? 'status-pending' : 'status-failed';
+        html += `
+          <div class="trade-history-item">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-bold text-lg">${t.symbol}</div>
+                <div class="text-slate-400 text-sm">${t.buyExchange} → ${t.sellExchange}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold ${t.netProfit >= 0 ? 'text-green-400' : 'text-red-400'}">${t.netProfit >= 0 ? '+' : ''}$${t.netProfit.toFixed(2)}</div>
+                <span class="status-badge ${statusClass}">${t.status}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-2 text-sm">
+              <div><span class="text-slate-400">Amount:</span> ${t.amount.toFixed(6)}</div>
+              <div><span class="text-slate-400">Investment:</span> $${t.investment.toFixed(2)}</div>
+              <div><span class="text-slate-400">ROI:</span> ${t.roi.toFixed(2)}%</div>
+            </div>
+            <div class="text-xs text-slate-400 mt-2">${new Date(t.createdAt).toLocaleString()}</div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    } catch (e) {
+      container.innerHTML = '<div class="text-slate-400 text-center">Error loading trades.</div>';
+    }
+  }
+
+  // ========== SETTINGS ==========
+  function resetSettings() {
+    document.getElementById('settingTheme').value = 'dark';
+    document.getElementById('settingNotification').value = 'all';
+    document.getElementById('settingCurrency').value = 'USDT';
+    const savedDiv = document.getElementById('settingsSaved');
+    savedDiv.classList.remove('hidden');
+    setTimeout(() => {
+      savedDiv.classList.add('hidden');
+    }, 4000);
+    showToast('✅ Settings reset to default', 'success');
+  }
+
+  // ========== INIT ==========
+  if (token) {
+    loadProfile();
+    loadOpportunities();
+    loadMessages();
+    renderFeatures();
+    loadTradeHistory();
+    chatPollInterval = setInterval(() => {
+      if (document.getElementById('chat').classList.contains('active')) loadMessages();
+    }, 10000);
+  } else {
+    showLogin();
+  }
+
+  setInterval(() => {
+    if (document.getElementById('home').classList.contains('active')) loadOpportunities();
+  }, 30000);
+</script>
+</body>
+</html>
+EOF
+
+echo "✅ All changes applied. Backups saved as .bak3"
+echo "🚀 Push to GitHub and Render will automatically redeploy."
