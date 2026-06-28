@@ -140,7 +140,7 @@ const EXCHANGE_CREDENTIALS = {
 };
 const exchangeInstances = {};
 for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
-  const ex = buildExchange(id, cred);
+  const ex = buildExchange(id, cred.apiKey, cred.secret);
   if (ex) exchangeInstances[id] = ex;
 }
 
@@ -159,88 +159,29 @@ const EXCHANGES = {
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
   htx: 'https://api.huobi.pro/market/tickers',
-  bingx: 'https://open-api.bingx.com/openApi/spot/v1/ticker/24hr'
+  bingx: 'https://api.bingx.com/api/v1/market/ticker?symbol=ALL'
 };
 
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
 function extractSymbol(exchange, symbol, t) {
+  let sym = null, price = null, volume = null;
   try {
-    if (!symbol) return null;
-
-    symbol = String(symbol).trim();
-
-    let sym = null;
-    let price = 0;
-    let volume = 0;
-
-    switch (exchange) {
-
-      case "mexc":
-        if (!symbol.endsWith("USDT")) return null;
-        sym = symbol.replace(/USDT$/, "");
-        price = Number(t.lastPrice || t.last || t.price);
-        volume = Number(t.quoteVolume || t.volume || 0);
-        break;
-
-      case "kucoin":
-        if (!symbol.endsWith("-USDT")) return null;
-        sym = symbol.replace(/-USDT$/, "");
-        price = Number(t.last || t.price);
-        volume = Number(t.volValue || t.vol || 0);
-        break;
-
-      case "gateio":
-        if (!symbol.endsWith("_USDT")) return null;
-        sym = symbol.replace(/_USDT$/, "");
-        price = Number(t.last || t.last_price);
-        volume = Number(t.quote_volume || t.base_volume || 0);
-        break;
-
-      case "htx":
-        if (!symbol.toLowerCase().endsWith("usdt")) return null;
-        sym = symbol.slice(0, -4).toUpperCase();
-        price = Number(t.close || t.lastPrice || t.price);
-        volume = Number(t.vol || t.amount || 0);
-        break;
-
-      case "bingx":
-        if (
-          symbol.endsWith("-USDT") ||
-          symbol.endsWith("_USDT") ||
-          symbol.endsWith("USDT")
-        ) {
-          sym = symbol
-            .replace("-USDT", "")
-            .replace("_USDT", "")
-            .replace("USDT", "");
-        } else {
-          return null;
-        }
-
-        price = Number(t.lastPrice || t.last || t.close || t.price);
-        volume = Number(t.quoteVolume || t.volume || 0);
-        break;
-
-      default:
-        return null;
+    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
+    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
+    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
+    else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
+    else if (exchange === 'bingx') {
+      if (symbol && symbol.includes('-USDT')) {
+        sym = symbol.replace('-USDT', '');
+        price = +t.lastPrice;
+        volume = +t.quoteVolume;
+      }
     }
-
-    sym = sym.trim().toUpperCase();
-
-    if (!sym) return null;
-    if (!Number.isFinite(price) || price <= 0) return null;
-
-    return {
-      symbol: sym,
-      price,
-      volume: Number.isFinite(volume) ? volume : 0
-    };
-
-  } catch (err) {
-    return null;
-  }
+    if (!sym || !price || isNaN(price)) return null;
+    return { symbol: sym, price, volume: volume || 0 };
+  } catch (e) { return null; }
 }
 
 let cachedOpportunities = [];
@@ -258,45 +199,13 @@ async function fetchRealNetworks(exchangeId, coin) {
   if (!ex) {
     const ExchangeClass = ccxt[key];
     if (!ExchangeClass) return null;
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      apiKey: API_KEYS[key]?.apiKey,
-      secret: API_KEYS[key]?.secret,
-      password: API_KEYS[key]?.password
-    });
+    ex = new ExchangeClass({ enableRateLimit: true });
   }
   try {
     await ex.loadMarkets();
     const currencies = await ex.fetchCurrencies();
-    const coinData =
-      currencies?.[coin] ||
-      Object.values(currencies || {}).find(c =>
-        c &&
-        (
-          c.code === coin ||
-          c.id === coin ||
-          c.symbol === coin
-        )
-      );
-
-    if (!coinData) {
-      console.log(`${exchangeId}: ${coin} not found`);
-      return {
-        networks: {},
-        canWithdraw: false,
-        canDeposit: false
-      };
-    }
-
-    console.log(exchangeId, coin, coinData ? "FOUND" : "NOT FOUND");
-
-    if (!coinData || !coinData.networks) {
-      return {
-        networks: {},
-        canWithdraw: false,
-        canDeposit: false
-      };
-    }
+    const coinData = currencies[coin];
+    if (!coinData || !coinData.networks) return null;
     const networks = {};
     for (const [netName, netInfo] of Object.entries(coinData.networks)) {
       let feeUnit = netName === 'TRC20' ? 'USDT' : (netName === 'BEP20' ? 'BNB' : 'ETH');
@@ -325,15 +234,10 @@ async function fetchLiquidity(exchangeId, symbol) {
   if (!ex) {
     const ExchangeClass = ccxt[key];
     if (!ExchangeClass) return null;
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      apiKey: API_KEYS[key]?.apiKey,
-      secret: API_KEYS[key]?.secret,
-      password: API_KEYS[key]?.password
-    });
+    ex = new ExchangeClass({ enableRateLimit: true });
   }
   try {
-    const orderbook = await ex.fetchOrderBook(symbol, key === 'kucoin' ? 20 : 5);
+    const orderbook = await ex.fetchOrderBook(symbol, 5);
     const bids = orderbook.bids.slice(0, 3);
     return bids.reduce((sum, [price, amount]) => sum + price * amount, 0);
   } catch (err) {
@@ -362,18 +266,7 @@ async function fastScan() {
         const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
         const d = extractSymbol(ex, symKey, t);
         if (!d) continue;
-
-        const s = d.symbol.toUpperCase();
-
-        if (
-          !allData[ex][s] ||
-          d.volume > (allData[ex][s].volume || 0)
-        ) {
-          allData[ex][s] = {
-            price: d.price,
-            volume: d.volume
-          };
-        }
+        allData[ex][d.symbol] = { price: d.price, volume: d.volume };
       }
     });
     const symbols = new Set();
@@ -445,8 +338,8 @@ async function detailScan() {
       const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
         fetchRealNetworks(buyEx, coin),
         fetchRealNetworks(sellEx, coin),
-        fetchLiquidity(buyEx, `${opp.symbol}/USDT`),
-        fetchLiquidity(sellEx, `${opp.symbol}/USDT`)
+        fetchLiquidity(buyEx, opp.symbol),
+        fetchLiquidity(sellEx, opp.symbol)
       ]);
       const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
       const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
@@ -495,12 +388,7 @@ app.get('/api/balance/:exchange', async (req, res) => {
   if (!ex) {
     const ExchangeClass = ccxt[key];
     if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      apiKey: API_KEYS[key]?.apiKey,
-      secret: API_KEYS[key]?.secret,
-      password: API_KEYS[key]?.password
-    });
+    ex = new ExchangeClass({ enableRateLimit: true });
   }
   try {
     await ex.loadMarkets();
@@ -524,12 +412,7 @@ app.get('/api/deposit-address/:exchange/:coin/:network', async (req, res) => {
   if (!ex) {
     const ExchangeClass = ccxt[key];
     if (!ExchangeClass) return res.status(400).json({ error: 'Exchange not configured' });
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      apiKey: API_KEYS[key]?.apiKey,
-      secret: API_KEYS[key]?.secret,
-      password: API_KEYS[key]?.password
-    });
+    ex = new ExchangeClass({ enableRateLimit: true });
   }
   try {
     await ex.loadMarkets();
@@ -768,8 +651,8 @@ app.get('/api/opportunity/:id/details', async (req, res) => {
   const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
     fetchRealNetworks(buyEx, coin),
     fetchRealNetworks(sellEx, coin),
-    fetchLiquidity(buyEx, `${opp.symbol}/USDT`),
-    fetchLiquidity(sellEx, `${opp.symbol}/USDT`)
+    fetchLiquidity(buyEx, opp.symbol),
+    fetchLiquidity(sellEx, opp.symbol)
   ]);
   const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
   const commonNetworks = getCommonNetworks(buyNet?.networks, sellNet?.networks);
