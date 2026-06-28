@@ -1,0 +1,73 @@
+services:
+  - type: web
+    name: arbimine
+    runtime: node
+    plan: free
+    autoDeploy: true
+
+    buildCommand: npm install
+    startCommand: node server.js
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 10000
+
+      - key: JWT_SECRET
+        sync: false
+
+      - key: MONGO_URI
+        sync: false
+
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+
+      - key: PESAPAL_CONSUMER_KEY
+        sync: false
+
+      - key: PESAPAL_CONSUMER_SECRET
+        sync: false
+
+      - key: EMAIL_USER
+        sync: false
+
+      - key: EMAIL_PASS
+        sync: false
+
+      - key: MEXC_API_KEY
+        sync: false
+
+      - key: MEXC_SECRET
+        sync: false
+
+      - key: KUCOIN_API_KEY
+        sync: false
+
+      - key: KUCOIN_SECRET
+        sync: false
+
+      - key: KUCOIN_PASSWORD
+        sync: false
+
+      - key: GATEIO_API_KEY
+        sync: false
+
+      - key: GATEIO_SECRET
+        sync: false
+
+      - key: HTX_API_KEY
+        sync: false
+
+      - key: HTX_SECRET
+        sync: false
+
+      - key: BINGX_API_KEY
+        sync: false
+
+      - key: BINGX_SECRET
+        sync: false
