@@ -166,22 +166,81 @@ const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
 function extractSymbol(exchange, symbol, t) {
-  let sym = null, price = null, volume = null;
   try {
-    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
-    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
-    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
-    else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
-    else if (exchange === 'bingx') {
-      if (symbol && symbol.includes('-USDT')) {
-        sym = symbol.replace('-USDT', '');
-        price = +t.lastPrice;
-        volume = +t.quoteVolume;
-      }
+    if (!symbol) return null;
+
+    symbol = String(symbol).trim();
+
+    let sym = null;
+    let price = 0;
+    let volume = 0;
+
+    switch (exchange) {
+
+      case "mexc":
+        if (!symbol.endsWith("USDT")) return null;
+        sym = symbol.replace(/USDT$/, "");
+        price = Number(t.lastPrice || t.last || t.price);
+        volume = Number(t.quoteVolume || t.volume || 0);
+        break;
+
+      case "kucoin":
+        if (!symbol.endsWith("-USDT")) return null;
+        sym = symbol.replace(/-USDT$/, "");
+        price = Number(t.last || t.price);
+        volume = Number(t.volValue || t.vol || 0);
+        break;
+
+      case "gateio":
+        if (!symbol.endsWith("_USDT")) return null;
+        sym = symbol.replace(/_USDT$/, "");
+        price = Number(t.last || t.last_price);
+        volume = Number(t.quote_volume || t.base_volume || 0);
+        break;
+
+      case "htx":
+        if (!symbol.toLowerCase().endsWith("usdt")) return null;
+        sym = symbol.slice(0, -4).toUpperCase();
+        price = Number(t.close || t.lastPrice || t.price);
+        volume = Number(t.vol || t.amount || 0);
+        break;
+
+      case "bingx":
+        if (
+          symbol.endsWith("-USDT") ||
+          symbol.endsWith("_USDT") ||
+          symbol.endsWith("USDT")
+        ) {
+          sym = symbol
+            .replace("-USDT", "")
+            .replace("_USDT", "")
+            .replace("USDT", "");
+        } else {
+          return null;
+        }
+
+        price = Number(t.lastPrice || t.last || t.close || t.price);
+        volume = Number(t.quoteVolume || t.volume || 0);
+        break;
+
+      default:
+        return null;
     }
-    if (!sym || !price || isNaN(price)) return null;
-    return { symbol: sym, price, volume: volume || 0 };
-  } catch (e) { return null; }
+
+    sym = sym.trim().toUpperCase();
+
+    if (!sym) return null;
+    if (!Number.isFinite(price) || price <= 0) return null;
+
+    return {
+      symbol: sym,
+      price,
+      volume: Number.isFinite(volume) ? volume : 0
+    };
+
+  } catch (err) {
+    return null;
+  }
 }
 
 let cachedOpportunities = [];
@@ -266,7 +325,18 @@ async function fastScan() {
         const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
         const d = extractSymbol(ex, symKey, t);
         if (!d) continue;
-        allData[ex][d.symbol] = { price: d.price, volume: d.volume };
+
+        const s = d.symbol.toUpperCase();
+
+        if (
+          !allData[ex][s] ||
+          d.volume > (allData[ex][s].volume || 0)
+        ) {
+          allData[ex][s] = {
+            price: d.price,
+            volume: d.volume
+          };
+        }
       }
     });
     const symbols = new Set();
