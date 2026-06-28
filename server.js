@@ -122,7 +122,6 @@ const Trade = mongoose.model('Trade', tradeSchema);
 
 const hashPassword = p => crypto.createHash('sha256').update(p).digest('hex');
 const generateToken = () => crypto.randomBytes(32).toString('hex');
-function formatPhone(phone) { /* keep as needed */ }
 
 // ==================== Admin Auth ====================
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
@@ -145,13 +144,11 @@ async function authMiddleware(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
 
-  // Check admin tokens (in-memory)
   if (adminTokens.has(token)) {
     req.user = 'admin';
     return next();
   }
 
-  // Check user sessions (MongoDB)
   try {
     const session = await Session.findOne({ token });
     if (!session) return res.status(401).json({ error: 'Invalid session' });
@@ -171,117 +168,153 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// ==================== Exchange Integration (Merged Scanner) ====================
-// We keep SUPPORTED_EXCHANGES with exchanges we have API keys for (no bybit)
-const SUPPORTED_EXCHANGES = [
-  'binance', 'kucoin', 'mexc', 'gateio', 'htx',
-  'okx', 'bitget', 'bitmart', 'coinex', 'lbank',
-  'kraken', 'coinbase', 'whitebit'
-];
+// ==================== Exchange Integration (6 Exchanges) ====================
+const SUPPORTED_EXCHANGES = ['binance', 'kucoin', 'mexc', 'gateio', 'htx', 'bingx'];
 
-function buildExchange(exchangeId, apiKey, secret) {
-  const exchangeMap = {
-    binance: ccxt.binance,
-    kucoin: ccxt.kucoin,
-    htx: ccxt.huobi,
-    gateio: ccxt.gateio,
-    mexc: ccxt.mexc,
-    okx: ccxt.okx,
-    bitget: ccxt.bitget,
-    bitmart: ccxt.bitmart,
-    coinex: ccxt.coinex,
-    lbank: ccxt.lbank,
-    kraken: ccxt.kraken,
-    coinbase: ccxt.coinbase,
-    whitebit: ccxt.whitebit
-  };
-  const ExchangeClass = exchangeMap[exchangeId];
-  if (!ExchangeClass) return null;
-  const config = {
+// Instantiate exchanges with API keys from environment
+const exchangeInstances = {};
+
+// Binance
+if (process.env.BINANCE_API_KEY && process.env.BINANCE_SECRET) {
+  exchangeInstances.binance = new ccxt.binance({
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_SECRET,
     enableRateLimit: true,
     timeout: 30000,
     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-  };
-  if (apiKey && secret) { config.apiKey = apiKey; config.secret = secret; }
-  return new ExchangeClass(config);
+  });
+  console.log('✅ Binance API configured');
+} else {
+  console.log('⚠️ Binance API keys missing – using public endpoints only');
+  exchangeInstances.binance = new ccxt.binance({ enableRateLimit: true });
 }
 
-const EXCHANGE_CREDENTIALS = {
-  binance: { apiKey: process.env.BINANCE_API_KEY, secret: process.env.BINANCE_SECRET },
-  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
-  htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
-  gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
-  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
-  okx: { apiKey: process.env.OKX_API_KEY, secret: process.env.OKX_SECRET },
-  bitget: { apiKey: process.env.BITGET_API_KEY, secret: process.env.BITGET_SECRET },
-  bitmart: { apiKey: process.env.BITMART_API_KEY, secret: process.env.BITMART_SECRET },
-  coinex: { apiKey: process.env.COINEX_API_KEY, secret: process.env.COINEX_SECRET },
-  lbank: { apiKey: process.env.LBANK_API_KEY, secret: process.env.LBANK_SECRET },
-  kraken: { apiKey: process.env.KRAKEN_API_KEY, secret: process.env.KRAKEN_SECRET },
-  coinbase: { apiKey: process.env.COINBASE_API_KEY, secret: process.env.COINBASE_SECRET },
-  whitebit: { apiKey: process.env.WHITEBIT_API_KEY, secret: process.env.WHITEBIT_SECRET }
-};
+// KuCoin (with password)
+if (process.env.KUCOIN_API_KEY && process.env.KUCOIN_SECRET && process.env.KUCOIN_PASSWORD) {
+  exchangeInstances.kucoin = new ccxt.kucoin({
+    apiKey: process.env.KUCOIN_API_KEY,
+    secret: process.env.KUCOIN_SECRET,
+    password: process.env.KUCOIN_PASSWORD,
+    enableRateLimit: true,
+    timeout: 30000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  });
+  console.log('✅ KuCoin API configured');
+} else {
+  console.log('⚠️ KuCoin API keys missing – using public endpoints only');
+  exchangeInstances.kucoin = new ccxt.kucoin({ enableRateLimit: true });
+}
 
-// Log API key status for MEXC and KuCoin
-console.log('🔑 MEXC API Key:', process.env.MEXC_API_KEY ? '✅ Set' : '❌ Missing');
-console.log('🔑 KuCoin API Key:', process.env.KUCOIN_API_KEY ? '✅ Set' : '❌ Missing');
+// MEXC
+if (process.env.MEXC_API_KEY && process.env.MEXC_SECRET) {
+  exchangeInstances.mexc = new ccxt.mexc({
+    apiKey: process.env.MEXC_API_KEY,
+    secret: process.env.MEXC_SECRET,
+    enableRateLimit: true,
+    timeout: 30000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  });
+  console.log('✅ MEXC API configured');
+} else {
+  console.log('⚠️ MEXC API keys missing – using public endpoints only');
+  exchangeInstances.mexc = new ccxt.mexc({ enableRateLimit: true });
+}
 
-const exchangeInstances = {};
-for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
-  const ex = buildExchange(id, cred.apiKey, cred.secret);
-  if (ex) exchangeInstances[id] = ex;
+// Gate.io
+if (process.env.GATEIO_API_KEY && process.env.GATEIO_SECRET) {
+  exchangeInstances.gateio = new ccxt.gateio({
+    apiKey: process.env.GATEIO_API_KEY,
+    secret: process.env.GATEIO_SECRET,
+    enableRateLimit: true,
+    timeout: 30000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  });
+  console.log('✅ Gate.io API configured');
+} else {
+  console.log('⚠️ Gate.io API keys missing – using public endpoints only');
+  exchangeInstances.gateio = new ccxt.gateio({ enableRateLimit: true });
+}
+
+// HTX (Huobi)
+if (process.env.HTX_API_KEY && process.env.HTX_SECRET) {
+  exchangeInstances.htx = new ccxt.huobi({
+    apiKey: process.env.HTX_API_KEY,
+    secret: process.env.HTX_SECRET,
+    enableRateLimit: true,
+    timeout: 30000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  });
+  console.log('✅ HTX API configured');
+} else {
+  console.log('⚠️ HTX API keys missing – using public endpoints only');
+  exchangeInstances.htx = new ccxt.huobi({ enableRateLimit: true });
+}
+
+// BingX
+if (process.env.BINGX_API_KEY && process.env.BINGX_SECRET) {
+  exchangeInstances.bingx = new ccxt.bingx({
+    apiKey: process.env.BINGX_API_KEY,
+    secret: process.env.BINGX_SECRET,
+    enableRateLimit: true,
+    timeout: 30000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  });
+  console.log('✅ BingX API configured');
+} else {
+  console.log('⚠️ BingX API keys missing – using public endpoints only');
+  exchangeInstances.bingx = new ccxt.bingx({ enableRateLimit: true });
 }
 
 // ===== Network Name Mapping =====
 function mapNetwork(exchange, currency, network) {
   const map = {
     'kucoin': {
-      'USDT': {
-        'TRC20': 'TRC20',
-        'ERC20': 'ERC20',
-        'BEP20': 'BEP20',
-        'SOL': 'SOL'
-      },
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
       'BTC': { 'BTC': 'BTC', 'BEP20': 'BEP20' },
       'ETH': { 'ERC20': 'ERC20' }
     },
     'mexc': {
-      'USDT': {
-        'TRC20': 'TRC20',
-        'ERC20': 'ERC20',
-        'BEP20': 'BEP20',
-        'SOL': 'SOL'
-      },
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'binance': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20', 'SOL': 'SOL' },
+      'BTC': { 'BTC': 'BTC', 'BEP20': 'BEP20' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'gateio': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'htx': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20' },
+      'BTC': { 'BTC': 'BTC' },
+      'ETH': { 'ERC20': 'ERC20' }
+    },
+    'bingx': {
+      'USDT': { 'TRC20': 'TRC20', 'ERC20': 'ERC20', 'BEP20': 'BEP20' },
       'BTC': { 'BTC': 'BTC' },
       'ETH': { 'ERC20': 'ERC20' }
     }
-    // Add others as needed
   };
   const exMap = map[exchange.toLowerCase()];
-  if (!exMap) return network; // fallback
+  if (!exMap) return network;
   const currMap = exMap[currency.toUpperCase()];
   if (!currMap) return network;
-  // Look for match (case-insensitive)
   const key = Object.keys(currMap).find(k => k.toUpperCase() === network.toUpperCase());
   return key ? currMap[key] : network;
 }
 
-// Public ticker endpoints (includes many exchanges; bybit may fail but safeGet handles it)
+// Public ticker endpoints (only for the 6 exchanges)
 const EXCHANGES = {
-  mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
+  binance: 'https://api.binance.com/api/v3/ticker/24hr',
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
-  bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
-  bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
-  lbank: 'https://api.lbank.info/v1/ticker.do?symbol=all',
-  coinex: 'https://api.coinex.com/v1/market/ticker/all',
+  mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
-  okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
-  bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
   htx: 'https://api.huobi.pro/market/tickers',
-  bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
-  poloniex: 'https://api.poloniex.com/markets/ticker24h',
-  cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
-  upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
+  bingx: 'https://api.bingx.com/api/v1/market/ticker/24hr'
 };
 
 // Symbol blacklist
@@ -307,23 +340,34 @@ async function safeGet(url, name) {
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
-// Enhanced extractSymbol from the older code
 function extractSymbol(exchange, symbol, t) {
   let sym = null, price = null, volume = null;
   try {
-    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
-    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
-    else if (exchange === 'bitmart' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last_price; volume = +t.quote_volume; }
-    else if (exchange === 'bitget') { sym = t.symbol?.replace('USDT', ''); price = +t.close; volume = +t.usdtVol; }
-    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
-    else if (exchange === 'okx' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volCcy24h; }
-    else if (exchange === 'bybit') { sym = t.symbol?.replace('USDT', ''); price = +t.lastPrice; volume = +t.turnover24h; }
-    else if (exchange === 'htx') { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
-    else if (exchange === 'bitfinex' && Array.isArray(t) && t[0]?.startsWith('t')) { sym = t[0].replace('t', '').replace('USD', ''); price = +t[7]; volume = +t[8]; }
-    else if (exchange === 'cryptocom') { const inst = t.i; if (inst?.includes('_USDT')) { sym = inst.replace('_USDT', ''); price = +t.a; volume = +t.v; } }
-    else if (exchange === 'upbit' && t.market?.startsWith('KRW-')) { sym = t.market.replace('KRW-', ''); price = +t.trade_price; volume = +t.acc_trade_price_24h; }
-    else if (exchange === 'kraken' && symbol) { sym = symbol.replace('USD', '').replace('USDT', ''); price = +t.c[0]; volume = +t.v[1]; }
-    else if (exchange === 'whitebit' && symbol) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.volume; }
+    if (exchange === 'binance' && symbol.endsWith('USDT')) {
+      sym = symbol.replace('USDT', '');
+      price = +t.lastPrice;
+      volume = +t.quoteVolume;
+    } else if (exchange === 'kucoin' && symbol.includes('-USDT')) {
+      sym = symbol.replace('-USDT', '');
+      price = +t.last;
+      volume = +t.volValue;
+    } else if (exchange === 'mexc' && symbol.endsWith('USDT')) {
+      sym = symbol.replace('USDT', '');
+      price = +t.lastPrice;
+      volume = +t.quoteVolume;
+    } else if (exchange === 'gateio' && symbol.includes('_USDT')) {
+      sym = symbol.replace('_USDT', '');
+      price = +t.last;
+      volume = +t.quote_volume;
+    } else if (exchange === 'htx' && symbol.endsWith('usdt')) {
+      sym = symbol.replace('usdt', '').toUpperCase();
+      price = +t.close;
+      volume = +t.vol;
+    } else if (exchange === 'bingx' && symbol.includes('-USDT')) {
+      sym = symbol.split('-USDT')[0];
+      price = +t.lastPrice;
+      volume = +t.quoteVolume;
+    }
     if (!sym || !price) return null;
     if (SYMBOL_BLACKLIST.has(sym)) return null;
     return { symbol: sym, price, volume: volume || 0 };
@@ -341,16 +385,8 @@ const DETAIL_OPP_LIMIT = 200;
 async function fetchRealNetworks(exchangeId, coin) {
   const key = exchangeId.toLowerCase();
   if (!SUPPORTED_EXCHANGES.includes(key)) return null;
-  let ex = exchangeInstances[key];
-  if (!ex) {
-    const ExchangeClass = ccxt[key];
-    if (!ExchangeClass) return null;
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      timeout: 30000,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-  }
+  const ex = exchangeInstances[key];
+  if (!ex) return null;
   try {
     await ex.loadMarkets();
     const currencies = await ex.fetchCurrencies();
@@ -379,16 +415,8 @@ async function fetchRealNetworks(exchangeId, coin) {
 async function fetchLiquidity(exchangeId, symbol) {
   const key = exchangeId.toLowerCase();
   if (!SUPPORTED_EXCHANGES.includes(key)) return null;
-  let ex = exchangeInstances[key];
-  if (!ex) {
-    const ExchangeClass = ccxt[key];
-    if (!ExchangeClass) return null;
-    ex = new ExchangeClass({
-      enableRateLimit: true,
-      timeout: 30000,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-  }
+  const ex = exchangeInstances[key];
+  if (!ex) return null;
   try {
     const orderbook = await ex.fetchOrderBook(symbol, 5);
     const bids = orderbook.bids.slice(0, 3);
@@ -410,32 +438,12 @@ async function fastScan() {
       const ex = Object.keys(EXCHANGES)[idx];
       if (!data) return;
       let tickers = [];
-      if (ex === 'mexc') tickers = data;
+      if (ex === 'binance') tickers = data;
       else if (ex === 'kucoin') tickers = data.data?.ticker || [];
-      else if (ex === 'bitmart') tickers = data.data?.tickers || [];
-      else if (ex === 'bitget') tickers = data.data || [];
+      else if (ex === 'mexc') tickers = data;
       else if (ex === 'gateio') tickers = data;
-      else if (ex === 'okx') tickers = data.data || [];
-      else if (ex === 'bybit') tickers = data.result?.list || [];
       else if (ex === 'htx') tickers = data.data || [];
-      else if (ex === 'bitfinex') tickers = data || [];
-      else if (ex === 'poloniex') tickers = data.data || [];
-      else if (ex === 'cryptocom') tickers = data.result?.data || [];
-      else if (ex === 'upbit') tickers = data || [];
-      else if (ex === 'kraken') {
-        if (data.result) {
-          for (const [pair, info] of Object.entries(data.result)) {
-            tickers.push({ symbol: pair, ...info });
-          }
-        }
-      }
-      else if (ex === 'whitebit') {
-        if (data.result) {
-          for (const [pair, info] of Object.entries(data.result)) {
-            tickers.push({ symbol: pair, ...info });
-          }
-        }
-      }
+      else if (ex === 'bingx') tickers = data.data || [];
       for (const t of tickers) {
         const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
         const d = extractSymbol(ex, symKey, t);
@@ -492,7 +500,6 @@ function computeTradable(buyNetworks, sellNetworks) {
 async function detailScan() {
   console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
   const start = Date.now();
-  // Filter out blacklisted and invalid markets
   const validOpps = cachedOpportunities
     .filter(o => !SYMBOL_BLACKLIST.has(o.symbol))
     .filter(o => {
@@ -567,11 +574,7 @@ app.post('/api/register', async (req, res) => {
     await user.save();
     const token = generateToken();
     await new Session({ token, username }).save();
-    sendEmailAsync(
-      email,
-      'Welcome to ArbiMine!',
-      `<h2>Welcome ${username}!</h2><p>Thank you for joining ArbiMine.</p><p>You can now start scanning live arbitrage opportunities.</p>`
-    );
+    sendEmailAsync(email, 'Welcome to ArbiMine!', `<h2>Welcome ${username}!</h2><p>You can now start scanning.</p>`);
     res.json({ success: true, token, username });
   } catch (err) {
     console.error(err);
@@ -588,11 +591,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
-    sendEmailAsync(
-      email,
-      '🔐 New login to your ArbiMine account',
-      `<p>Your ArbiMine account was just logged into at ${new Date().toLocaleString()}.</p><p>If this was you, ignore this message.</p>`
-    );
+    sendEmailAsync(email, '🔐 New login', `<p>Login at ${new Date().toLocaleString()}</p>`);
     res.json({ success: true, token, username: user.username });
   } catch (err) {
     console.error(err);
@@ -760,17 +759,10 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
     const balances = {
       binance: { USDT: 1250, BTC: 0.02, ETH: 0.5 },
       kucoin: { USDT: 800, BTC: 0.015, ETH: 0.3 },
-      htx: { USDT: 600, BTC: 0.01, ETH: 0.2 },
-      gateio: { USDT: 900, BTC: 0.018, ETH: 0.35 },
       mexc: { USDT: 700, BTC: 0.012, ETH: 0.25 },
-      okx: { USDT: 950, BTC: 0.019, ETH: 0.38 },
-      bitget: { USDT: 550, BTC: 0.009, ETH: 0.15 },
-      bitmart: { USDT: 400, BTC: 0.006, ETH: 0.1 },
-      coinex: { USDT: 300, BTC: 0.005, ETH: 0.08 },
-      lbank: { USDT: 250, BTC: 0.004, ETH: 0.06 },
-      kraken: { USDT: 1300, BTC: 0.025, ETH: 0.55 },
-      coinbase: { USDT: 1500, BTC: 0.03, ETH: 0.6 },
-      whitebit: { USDT: 200, BTC: 0.003, ETH: 0.04 }
+      gateio: { USDT: 900, BTC: 0.018, ETH: 0.35 },
+      htx: { USDT: 600, BTC: 0.01, ETH: 0.2 },
+      bingx: { USDT: 500, BTC: 0.008, ETH: 0.12 }
     };
     return res.json(balances[exchange.toLowerCase()] || { USDT: 0 });
   }
@@ -791,8 +783,6 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
 app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, async (req, res) => {
   const { exchange, currency, network } = req.params;
   const ex = exchangeInstances[exchange.toLowerCase()];
-  
-  // If no API keys, return simulated address
   if (!ex || !ex.apiKey || !ex.secret) {
     return res.json({
       address: '0x' + crypto.randomBytes(20).toString('hex'),
@@ -803,7 +793,6 @@ app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, asy
     });
   }
 
-  // Map the network to the exchange's expected format
   const mappedNetwork = mapNetwork(exchange, currency, network);
   console.log(`🔍 Fetching deposit address for ${exchange} ${currency} ${network} -> ${mappedNetwork}`);
 
@@ -828,7 +817,6 @@ app.get('/api/deposit-address/:exchange/:currency/:network', authMiddleware, asy
     throw new Error('No address found');
   } catch (err) {
     console.log(`Deposit address error ${exchange} ${currency} ${network} -> ${mappedNetwork}:`, err.message);
-    // Fallback to simulated address
     return res.json({
       address: '0x' + crypto.randomBytes(20).toString('hex'),
       tag: null,
@@ -844,13 +832,7 @@ app.get('/api/withdrawal-info/:exchange/:currency/:network', authMiddleware, asy
   const { exchange, currency, network } = req.params;
   const ex = exchangeInstances[exchange.toLowerCase()];
   if (!ex || !ex.apiKey || !ex.secret) {
-    return res.json({
-      fee: 0.5,
-      minAmount: 10,
-      network: network,
-      currency: currency,
-      simulated: true
-    });
+    return res.json({ fee: 0.5, minAmount: 10, network: network, currency: currency, simulated: true });
   }
   try {
     await ex.loadMarkets();
@@ -870,13 +852,7 @@ app.get('/api/withdrawal-info/:exchange/:currency/:network', authMiddleware, asy
     });
   } catch (err) {
     console.log(`Withdrawal info error ${exchange} ${currency} ${network}:`, err.message);
-    return res.json({
-      fee: 0.5,
-      minAmount: 10,
-      network: network,
-      currency: currency,
-      simulated: true
-    });
+    return res.json({ fee: 0.5, minAmount: 10, network: network, currency: currency, simulated: true });
   }
 });
 
@@ -941,8 +917,8 @@ app.get('/api/trades', authMiddleware, async (req, res) => {
   res.json(trades);
 });
 
-// ==================== Payment (Paystack) ====================
-// ... (keep your existing payment routes as they are) ...
+// ==================== Payment (Paystack) – keep your existing routes ====================
+// ... (your payment routes go here – they should use authMiddleware as well) ...
 
 // ==================== Admin page ====================
 app.get('/admin', (req, res) => {
