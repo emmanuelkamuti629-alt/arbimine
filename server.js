@@ -2705,15 +2705,6 @@ async function processOpportunity(opportunity) {
 
 
 
-// ==================== EXCHANGE LAYER (CROSS ARBITRAGE) ====================
-
-  binance: {},
-  kucoin: {},
-  gateio: {},
-  bingx: {},
-  mexc: {},
-  htx: {}
-};
 
 function getExchange(name) {
   return exchanges[name] || null;
