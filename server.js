@@ -85,9 +85,6 @@ const messageSchema = new mongoose.Schema({
   user: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
   content: { type: String, required: true },
-  status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
-  edited: { type: Boolean, default: false },
-  deleted: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 const blockedUserSchema = new mongoose.Schema({
@@ -113,7 +110,7 @@ function formatPhone(phone) {
   return cleaned;
 }
 
-// ==================== Exchange API (scanning) ====================
+// ==================== Exchange API ====================
 const SUPPORTED_EXCHANGES = ['mexc', 'kucoin', 'binance', 'bingx', 'htx', 'gateio'];
 
 function buildExchange(exchangeId, apiKey, secret) {
@@ -453,48 +450,33 @@ app.get('/api/user/subscription', async (req, res) => {
   }
 });
 
-// ==================== Messaging (User & Admin) ====================
-// Middleware to authenticate user by token
-async function getUserFromToken(token) {
-  if (!token) return null;
-  const session = await Session.findOne({ token });
-  if (!session) return null;
-  return session.username;
-}
-
-// User sends a message
+// ==================== Messaging ====================
 app.post('/api/messages', async (req, res) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    const username = await getUserFromToken(token);
-    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
     const { content } = req.body;
     if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
-    const blocked = await BlockedUser.findOne({ username });
+    const blocked = await BlockedUser.findOne({ username: session.username });
     if (blocked) return res.status(403).json({ error: 'You have been blocked from sending messages' });
-    const msg = new Message({ user: username, isAdmin: false, content: content.trim(), status: 'sent' });
+    const msg = new Message({ user: session.username, isAdmin: false, content: content.trim() });
     await msg.save();
-    // Simulate delivery (in production, admin panel will mark as read)
-    setTimeout(async () => {
-      msg.status = 'delivered';
-      await msg.save();
-    }, 1000);
-    res.json({ success: true, message: msg });
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// User gets their messages (including admin replies)
 app.get('/api/messages', async (req, res) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    const username = await getUserFromToken(token);
-    if (!username) return res.status(401).json({ error: 'Invalid session' });
-    const messages = await Message.find({ user: username, deleted: false }).sort({ createdAt: -1 });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const messages = await Message.find({ user: session.username }).sort({ createdAt: -1 });
     res.json(messages);
   } catch (err) {
     console.error(err);
@@ -502,82 +484,7 @@ app.get('/api/messages', async (req, res) => {
   }
 });
 
-// User edits their own message
-app.put('/api/messages/:id', async (req, res) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: 'No token' });
-  try {
-    const username = await getUserFromToken(token);
-    if (!username) return res.status(401).json({ error: 'Invalid session' });
-    const { content } = req.body;
-    if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
-    const msg = await Message.findById(req.params.id);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-    // Only allow edit if user owns the message and it's not admin message
-    if (msg.user !== username) return res.status(403).json({ error: 'Not your message' });
-    if (msg.isAdmin) return res.status(403).json({ error: 'Cannot edit admin message' });
-    msg.content = content.trim();
-    msg.edited = true;
-    await msg.save();
-    res.json({ success: true, message: msg });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// User deletes their own message (soft delete)
-app.delete('/api/messages/:id', async (req, res) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: 'No token' });
-  try {
-    const username = await getUserFromToken(token);
-    if (!username) return res.status(401).json({ error: 'Invalid session' });
-    const msg = await Message.findById(req.params.id);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-    if (msg.user !== username) return res.status(403).json({ error: 'Not your message' });
-    if (msg.isAdmin) return res.status(403).json({ error: 'Cannot delete admin message' });
-    msg.deleted = true;
-    await msg.save();
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Mark a message as read (when admin views it, or user views admin's reply)
-app.post('/api/messages/:id/read', async (req, res) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: 'No token' });
-  try {
-    const username = await getUserFromToken(token);
-    if (!username) return res.status(401).json({ error: 'Invalid session' });
-    const msg = await Message.findById(req.params.id);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-    // Only mark as read if the message is not owned by the user (i.e., it's from admin)
-    if (msg.user !== username && !msg.isAdmin) return res.status(403).json({ error: 'Cannot mark this message' });
-    // If the message is from admin and user is reading it, mark as read
-    if (msg.isAdmin && msg.user === username) {
-      msg.status = 'read';
-      await msg.save();
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // ==================== Admin Messaging ====================
-function adminAuth(req, res, next) {
-  const token = req.headers.authorization;
-  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
-
 app.get('/admin/messages', adminAuth, async (req, res) => {
   try {
     const users = await Message.distinct('user');
@@ -585,8 +492,7 @@ app.get('/admin/messages', adminAuth, async (req, res) => {
     for (const user of users) {
       const lastMsg = await Message.findOne({ user }).sort({ createdAt: -1 });
       const count = await Message.countDocuments({ user });
-      const unread = await Message.countDocuments({ user, isAdmin: false, status: { $ne: 'read' } });
-      conversations.push({ _id: user, count, unread, lastMessage: lastMsg });
+      conversations.push({ _id: user, count, lastMessage: lastMsg });
     }
     res.json(conversations);
   } catch (err) {
@@ -599,8 +505,6 @@ app.get('/admin/messages/:user', adminAuth, async (req, res) => {
   try {
     const { user } = req.params;
     const messages = await Message.find({ user }).sort({ createdAt: -1 });
-    // Mark all user messages as read when admin views them
-    await Message.updateMany({ user, isAdmin: false, status: 'delivered' }, { status: 'read' });
     res.json(messages);
   } catch (err) {
     console.error(err);
@@ -612,13 +516,8 @@ app.post('/admin/messages', adminAuth, async (req, res) => {
   try {
     const { userId, content } = req.body;
     if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
-    const msg = new Message({ user: userId, isAdmin: true, content: content.trim(), status: 'sent' });
+    const msg = new Message({ user: userId, isAdmin: true, content: content.trim() });
     await msg.save();
-    // Auto-deliver for admin messages (since admin is sender)
-    setTimeout(async () => {
-      msg.status = 'delivered';
-      await msg.save();
-    }, 500);
     const user = await User.findOne({ username: userId });
     if (user) {
       sendEmailAsync(
@@ -627,7 +526,7 @@ app.post('/admin/messages', adminAuth, async (req, res) => {
         `<p>You have received a new reply from ArbiMine admin:</p><p><em>${content}</em></p><p>Login to your account to view the full conversation.</p>`
       );
     }
-    res.json({ success: true, message: msg });
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -637,7 +536,6 @@ app.post('/admin/messages', adminAuth, async (req, res) => {
 app.delete('/admin/message/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    // Admin can hard delete (or soft delete – we'll hard delete for simplicity)
     await Message.findByIdAndDelete(id);
     res.json({ success: true });
   } catch (err) {
@@ -651,7 +549,7 @@ app.put('/admin/message/:id', adminAuth, async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
     if (!content) return res.status(400).json({ error: 'Content required' });
-    const msg = await Message.findByIdAndUpdate(id, { content: content.trim(), edited: true }, { new: true });
+    const msg = await Message.findByIdAndUpdate(id, { content: content.trim() }, { new: true });
     res.json({ success: true, message: msg });
   } catch (err) {
     console.error(err);
@@ -890,18 +788,25 @@ app.post('/api/payment/webhook', async (req, res) => {
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 
-global.adminTokens = new Set();
-
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     const token = crypto.randomBytes(32).toString('hex');
+    if (!global.adminTokens) global.adminTokens = new Set();
     global.adminTokens.add(token);
     res.json({ success: true, token });
   } else {
     res.status(401).json({ error: 'Invalid admin credentials' });
   }
 });
+
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
 
 app.get('/admin/users', adminAuth, async (req, res) => {
   const users = await User.find({}, '-passwordHash');
@@ -917,6 +822,7 @@ app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
   const { active, plan, expiresAt } = req.body;
   const updates = { 'subscription.active': active };
   if (plan) updates['subscription.plan'] = plan;
+  // If active is true and no expiresAt given, set a default
   if (active && !expiresAt) {
     const days = plan === 'weekly' ? 7 : 30;
     updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
@@ -937,3 +843,5 @@ app.get('/admin', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
+
+
