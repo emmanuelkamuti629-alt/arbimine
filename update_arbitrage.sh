@@ -1736,7 +1736,6 @@ cat > public/index.html << 'EOF'
       const opp = await res.json();
       if (opp.error) throw new Error(opp.error);
       currentDetailOpp = opp;
-      displayDetails(opp);
       setupExecuteTab(opp);
     } catch (e) {
       showToast('Failed to load details: ' + e.message, 'error');
@@ -1744,7 +1743,6 @@ cat > public/index.html << 'EOF'
     }
   }
 
-  function displayDetails(opp) {
     document.getElementById('detailSymbol').innerText = opp.symbol || '—';
     document.getElementById('detailBuyExchange').innerText = opp.buyExchange || '—';
     document.getElementById('detailSellExchange').innerText = opp.sellExchange || '—';

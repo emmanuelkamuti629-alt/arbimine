@@ -1,5 +1,4 @@
 
-function displayDetails(opp) {
   const set = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.innerText = (val ?? "—");
