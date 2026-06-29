@@ -1527,7 +1527,7 @@ function authenticateToken(req, res, next) {
 
 
 // ==================== ACTIVITY LOGS ====================
-const fs = require("fs");
+// Removed duplicate fs require
 
 const activityLogs = [];
 
