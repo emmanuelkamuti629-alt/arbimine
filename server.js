@@ -2705,13 +2705,29 @@ function getExchange(name) {
 const DRY_RUN = true;
 
 // Unified exchange manager
-const exchangeClients = {
-  binance: new ccxt.binance({ enableRateLimit: true }),
-  kucoin: new ccxt.kucoin({ enableRateLimit: true }),
-  gateio: new ccxt.gateio({ enableRateLimit: true }),
-  mexc: new ccxt.mexc({ enableRateLimit: true }),
-  htx: new ccxt.huobi({ enableRateLimit: true })
-};
+const exchangeClients = {};
+
+if (process.env.ENABLE_BINANCE === "true") {
+  exchangeClients.binance = new ccxt.binance({
+    enableRateLimit: true
+  });
+}
+
+exchangeClients.kucoin = new ccxt.kucoin({
+  enableRateLimit: true
+});
+
+exchangeClients.gateio = new ccxt.gateio({
+  enableRateLimit: true
+});
+
+exchangeClients.mexc = new ccxt.mexc({
+  enableRateLimit: true
+});
+
+exchangeClients.htx = new ccxt.huobi({
+  enableRateLimit: true
+});
 
 // Load markets once
 async function initExchanges() {
