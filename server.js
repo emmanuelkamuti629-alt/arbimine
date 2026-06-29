@@ -2102,7 +2102,6 @@ async function executeArbitrage(opportunity) {
 const activeTrades = new Set();
 
 // Safety thresholds
-const MIN_PROFIT_PERCENT = 0.6;
 const MIN_LIQUIDITY = 1000;
 
 // Main decision engine
@@ -2708,7 +2707,6 @@ async function processOpportunity(opportunity) {
 
 // ==================== EXCHANGE LAYER (CROSS ARBITRAGE) ====================
 
-const exchanges = {
   binance: {},
   kucoin: {},
   gateio: {},
@@ -2724,8 +2722,6 @@ function getExchange(name) {
 
 
 // ==================== CCXT CROSS EXCHANGE ENGINE ====================
-
-const ccxt = require('ccxt');
 
 // DRY RUN MODE (VERY IMPORTANT)
 const DRY_RUN = true;
