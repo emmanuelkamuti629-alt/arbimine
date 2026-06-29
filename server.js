@@ -157,6 +157,17 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// -------------------- Get User Profile (for frontend) --------------------
+app.get('/api/user/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id, '-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // -------------------- Paystack Subscription --------------------
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const PLANS = { weekly: { amount: 100, duration: 7 }, monthly: { amount: 350, duration: 30 } };
