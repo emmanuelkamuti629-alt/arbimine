@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ArbiMine • Arbitrage Intelligence</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     /* ---------- RESET & BASE ---------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -106,6 +105,7 @@
       font-size: 12px;
       color: #9ca3af;
     }
+    .badge.tier-green { color: #00ff99; font-weight: 600; }
 
     /* ---------- BOTTOM NAV ---------- */
     .bottom-nav {
@@ -217,6 +217,15 @@
       color: #0a0c15;
       cursor: pointer;
     }
+    .tier-green { color: #00ff99; font-weight: 600; }
+    #copyStatus {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: #00ff99;
+      font-size: 14px;
+      margin-top: 8px;
+    }
 
     /* ---------- RESPONSIVE ---------- */
     @media (max-width: 480px) {
@@ -258,7 +267,7 @@
   <div id="sectionHome" class="section active">
     <div class="home-header">
       <h2>Welcome, <span id="userName">User</span></h2>
-      <span class="badge" id="planBadge">Free</span>
+      <span class="badge tier-green" id="planBadge">Free</span>
     </div>
     <div class="card">
       <h3>📈 Live Opportunities</h3>
@@ -277,7 +286,6 @@
         <span class="change" id="ethChange">—</span>
       </div>
     </div>
-    <!-- You can add more opportunity cards here -->
   </div>
 
   <!-- PRO SECTION -->
@@ -287,7 +295,7 @@
 
     <div class="card">
       <h3>Your Current Plan</h3>
-      <p><strong>Plan:</strong> <span id="proPlan">Free</span></p>
+      <p><strong>Plan:</strong> <span id="proPlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="proExpiry">—</span></p>
     </div>
 
@@ -315,14 +323,17 @@
       <p><strong>Username:</strong> <span id="profileUsername">—</span></p>
       <p><strong>Email:</strong> <span id="profileEmail">—</span></p>
       <p><strong>M-Pesa:</strong> <span id="profileMpesa">—</span></p>
-      <p><strong>Plan:</strong> <span id="profilePlan">Free</span></p>
+      <p><strong>Plan:</strong> <span id="profilePlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="profileExpiry">—</span></p>
     </div>
 
     <h3 style="margin:24px 0 12px;">Referral Link</h3>
     <div class="referral-box">
       <input type="text" id="referralLink" value="https://arbimine.onrender.com" readonly>
-      <button onclick="copyReferral()">Copy</button>
+      <button onclick="copyReferral()">📋 Copy</button>
+    </div>
+    <div id="copyStatus">
+      <span>✅</span> Copied!
     </div>
     <p style="color:#9ca3af; font-size:13px; margin-top:8px;">Share this link to invite friends.</p>
   </div>
@@ -344,7 +355,6 @@
 <script>
   // ========== STATE ==========
   let currentUser = null;
-  let token = null;
 
   // ========== DOM REFS ==========
   const $ = id => document.getElementById(id);
@@ -422,20 +432,8 @@
     // Populate user info
     $('userName').textContent = currentUser.username;
     $('profileUsername').textContent = currentUser.username;
-    // We need email and mpesa – we'll fetch from a /api/user/:id endpoint.
-    // For now, we store them in localStorage after registration or we can fetch.
-    // Since we don't have that endpoint yet, we'll manually retrieve from registration.
-    // For demo, we'll just show placeholders.
-    // Actually we can store email/mpesa in localStorage when registering.
-    // We'll improve: after registration we store them in localStorage.
-    // Let's fetch full user profile using a new endpoint? We'll just use the data from login.
-    // For now, we can prompt user to add email/mpesa? Better to fetch from server.
-    // I'll create a GET /api/user/:id endpoint on server side to return user data.
-    // For this demo, we'll just show empty.
     fetchUserProfile();
-    // Update subscription UI
     updateSubscriptionUI();
-    // start data refresh
     refreshMarketData();
     setInterval(refreshMarketData, 10000);
     // nav listeners
@@ -452,19 +450,14 @@
 
   async function fetchUserProfile() {
     try {
-      // We'll add a GET /api/user/:id endpoint on server
-      // For now, we can use the data we have
-      // Actually we can store email/mpesa in localStorage after registration
-      // Let's check if we have them stored
-      const stored = localStorage.getItem('arbimine_user');
-      if (stored) {
-        const user = JSON.parse(stored);
+      const res = await fetch(`/api/user/${currentUser._id}`);
+      if (res.ok) {
+        const user = await res.json();
         $('profileEmail').textContent = user.email || '—';
         $('profileMpesa').textContent = user.mpesa || '—';
+        currentUser.subscription = user.subscription;
+        updateSubscriptionUI();
       }
-      // Update profile plan and expiry from currentUser
-      $('profilePlan').textContent = currentUser.subscription?.plan || 'free';
-      $('profileExpiry').textContent = currentUser.subscription?.expiresAt ? new Date(currentUser.subscription.expiresAt).toLocaleDateString() : '—';
     } catch (e) {}
   }
 
@@ -472,9 +465,9 @@
     const plan = currentUser.subscription?.plan || 'free';
     const expires = currentUser.subscription?.expiresAt ? new Date(currentUser.subscription.expiresAt).toLocaleDateString() : '—';
     $('planBadge').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-    $('proPlan').textContent = plan;
+    $('proPlan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     $('proExpiry').textContent = expires;
-    $('profilePlan').textContent = plan;
+    $('profilePlan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     $('profileExpiry').textContent = expires;
     // Highlight active plan
     document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active-plan'));
@@ -503,20 +496,18 @@
     }
   }
 
-  // ========== SUBSCRIPTION (Paystack) ==========
+  // ========== SUBSCRIPTION (Paystack STK Push) ==========
   async function subscribe(plan) {
     if (!currentUser) return alert('Please log in first.');
-    const email = prompt('Enter your email for Paystack:');
-    if (!email) return;
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser._id, plan, email })
+        body: JSON.stringify({ userId: currentUser._id, plan })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Subscription initiation failed');
-      window.location.href = data.authorization_url;
+      alert(data.message); // "STK push sent to your phone..."
     } catch (err) {
       alert(err.message);
     }
@@ -527,7 +518,9 @@
     const link = $('referralLink');
     link.select();
     document.execCommand('copy');
-    alert('Referral link copied!');
+    const status = $('copyStatus');
+    status.style.display = 'flex';
+    setTimeout(() => { status.style.display = 'none'; }, 3000);
   }
 
   // ========== AUTO-LOGIN ==========
