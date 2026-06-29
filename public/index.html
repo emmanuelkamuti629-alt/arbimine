@@ -109,6 +109,16 @@
     .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1f2937; border-left: 4px solid; padding: 12px 24px; border-radius: 12px; z-index: 1000; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.3s; }
     .toast.success { border-left-color: #00ff99; color: #00ff99; }
     .toast.error { border-left-color: #ff4d4d; color: #ff4d4d; }
+    .toast.info { border-left-color: #60a5fa; color: #60a5fa; }
+    .glass { background: rgba(255,255,255,.05); backdrop-filter: blur(10px); border-radius: 20px; padding: 16px; }
+    .chat-container { background: #0f172a; border-radius: 20px; padding: 12px; max-height: 350px; overflow-y: auto; }
+    .chat-message { padding: 8px 14px; border-radius: 16px; margin-bottom: 8px; max-width: 80%; }
+    .chat-message.user { background: #1f2937; align-self: flex-end; margin-left: auto; }
+    .chat-message.admin { background: #1a2a5a; align-self: flex-start; }
+    .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
+    .chat-input-row input { flex: 1; padding: 12px; border-radius: 40px; background: #0f172a; border: 1px solid #1f2937; color: white; outline: none; }
+    .msg-actions button { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 12px; margin-left: 6px; }
+    .msg-actions button:hover { color: white; }
     @media (max-width: 480px) {
       .detail-box .price { font-size: 20px; }
       .stat-value { font-size: 16px; }
@@ -135,6 +145,7 @@
     <input type="email" id="regEmail" placeholder="Email">
     <input type="tel" id="regMpesa" placeholder="Mobile number (e.g., 0712345678)">
     <input type="password" id="regPassword" placeholder="Password">
+    <input type="text" id="regReferral" placeholder="Referral code (optional)">
     <button onclick="register()">Register</button>
     <div class="toggle-link" onclick="showLogin()">Back to Login</div>
   </div>
@@ -144,6 +155,8 @@
   <div class="bottom-nav">
     <button class="nav-item active" onclick="switchTab('home', event)"><span class="icon">🏠</span><span>Home</span></button>
     <button class="nav-item" onclick="switchTab('pro', event)"><span class="icon">💎</span><span>Pro</span></button>
+    <button class="nav-item" onclick="switchTab('refer', event)"><span class="icon">🔗</span><span>Refer</span></button>
+    <button class="nav-item" onclick="switchTab('help', event)"><span class="icon">💬</span><span>Help</span></button>
     <button class="nav-item" onclick="switchTab('profile', event)"><span class="icon">👤</span><span>Profile</span></button>
   </div>
 
@@ -180,6 +193,25 @@
     </div>
   </div>
 
+  <div id="refer" class="section">
+    <h2>🔗 Refer & Earn</h2>
+    <p class="text-slate-400">Share your unique link and earn rewards!</p>
+    <div class="glass p-4 mt-4 flex items-center gap-3" style="display:flex; align-items:center; gap:12px;">
+      <input id="referLinkInput" class="flex-1 bg-slate-800 rounded-xl p-3 text-white" readonly style="flex:1; background:#1f2937; border:1px solid #374151; border-radius:20px; padding:12px; color:white;">
+      <button class="btn-pro" style="width:auto; padding:12px 24px;" onclick="copyReferLink()">📋 Copy</button>
+    </div>
+    <div id="copyFeedback" class="text-green-400 mt-2 hidden">✅ Copied!</div>
+  </div>
+
+  <div id="help" class="section">
+    <h2>💬 Help & Support</h2>
+    <div id="chatMessagesUser" class="chat-container" style="max-height:350px; overflow-y:auto;"></div>
+    <div class="chat-input-row">
+      <input id="helpInput" placeholder="Type your message..." class="flex-1">
+      <button class="btn-pro" style="width:auto; padding:12px 24px;" onclick="sendHelpMessage()">Send</button>
+    </div>
+  </div>
+
   <div id="profile" class="section">
     <h2 style="margin-bottom: 20px;">👤 Profile</h2>
     <div id="profileCard" class="loading">Loading...</div>
@@ -199,6 +231,7 @@
   let allOpportunities = [];
   let currentChart = null;
   let countdownInterval = null;
+  let currentOpp = null;
 
   window.onload = () => { if (token) verifyAndShowDashboard(); else showAuth(); checkPaymentStatus(); };
 
@@ -218,10 +251,8 @@
       const status = urlParams.get('payment_status');
       if (status === 'success') {
         showToast('✅ Payment successful! Your Pro plan is now active.', 'success');
-        // Refresh profile and switch to profile tab
         if (token) {
           loadProfile();
-          // Switch to profile tab after 1 second
           setTimeout(() => {
             const profileTab = document.querySelector('.nav-item[onclick*="profile"]');
             if (profileTab) profileTab.click();
@@ -248,6 +279,14 @@
         document.getElementById('dashboard').style.display = 'block';
         loadOpps();
         loadProfile();
+        loadReferralLink();
+        loadHelpMessages();
+        // Set up polling for new messages every 30s
+        setInterval(() => {
+          if (document.getElementById('help').classList.contains('active')) {
+            loadHelpMessages();
+          }
+        }, 30000);
       } else throw new Error();
     } catch { localStorage.removeItem('token'); token = null; showAuth(); }
   }
@@ -261,12 +300,13 @@
     const email = document.getElementById('regEmail').value.trim();
     const mpesa = document.getElementById('regMpesa').value.trim();
     const password = document.getElementById('regPassword').value;
+    const referral = document.getElementById('regReferral').value.trim();
     if (!username || !email || !mpesa || !password) { alert('All fields required'); return; }
     if (!isValidEmail(email)) { alert('Valid email required'); return; }
     if (!isValidPhone(mpesa)) { alert('Valid Kenyan phone required (e.g., 0712345678)'); return; }
     if (password.length < 4) { alert('Password min 4 chars'); return; }
     try {
-      const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, mpesa, password }) });
+      const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, mpesa, password, referralCode: referral || undefined }) });
       const data = await res.json();
       if (data.token) { localStorage.setItem('token', data.token); token = data.token; verifyAndShowDashboard(); }
       else alert(data.error);
@@ -294,6 +334,8 @@
     document.getElementById(tabId).classList.add('active');
     if (tabId === 'home') loadOpps();
     if (tabId === 'profile') loadProfile();
+    if (tabId === 'refer') loadReferralLink();
+    if (tabId === 'help') loadHelpMessages();
   }
 
   async function refreshOpportunities() { await loadOpps(); }
@@ -397,6 +439,7 @@
   }
 
   function displayDetailModal(opp) {
+    currentOpp = opp;
     const modalBody = document.getElementById('modalBody');
     const hasBuyNetworkData = opp.buyNetworks && Object.keys(opp.buyNetworks).length > 0;
     const hasSellNetworkData = opp.sellNetworks && Object.keys(opp.sellNetworks).length > 0;
@@ -503,6 +546,16 @@
           <div class="stat-card"><div class="label">Volatility</div><div class="score red">${volatility}%</div></div>
         </div>
       </div>
+      <!-- Profit Calculator -->
+      <div class="mt-4 p-3 bg-slate-800 rounded-xl">
+        <h4 class="font-bold">💹 Profit Calculator</h4>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-slate-400">Invest (USD):</span>
+          <input id="calcAmount" type="number" class="bg-slate-700 rounded-xl px-3 py-2 w-32 text-white" value="100" step="1">
+          <button class="btn-pro" style="width:auto; padding:8px 20px;" onclick="calculateProfit()">Calculate</button>
+        </div>
+        <div id="calcResult" class="mt-2 text-green-400 font-bold">Profit: $0.00</div>
+      </div>
       <div class="trend-container">
         <div class="trend-header"><div class="trend-title"><h3>Spread Trend</h3><p>AI spread movement analysis</p></div><div class="current-spread"><div class="small">Current Spread</div><div class="big">${opp.spread}%</div></div></div>
         <div><canvas id="trendChart" width="600" height="300" style="max-height:320px; width:100%"></canvas></div>
@@ -515,6 +568,14 @@
       data: { labels: chartLabels, datasets: [{ label: 'Spread %', data: chartData, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.18)', fill: true, tension: 0.4, borderWidth: 5, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#22c55e', pointBorderColor: '#22c55e' }] },
       options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: 'white', font: { size: 14 } } } }, scales: { x: { title: { display: true, text: 'X Axis • Time Updates', color: 'white', font: { size: 14, weight: 'bold' } }, ticks: { color: 'white', font: { size: 12 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { title: { display: true, text: 'Y Axis • Spread %', color: 'white', font: { size: 14, weight: 'bold' } }, ticks: { color: 'white', font: { size: 12 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
     });
+  }
+
+  function calculateProfit() {
+    const amount = parseFloat(document.getElementById('calcAmount').value) || 0;
+    if (!currentOpp) return;
+    const spread = parseFloat(currentOpp.spread);
+    const profit = amount * (spread / 100);
+    document.getElementById('calcResult').innerText = `Profit: $${profit.toFixed(2)}`;
   }
 
   function closeDetail() {
@@ -557,6 +618,116 @@
     } catch { container.innerHTML = '<div class="loading">Session expired. Please login again.</div>'; }
   }
 
+  // ===== Referral =====
+  async function loadReferralLink() {
+    try {
+      const res = await fetch('/api/referral', { headers: { Authorization: token } });
+      const data = await res.json();
+      if (data.link) {
+        document.getElementById('referLinkInput').value = data.link;
+      } else {
+        document.getElementById('referLinkInput').value = 'Error loading link';
+      }
+    } catch {
+      document.getElementById('referLinkInput').value = 'Could not load referral link';
+    }
+  }
+
+  function copyReferLink() {
+    const input = document.getElementById('referLinkInput');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+      const feedback = document.getElementById('copyFeedback');
+      feedback.classList.remove('hidden');
+      setTimeout(() => feedback.classList.add('hidden'), 3000);
+    }).catch(() => {
+      // Fallback
+      document.execCommand('copy');
+      const feedback = document.getElementById('copyFeedback');
+      feedback.classList.remove('hidden');
+      setTimeout(() => feedback.classList.add('hidden'), 3000);
+    });
+  }
+
+  // ===== Help / Messaging =====
+  async function loadHelpMessages() {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/messages', { headers: { Authorization: token } });
+      const msgs = await res.json();
+      const container = document.getElementById('chatMessagesUser');
+      if (!msgs.length) {
+        container.innerHTML = '<div class="text-slate-400 text-center py-4">No messages yet.</div>';
+        return;
+      }
+      container.innerHTML = msgs.map(m => `
+        <div class="chat-message ${m.isAdmin ? 'admin' : 'user'}">
+          <div class="text-sm">${m.isAdmin ? '🛡️ Admin' : 'You'}</div>
+          <div>${m.content}</div>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs text-slate-400">${new Date(m.createdAt).toLocaleString()}</span>
+            ${m.isAdmin ? (m.read ? '✅' : '⬜') : ''}
+            ${!m.isAdmin ? `<button onclick="editOwnMessage('${m._id}')" class="text-xs text-blue-400">✏️</button><button onclick="deleteOwnMessage('${m._id}')" class="text-xs text-red-400">🗑️</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
+    } catch {
+      document.getElementById('chatMessagesUser').innerHTML = '<div class="text-slate-400 text-center py-4">Failed to load messages</div>';
+    }
+  }
+
+  async function sendHelpMessage() {
+    const input = document.getElementById('helpInput');
+    const content = input.value.trim();
+    if (!content) return;
+    try {
+      const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: token }, body: JSON.stringify({ content }) });
+      if (res.ok) {
+        input.value = '';
+        loadHelpMessages();
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to send', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  }
+
+  async function editOwnMessage(id) {
+    const newContent = prompt('Edit your message:');
+    if (newContent === null) return;
+    if (!newContent.trim()) { showToast('Content cannot be empty', 'error'); return; }
+    try {
+      const res = await fetch(`/api/message/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: token }, body: JSON.stringify({ content: newContent.trim() }) });
+      if (res.ok) {
+        loadHelpMessages();
+        showToast('Message updated', 'success');
+      } else {
+        showToast('Update failed', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  }
+
+  async function deleteOwnMessage(id) {
+    if (!confirm('Delete this message?')) return;
+    try {
+      const res = await fetch(`/api/message/${id}`, { method: 'DELETE', headers: { Authorization: token } });
+      if (res.ok) {
+        loadHelpMessages();
+        showToast('Message deleted', 'success');
+      } else {
+        showToast('Delete failed', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  }
+
+  // ===== Payment =====
   async function payPro(plan, amount) {
     if (!token) { alert('Please login first'); return; }
     const phoneInput = plan === 'weekly' ? document.getElementById('weeklyPhone') : document.getElementById('monthlyPhone');
