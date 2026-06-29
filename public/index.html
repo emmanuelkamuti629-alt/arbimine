@@ -742,7 +742,12 @@
     btn.disabled = true;
     msgDiv.innerText = '⏳ Please wait... Initializing payment.';
     try {
-      const res = await fetch('/api/pesapal/pay', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: token }, body: JSON.stringify({ plan, amount }) });
+      // Using /api/paystack/pay (updated endpoint)
+      const res = await fetch('/api/paystack/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ plan, amount })
+      });
       const data = await res.json();
       if (data.success && data.authorizationUrl) {
         msgDiv.innerText = 'Redirecting to Paystack...';
