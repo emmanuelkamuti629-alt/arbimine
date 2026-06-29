@@ -191,6 +191,11 @@
       <button class="btn-pro" id="monthlyPayBtn" onclick="payPro('monthly', 350)">Pay with M-Pesa</button>
       <div id="monthlyMessage" class="payment-message"></div>
     </div>
+    <!-- Manual payment status check button -->
+    <div style="margin-top:20px; text-align:center;">
+      <button class="btn-pro" style="background:#334155; width:auto; padding:12px 24px;" onclick="checkPaymentStatusManually()">🔄 Check Last Payment Status</button>
+      <div id="manualStatusResult" class="payment-message" style="margin-top:10px;"></div>
+    </div>
   </div>
 
   <div id="refer" class="section">
@@ -281,7 +286,6 @@
         loadProfile();
         loadReferralLink();
         loadHelpMessages();
-        // Set up polling for new messages every 30s
         setInterval(() => {
           if (document.getElementById('help').classList.contains('active')) {
             loadHelpMessages();
@@ -641,7 +645,6 @@
       feedback.classList.remove('hidden');
       setTimeout(() => feedback.classList.add('hidden'), 3000);
     }).catch(() => {
-      // Fallback
       document.execCommand('copy');
       const feedback = document.getElementById('copyFeedback');
       feedback.classList.remove('hidden');
@@ -751,6 +754,39 @@
     } catch (err) {
       msgDiv.innerText = '❌ Network error. Please try again.';
       btn.disabled = false;
+    }
+  }
+
+  // ===== Manual payment status check =====
+  async function checkPaymentStatusManually() {
+    const resultDiv = document.getElementById('manualStatusResult');
+    if (!token) {
+      resultDiv.innerText = 'Please login first.';
+      resultDiv.style.color = '#ff8a8a';
+      return;
+    }
+    resultDiv.innerText = 'Checking...';
+    resultDiv.style.color = '#ffcc00';
+    try {
+      const res = await fetch('/api/transaction/status', { headers: { Authorization: token } });
+      if (res.status === 404) {
+        resultDiv.innerText = 'No payment found yet.';
+        resultDiv.style.color = '#9ca3af';
+        return;
+      }
+      const data = await res.json();
+      if (data.status) {
+        const statusText = data.status.toUpperCase();
+        const color = data.status === 'success' ? '#00ff99' : (data.status === 'failed' ? '#ff8a8a' : '#ffcc00');
+        resultDiv.innerText = `💰 Last payment: ${statusText} – ${data.plan || 'N/A'} – KES ${data.amount || 0} (Ref: ${data.reference?.slice(-8)})`;
+        resultDiv.style.color = color;
+      } else {
+        resultDiv.innerText = 'No transaction details available.';
+        resultDiv.style.color = '#9ca3af';
+      }
+    } catch (err) {
+      resultDiv.innerText = 'Failed to fetch payment status.';
+      resultDiv.style.color = '#ff8a8a';
     }
   }
 </script>
