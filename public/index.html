@@ -29,7 +29,7 @@
     .page.active { display: block; }
     @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     .stat-card { padding: 16px; border-radius: 20px; background: #0f172a; border: 1px solid rgba(255,255,255,.04); }
-    .opportunity-card { padding: 20px; margin-top: 16px; border-radius: 24px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); transition: .2s; }
+    .opportunity-card { padding: 20px; margin-top: 16px; border-radius: 24px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); transition: .2s; cursor: pointer; }
     .opportunity-card:hover { transform: translateY(-3px); border-color: rgba(34,197,94,.3); }
     .opportunity-card .top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
     .opportunity-card .symbol { font-size: 24px; font-weight: 700; }
@@ -47,22 +47,41 @@
     .badge-nontradable { background: #5a1a1a; color: #f87171; }
     .badge-profit { background: #1a2e2a; color: #4ade80; }
     .badge-loss { background: #2a1a1a; color: #f87171; }
-    .filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 8px 14px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: .2s; white-space: nowrap; }
-    .filter-btn.active { background: #22c55e; color: #0a0c15; border-color: #22c55e; font-weight: 600; }
-    .refresh-btn { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; padding: 4px 10px; border-radius: 30px; transition: .2s; }
-    .refresh-btn:hover { background: rgba(255,255,255,.04); color: #22c55e; }
+    .detail-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.05); }
+    .detail-item { background: rgba(255,255,255,.02); border-radius: 12px; padding: 8px 12px; text-align: center; }
+    .detail-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+    .detail-item .value { font-weight: 600; margin-top: 2px; }
     .search-input { width: 100%; padding: 12px 16px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 40px; color: white; outline: none; transition: .2s; }
     .search-input:focus { border-color: #22c55e; }
+    .refresh-btn { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; padding: 4px 10px; border-radius: 30px; transition: .2s; }
+    .refresh-btn:hover { background: rgba(255,255,255,.04); color: #22c55e; }
     .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,.95); backdrop-filter: blur(12px); padding: 14px 24px; border-radius: 60px; border-left: 4px solid; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,.5); max-width: 90%; text-align: center; display: none; }
     .toast.success { border-left-color: #22c55e; color: #22c55e; }
     .toast.error { border-left-color: #ef4444; color: #ef4444; }
     .toast.info { border-left-color: #3b82f6; color: #3b82f6; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
     .modal.show { display: flex; }
-    .modal-content { max-width: 420px; width: 92%; background: #0f172a; border-radius: 32px; padding: 24px; border: 1px solid rgba(255,255,255,.06); max-height: 80vh; overflow-y: auto; }
-    .pwd-wrapper { position: relative; width: 100%; }
-    .pwd-wrapper input { padding-right: 50px; }
-    .pwd-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; }
+    .modal-content { max-width: 520px; width: 100%; background: #0f172a; border-radius: 32px; padding: 28px; border: 1px solid rgba(255,255,255,.06); max-height: 90vh; overflow-y: auto; }
+    .modal-content .close-btn { float: right; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; transition: .2s; }
+    .modal-content .close-btn:hover { color: white; }
+    .modal-content h2 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .modal-content .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+    .modal-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .modal-detail-item { background: rgba(255,255,255,.02); border-radius: 16px; padding: 12px; text-align: center; }
+    .modal-detail-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+    .modal-detail-item .value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .modal-detail-item .value.green { color: #4ade80; }
+    .modal-detail-item .value.red { color: #f87171; }
+    .modal-detail-item .value.yellow { color: #fbbf24; }
+    .execution-statement { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.2); border-radius: 16px; padding: 16px; margin-top: 16px; text-align: center; }
+    .execution-statement p { font-size: 15px; line-height: 1.6; color: #d1d5db; }
+    .execution-statement strong { color: #22c55e; }
+    .exchange-filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 6px 14px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 6px; }
+    .exchange-filter-btn.active { background: #22c55e; color: #070b1a; border-color: #22c55e; font-weight: 600; }
+    .exchange-filter-btn .check { display: none; }
+    .exchange-filter-btn.active .check { display: inline; }
+    .loading-skeleton { height: 120px; border-radius: 20px; margin-top: 16px; background: linear-gradient(90deg, #111827 20%, #1f2937 50%, #111827 80%); background-size: 200% 100%; animation: load 1.3s infinite; }
+    @keyframes load { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .chat-message { padding: 8px 14px; border-radius: 16px; margin-bottom: 8px; max-width: 80%; }
     .chat-message.user { background: #0f172a; align-self: flex-end; }
     .chat-message.admin { background: #1a2a5a; align-self: flex-start; }
@@ -84,21 +103,13 @@
     .settings-card { max-width: 500px; margin: 0 auto; }
     .settings-card .setting-group { margin-top: 20px; padding: 16px; background: rgba(255,255,255,.03); border-radius: 16px; border: 1px solid rgba(255,255,255,.04); }
     .settings-card .setting-group label { display: block; color: #94a3b8; font-size: 14px; margin-bottom: 6px; }
-    .settings-card .setting-group input, .settings-card .setting-group select { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; color: white; outline: none; }
-    .settings-card .setting-group input:focus { border-color: #22c55e; }
+    .settings-card .setting-group select { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; color: white; outline: none; }
+    .settings-card .setting-group select:focus { border-color: #22c55e; }
     .empty-state { text-align: center; padding: 40px 20px; }
     .empty-state .icon { font-size: 60px; }
     .empty-state .title { font-size: 22px; font-weight: 600; margin-top: 16px; }
     .empty-state .desc { color: #94a3b8; margin-top: 8px; }
-    .exchange-filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 6px 14px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 6px; }
-    .exchange-filter-btn.active { background: #22c55e; color: #070b1a; border-color: #22c55e; font-weight: 600; }
-    .exchange-filter-btn .check { display: none; }
-    .exchange-filter-btn.active .check { display: inline; }
-    .detail-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.05); }
-    .detail-item { background: rgba(255,255,255,.02); border-radius: 12px; padding: 8px 12px; text-align: center; }
-    .detail-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
-    .detail-item .value { font-weight: 600; margin-top: 2px; }
-    @media (max-width: 640px) { .exchange-row { flex-direction: column; } .detail-row { grid-template-columns: 1fr 1fr; } .feature-grid { grid-template-columns: 1fr; } .bottom-nav button { font-size: 10px; } .bottom-nav button .icon { font-size: 16px; } }
+    @media (max-width: 640px) { .exchange-row { flex-direction: column; } .modal-detail-grid { grid-template-columns: 1fr; } .detail-row { grid-template-columns: 1fr 1fr; } .bottom-nav button { font-size: 10px; } .bottom-nav button .icon { font-size: 16px; } }
   </style>
 </head>
 <body>
@@ -144,6 +155,29 @@
     <div class="text-slate-400 mt-1" id="featureModalNum">#0</div>
     <p id="featureModalDesc" class="text-slate-300 mt-4 leading-relaxed">Description</p>
     <button class="btn w-full mt-6" onclick="closeFeatureModal()">Close</button>
+  </div>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+<div id="detailModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeDetailModal()">×</button>
+    <h2 id="detailModalSymbol" class="text-3xl font-bold">BTC</h2>
+    <div class="subtitle" id="detailModalSubtitle">Buy on <span id="detailModalBuyEx">—</span> · Sell on <span id="detailModalSellEx">—</span></div>
+    <div class="modal-detail-grid">
+      <div class="modal-detail-item"><div class="label">Buy Price</div><div id="detailModalBuyPrice" class="value">$0.00</div></div>
+      <div class="modal-detail-item"><div class="label">Sell Price</div><div id="detailModalSellPrice" class="value">$0.00</div></div>
+      <div class="modal-detail-item"><div class="label">Price Difference</div><div id="detailModalPriceDiff" class="value green">$0.00</div></div>
+      <div class="modal-detail-item"><div class="label">Spread</div><div id="detailModalSpread" class="value green">0.00%</div></div>
+      <div class="modal-detail-item"><div class="label">Est. Profit (100 USDT)</div><div id="detailModalProfit" class="value green">$0.00</div></div>
+      <div class="modal-detail-item"><div class="label">Risk Level</div><div id="detailModalRisk" class="value yellow">Medium</div></div>
+      <div class="modal-detail-item"><div class="label">Confidence</div><div id="detailModalConfidence" class="value green">0%</div></div>
+      <div class="modal-detail-item"><div class="label">Liquidity Score</div><div id="detailModalLiquidity" class="value blue">0%</div></div>
+    </div>
+    <div class="execution-statement">
+      <p id="detailModalExecution">Buy on <strong>KuCoin</strong> and sell on <strong>MEXC</strong> to capture the spread.</p>
+    </div>
+    <button class="btn w-full mt-4" onclick="closeDetailModal()">Close</button>
   </div>
 </div>
 
@@ -615,6 +649,64 @@
     renderOpportunities(filtered);
   }
 
+  // ========== DETAIL MODAL ==========
+  function openDetailModal(opp) {
+    if (!opp) return;
+    // Populate modal with clean data
+    document.getElementById('detailModalSymbol').innerText = opp.symbol || '—';
+    document.getElementById('detailModalBuyEx').innerText = opp.buyExchange || '—';
+    document.getElementById('detailModalSellEx').innerText = opp.sellExchange || '—';
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    document.getElementById('detailModalBuyPrice').innerText = '$' + buy.toFixed(8);
+    document.getElementById('detailModalSellPrice').innerText = '$' + sell.toFixed(8);
+    const diff = sell - buy;
+    document.getElementById('detailModalPriceDiff').innerText = '$' + diff.toFixed(8);
+    const spread = parseFloat(opp.spread) || 0;
+    document.getElementById('detailModalSpread').innerText = spread.toFixed(2) + '%';
+    // Estimated profit per 100 USDT
+    const profit = diff * 100;
+    document.getElementById('detailModalProfit').innerText = '$' + profit.toFixed(2);
+    // Risk level
+    const risk = opp.risk || 'medium';
+    const riskDisplay = risk.charAt(0).toUpperCase() + risk.slice(1);
+    const riskColor = risk === 'low' ? 'green' : risk === 'high' ? 'red' : 'yellow';
+    document.getElementById('detailModalRisk').innerText = riskDisplay;
+    document.getElementById('detailModalRisk').className = 'value ' + riskColor;
+    // Confidence (based on spread and liquidity)
+    const liquidity = parseFloat(opp.liquidity) || 0;
+    let confidence = 60;
+    if (spread > 1 && liquidity > 10000) confidence = 90;
+    else if (spread > 0.5 && liquidity > 5000) confidence = 75;
+    else if (spread > 0.3) confidence = 65;
+    else confidence = 50;
+    document.getElementById('detailModalConfidence').innerText = confidence + '%';
+    document.getElementById('detailModalConfidence').className = 'value ' + (confidence >= 70 ? 'green' : 'yellow');
+    // Liquidity score
+    let liqScore = 60;
+    if (liquidity > 50000) liqScore = 95;
+    else if (liquidity > 20000) liqScore = 85;
+    else if (liquidity > 10000) liqScore = 75;
+    else if (liquidity > 5000) liqScore = 65;
+    document.getElementById('detailModalLiquidity').innerText = liqScore + '%';
+    document.getElementById('detailModalLiquidity').className = 'value ' + (liqScore >= 70 ? 'green' : 'yellow');
+    // Execution statement
+    document.getElementById('detailModalExecution').innerHTML =
+      `Buy on <strong>${opp.buyExchange}</strong> and sell on <strong>${opp.sellExchange}</strong> to capture the spread.`;
+
+    // Show modal
+    document.getElementById('detailModal').classList.add('show');
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('show');
+  }
+  // Click outside modal to close
+  document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDetailModal();
+  });
+
+  // ========== RENDER OPPORTUNITIES ==========
   function renderOpportunities(opps) {
     const container = document.getElementById('opportunitiesContainer');
     if (!opps.length) {
@@ -629,10 +721,10 @@
       const spread = parseFloat(o.spread) || 0;
       const buyPrice = parseFloat(o.buyPrice) || 0;
       const sellPrice = parseFloat(o.sellPrice) || 0;
-      const estimatedProfit = (sellPrice - buyPrice) * 100; // rough estimate per 100 USDT
+      const estimatedProfit = (sellPrice - buyPrice) * 100;
       const profitClass = estimatedProfit >= 0 ? 'badge-profit' : 'badge-loss';
       html += `
-        <div class="opportunity-card">
+        <div class="opportunity-card" onclick='openDetailModal(${JSON.stringify(o).replace(/'/g,"&#39;")})'>
           <div class="top-row">
             <div class="symbol">${o.symbol}</div>
             <div class="spread">${spread.toFixed(2)}%</div>
@@ -664,7 +756,7 @@
             </div>
             <div class="detail-item">
               <div class="label">Est. Profit (per 100 USDT)</div>
-              <div class="value"><span class="badge ${profitClass}">${estimatedProfit.toFixed(2)} USDT</span></div>
+              <div class="value"><span class="badge ${profitClass}">$${estimatedProfit.toFixed(2)}</span></div>
             </div>
           </div>
         </div>
