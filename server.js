@@ -2723,8 +2723,7 @@ const exchangeClients = {
   kucoin: new ccxt.kucoin({ enableRateLimit: true }),
   gateio: new ccxt.gateio({ enableRateLimit: true }),
   mexc: new ccxt.mexc({ enableRateLimit: true }),
-  bingx: new ccxt.bingx({ enableRateLimit: true }),
-  htx: new ccxt.htx({ enableRateLimit: true })
+  htx: new ccxt.huobi({ enableRateLimit: true })
 };
 
 // Load markets once
