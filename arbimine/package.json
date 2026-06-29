@@ -1,0 +1,15 @@
+{
+  "name": "arbitrage-master",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "4.17.1",
+    "mongoose": "8.6.3",
+    "dotenv": "16.4.5",
+    "axios": "1.7.2",
+    "ccxt": "4.5.60"
+  }
+}

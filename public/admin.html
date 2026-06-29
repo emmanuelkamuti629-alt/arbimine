@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    .chat-box { border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin: 20px 0; padding: 10px; }
+    .message { margin: 5px 0; }
+    .sent { color: #888; }
+    .delivered { color: #fff; background: #333; }
+    .read { color: #0f0; }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  <div id="login">
+    <h2>Login</h2>
+    <input type="text" id="adminUser" placeholder="Username" value="admin"><br>
+    <input type="password" id="adminPass" placeholder="Password" value="admin123"><br>
+    <button onclick="adminLogin()">Login</button>
+  </div>
+  <div id="adminContent" style="display:none;">
+    <h2>Users</h2>
+    <table id="usersTable">
+      <thead><tr><th>Username</th><th>Email</th><th>Plan</th><th>Active</th><th>Blocked</th><th>Actions</th></tr></thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+    <h2>Chat with User</h2>
+    <select id="chatUserSelect" onchange="loadChat()">
+      <option value="">Select user</option>
+    </select>
+    <div id="chatMessages" class="chat-box"></div>
+    <input type="text" id="chatInput" placeholder="Type message..." onkeydown="if(event.key==='Enter') sendAdminMessage()">
+    <button onclick="sendAdminMessage()">Send</button>
+  </div>
+  <script>
+    let token = '';
+    let socket = null;
+    let currentUserId = '';
+    const adminId = 'admin';
+
+    function adminLogin() {
+      const username = document.getElementById('adminUser').value;
+      const password = document.getElementById('adminPass').value;
+      fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.token) {
+          token = data.token;
+          document.getElementById('login').style.display = 'none';
+          document.getElementById('adminContent').style.display = 'block';
+          loadUsers();
+          initSocket();
+        } else {
+          alert('Login failed: ' + data.error);
+        }
+      });
+    }
+
+    function loadUsers() {
+      fetch('/api/admin/users', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(users => {
+        const tbody = document.getElementById('usersBody');
+        tbody.innerHTML = '';
+        const select = document.getElementById('chatUserSelect');
+        select.innerHTML = '<option value="">Select user</option>';
+        users.forEach(user => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.username}</td>
+            <td>${user.email}</td>
+            <td>${user.subscription.plan}</td>
+            <td>${user.isActive ? '✅' : '❌'}</td>
+            <td>${user.isBlocked ? '🚫' : '✅'}</td>
+            <td>
+              <button onclick="toggleActive('${user._id}')">Toggle Active</button>
+              <button onclick="toggleBlock('${user._id}')">Toggle Block</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          const opt = document.createElement('option');
+          opt.value = user._id;
+          opt.text = user.username;
+          select.appendChild(opt);
+        });
+      });
+    }
+
+    function toggleActive(id) {
+      fetch(`/api/admin/user/${id}/activate`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(() => loadUsers());
+    }
+
+    function toggleBlock(id) {
+      fetch(`/api/admin/user/${id}/block`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(() => loadUsers());
+    }
+
+    function initSocket() {
+      socket = io();
+      socket.on('connect', () => {
+        socket.emit('join', adminId);
+      });
+      socket.on('new_message', (msg) => {
+        if (msg.from === currentUserId || msg.to === currentUserId) {
+          displayMessage(msg);
+        }
+      });
+      socket.on('message_status', (data) => {
+        updateMessageStatus(data.id, data.status);
+      });
+    }
+
+    function loadChat() {
+      const userId = document.getElementById('chatUserSelect').value;
+      if (!userId) return;
+      currentUserId = userId;
+      fetch(`/api/messages/${userId}`)
+        .then(res => res.json())
+        .then(messages => {
+          const box = document.getElementById('chatMessages');
+          box.innerHTML = '';
+          messages.forEach(msg => displayMessage(msg));
+          box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    function displayMessage(msg) {
+      const box = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.dataset.id = msg._id;
+      const sender = msg.from === adminId ? 'Admin' : 'User';
+      const statusSymbol = msg.status === 'sent' ? '✓' : msg.status === 'delivered' ? '✓✓' : '✓✓✓';
+      const color = msg.status === 'sent' ? 'sent' : msg.status === 'delivered' ? 'delivered' : 'read';
+      div.innerHTML = `<strong>${sender}:</strong> ${msg.content} <span class="${color}">${statusSymbol}</span>`;
+      if (msg.edited) div.innerHTML += ' (edited)';
+      // Allow delete/edit (only for messages sent by admin)
+      if (msg.from === adminId) {
+        div.innerHTML += ` <button onclick="editMessage('${msg._id}')">Edit</button>`;
+        div.innerHTML += ` <button onclick="deleteMessage('${msg._id}')">Delete</button>`;
+      }
+      box.appendChild(div);
+      // Mark as read if the message is to admin and not read
+      if (msg.to === adminId && msg.status !== 'read') {
+        socket.emit('mark_read', msg._id);
+      }
+    }
+
+    function updateMessageStatus(id, status) {
+      const divs = document.querySelectorAll(`.message[data-id="${id}"]`);
+      divs.forEach(div => {
+        const span = div.querySelector('span');
+        if (span) {
+          span.className = status;
+          span.textContent = status === 'sent' ? '✓' : status === 'delivered' ? '✓✓' : '✓✓✓';
+        }
+      });
+    }
+
+    function sendAdminMessage() {
+      const input = document.getElementById('chatInput');
+      const content = input.value.trim();
+      if (!content || !currentUserId) return;
+      const msg = { from: adminId, to: currentUserId, content };
+      socket.emit('send_message', msg);
+      input.value = '';
+    }
+
+    function editMessage(id) {
+      const newContent = prompt('Edit message:');
+      if (newContent) {
+        fetch(`/api/messages/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: newContent, userId: adminId })
+        })
+        .then(() => loadChat());
+      }
+    }
+
+    function deleteMessage(id) {
+      if (confirm('Delete this message?')) {
+        fetch(`/api/messages/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: adminId })
+        })
+        .then(() => loadChat());
+      }
+    }
+  </script>
+</body>
+</html>
