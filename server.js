@@ -78,6 +78,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const app = express();
+const { calculateScore } = require('./ai-score');
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,

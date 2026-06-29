@@ -935,7 +935,7 @@
     document.getElementById('detailSymbol').innerText = 'Loading...';
     try {
       const res = await fetch(`/api/opportunity/${id}/details`, { headers: { Authorization: token } });
-      if (!res.ok) throw new Error('Failed to load details');
+      if (!res.ok) { console.error(await res.text()); throw new Error("API error loading details"); }
       const opp = await res.json();
       if (opp.error) throw new Error(opp.error);
       currentDetailOpp = opp;
@@ -947,59 +947,13 @@
     }
   }
 
-  function displayDetails(opp) {
-    document.getElementById('detailSymbol').innerText = opp.symbol || '—';
-    document.getElementById('detailBuyExchange').innerText = opp.buyExchange || '—';
-    document.getElementById('detailSellExchange').innerText = opp.sellExchange || '—';
-    document.getElementById('detailSpread').innerText = (opp.spread || '0') + '%';
-    const buy = parseFloat(opp.buyPrice) || 0;
-    const sell = parseFloat(opp.sellPrice) || 0;
-    document.getElementById('detailBuyPrice').innerText = '$' + buy.toFixed(8);
-    document.getElementById('detailSellPrice').innerText = '$' + sell.toFixed(8);
-    document.getElementById('detailPriceDiff').innerText = '$' + (sell - buy).toFixed(8);
-    const profit = (sell - buy) * 100;
-    document.getElementById('detailProfit').innerText = '$' + profit.toFixed(2);
-
-    // Additional metrics (simulated)
-    const depth = (buy + sell) / 2 * 1000 * (0.8 + 0.4 * Math.random());
-    const liqScore = opp.liquidityScore || Math.min(95, 60 + Math.random() * 30);
-    const marketImpact = (Math.random() * 0.5 + 0.1).toFixed(2);
-    const maxTrade = depth * (0.5 + 0.5 * Math.random());
-    const whale = Math.random() > 0.7 ? '🚨 Large order detected' : 'None';
-    const hiddenLiq = depth * (0.1 + 0.3 * Math.random());
-    document.getElementById('detailDepth').innerText = '$' + depth.toFixed(0);
-    document.getElementById('detailLiquidityScore').innerText = liqScore.toFixed(0) + '%';
-    document.getElementById('detailMarketImpact').innerText = marketImpact + '%';
-    document.getElementById('detailMaxTrade').innerText = '$' + maxTrade.toFixed(0);
-    document.getElementById('detailWhale').innerText = whale;
-    document.getElementById('detailHiddenLiq').innerText = '$' + hiddenLiq.toFixed(0);
-
-    // Networks
-    let netHtml = '';
-    const nets = { ...(opp.buyNetworks || {}), ...(opp.sellNetworks || {}) };
-    const netEntries = Object.values(nets).slice(0, 8);
-    if (netEntries.length) {
-      netEntries.forEach(n => {
-        netHtml += `
-          <div class="flex justify-between border-b border-slate-700 py-2">
-            <span class="font-medium">${n.name || '—'}</span>
-            <span>Fee: ${n.fee || 0} ${n.feeUnit || ''}</span>
-            <span>Withdraw ${n.withdraw ? '✅' : '❌'}</span>
-            <span>Deposit ${n.deposit ? '✅' : '❌'}</span>
-            <span>Conf: ${Math.floor(4 + Math.random()*6)}</span>
-          </div>
-        `;
-      });
-    } else {
-      netHtml = '<div class="text-slate-400">No network data available.</div>';
-    }
-    document.getElementById('detailNetworks').innerHTML = netHtml;
+  document.getElementById('detailNetworks').innerHTML = netHtml;
 
     const netNames = Object.keys(nets);
     const cheapest = netNames.length ? netNames.reduce((a,b) => (nets[a].fee || 0) < (nets[b].fee || 0) ? a : b) : '—';
     const fastest = netNames.length ? netNames.find(n => n.includes('TRC20') || n.includes('BEP20') || n.includes('ERC20')) || netNames[0] : '—';
-    const aiRec = netNames.length ? netNames[Math.floor(Math.random()*netNames.length)] : '—';
-    const congestion = ['Low', 'Medium', 'High'][Math.floor(Math.random()*3)];
+    const aiRec = netNames.length ? netNames[Math.floor(Math.random() || 0*netNames.length)] : '—';
+    const congestion = ['Low', 'Medium', 'High'][Math.floor(Math.random() || 0*3)];
     document.getElementById('cheapestNet').innerText = cheapest;
     document.getElementById('fastestNet').innerText = fastest;
     document.getElementById('aiNetRec').innerText = aiRec;
@@ -1014,13 +968,13 @@
     document.getElementById('slippage1').innerText = '$' + (depth * 0.01).toFixed(2);
 
     // AI scores
-    const stability = Math.min(95, 70 + Math.random()*25);
+    const stability = Math.min(95, 70 + Math.random() || 0*25);
     const transfer = opp.tradable ? 96 : 45;
     const volatility = parseFloat(opp.spread) * 5 + 5;
-    const confidence = Math.min(98, 60 + Math.random()*30);
+    const confidence = Math.min(98, 60 + Math.random() || 0*30);
     const riskLabel = opp.risk || 'medium';
-    const marketImpactScore = (Math.random() * 30 + 20).toFixed(0);
-    const whaleActivity = Math.random() > 0.6 ? 'High' : 'Low';
+    const marketImpactScore = (Math.random() || 0 * 30 + 20).toFixed(0);
+    const whaleActivity = Math.random() || 0 > 0.6 ? 'High' : 'Low';
     document.getElementById('aiSpreadStab').innerText = Math.round(stability) + '%';
     document.getElementById('aiLiquidity').innerText = Math.round(liqScore) + '%';
     document.getElementById('aiTransfer').innerText = transfer + '%';
@@ -1039,14 +993,14 @@
 
     // Arbitrage types
     document.getElementById('arbCross').innerText = 'Yes';
-    document.getElementById('arbTriangular').innerText = Math.random() > 0.5 ? 'Potential' : '—';
-    document.getElementById('arbStable').innerText = Math.random() > 0.5 ? 'Found' : '—';
-    document.getElementById('arbFutures').innerText = Math.random() > 0.5 ? 'Premium 0.5%' : '—';
-    document.getElementById('arbFunding').innerText = Math.random() > 0.5 ? '0.01%' : '—';
-    document.getElementById('arbDex').innerText = Math.random() > 0.5 ? '0.3% diff' : '—';
-    document.getElementById('arbRegional').innerText = Math.random() > 0.5 ? '0.2%' : '—';
-    document.getElementById('arbMulti').innerText = Math.random() > 0.5 ? '3 hops' : '—';
-    document.getElementById('arbRanking').innerText = Math.floor(30 + Math.random() * 60) + '/100';
+    document.getElementById('arbTriangular').innerText = Math.random() || 0 > 0.5 ? 'Potential' : '—';
+    document.getElementById('arbStable').innerText = Math.random() || 0 > 0.5 ? 'Found' : '—';
+    document.getElementById('arbFutures').innerText = Math.random() || 0 > 0.5 ? 'Premium 0.5%' : '—';
+    document.getElementById('arbFunding').innerText = Math.random() || 0 > 0.5 ? '0.01%' : '—';
+    document.getElementById('arbDex').innerText = Math.random() || 0 > 0.5 ? '0.3% diff' : '—';
+    document.getElementById('arbRegional').innerText = Math.random() || 0 > 0.5 ? '0.2%' : '—';
+    document.getElementById('arbMulti').innerText = Math.random() || 0 > 0.5 ? '3 hops' : '—';
+    document.getElementById('arbRanking').innerText = Math.floor(30 + Math.random() || 0 * 60) + '/100';
 
     // Charts
     const spreadData = [parseFloat(opp.spread)*0.6, parseFloat(opp.spread)*0.75, parseFloat(opp.spread)*0.9, parseFloat(opp.spread)*1.05, parseFloat(opp.spread)*0.95, parseFloat(opp.spread)];
@@ -1082,7 +1036,7 @@
     const depositNet = sellNets.length ? sellNets[0].name : '—';
     document.getElementById('execWithdrawNetwork').innerText = withdrawNet;
     document.getElementById('execDepositNetwork').innerText = depositNet;
-    document.getElementById('execDepositAddress').innerText = '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
+    document.getElementById('execDepositAddress').innerText = '0x' + Array.from({length: 40}, () => Math.floor(Math.random() || 0*16).toString(16)).join('');
 
     const buyEx = opp.buyExchange.toLowerCase();
     fetch(`/api/balance/${buyEx}`, { headers: { Authorization: token } })
@@ -1454,3 +1408,50 @@
 </script>
 </body>
 </html>
+
+function displayDetails(opp) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = (val ?? "—");
+  };
+
+  // Core fields
+  set("detailSymbol", opp.symbol);
+  set("detailBuyExchange", opp.buyExchange);
+  set("detailSellExchange", opp.sellExchange);
+  set("detailSpread", (opp.spread || 0) + "%");
+
+  const buy = parseFloat(opp.buyPrice) || 0;
+  const sell = parseFloat(opp.sellPrice) || 0;
+
+  set("detailBuyPrice", "$" + buy.toFixed(8));
+  set("detailSellPrice", "$" + sell.toFixed(8));
+  set("detailPriceDiff", "$" + (sell - buy).toFixed(8));
+
+  const profit = (sell - buy) * 100;
+  set("detailProfit", "$" + profit.toFixed(2));
+
+  // Risk + confidence
+  const risk = opp.risk || "medium";
+  const confidence = opp.confidence || Math.round(60 + Math.random() * 30);
+
+  set("detailRisk", risk);
+  set("detailConfidence", confidence + "%");
+
+  // Liquidity simulation (safe fallback)
+  const depth = (buy + sell) / 2 * 1000;
+  const liqScore = opp.liquidityScore || Math.round(70 + Math.random() * 20);
+
+  set("detailDepth", "$" + depth.toFixed(0));
+  set("detailLiquidityScore", liqScore + "%");
+
+  // Recommendation text
+  const rec =
+    `Buy on ${opp.buyExchange || "—"} and sell on ${opp.sellExchange || "—"}. ` +
+    `Estimated profit: $${profit.toFixed(2)}. ` +
+    `Risk: ${risk.toUpperCase()}. ` +
+    `Confidence: ${confidence}%.`;
+
+  const recEl = document.getElementById("aiRecommendation");
+  if (recEl) recEl.innerText = rec;
+}
