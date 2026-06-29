@@ -1,20 +1,3 @@
-
-let BOT_RUNNING = false;
-
-function startBot(){
-  BOT_RUNNING = true;
-  console.log("🟢 BOT STARTED");
-}
-
-function stopBot(){
-  BOT_RUNNING = false;
-  console.log("🔴 BOT STOPPED");
-}
-
-function isTradingAllowed(){
-  return BOT_RUNNING;
-}
-
 require("dotenv").config();
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -188,7 +171,7 @@ const blockedUserSchema = new mongoose.Schema({
   blockedAt: { type: Date, default: Date.now }
 });
 
-const User = mongoose.model('User', userSchema);
+// Removed duplicate User model declaration
 const Session = mongoose.model('Session', sessionSchema);
 const Transaction = mongoose.model('Transaction', transactionSchema);
 const Message = mongoose.model('Message', messageSchema);
@@ -1960,7 +1943,6 @@ function findArbitrageOpportunities(allData) {
 
 
 
-// ==================== DATA COLLECTOR ====================
 
 // ==================== DATA COLLECTOR ====================
 
@@ -2054,8 +2036,6 @@ async function executeArbitrage(opportunity, exchanges) {
 
 // ==================== EXECUTION ENGINE ====================
 
-// ==================== EXECUTION ENGINE ====================
-
 const AUTO_TRADE = false; // ⚠️ safety switch (DO NOT ENABLE YET)
 
 // Simple fee buffer (adjust per exchange later)
@@ -2115,8 +2095,6 @@ async function executeArbitrage(opportunity) {
 }
 
 
-
-// ==================== TRADE ORCHESTRATOR ====================
 
 // ==================== TRADE ORCHESTRATOR ====================
 
@@ -2185,7 +2163,6 @@ async function processArbitrageOpportunities() {
 
 
 
-// ==================== LIVE SCANNER LOOP ====================
 
 // ==================== LIVE SCANNER LOOP ====================
 
@@ -2223,7 +2200,6 @@ startScanner();
 
 
 
-// ==================== RISK ENGINE ====================
 
 // ==================== RISK ENGINE ====================
 
@@ -2300,7 +2276,6 @@ function isTradeSafe(opportunity) {
 
 
 
-// ==================== BALANCE CHECKER ====================
 
 // ==================== BALANCE CHECKER ====================
 
