@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ArbiMine • Arbitrage Intelligence</title>
   <style>
-    /* ---------- RESET & BASE ---------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #0a0c15;
@@ -17,7 +16,6 @@
     input, button { font-family: inherit; }
     .hidden { display: none !important; }
 
-    /* ---------- AUTH CONTAINER ---------- */
     .auth-container {
       max-width: 400px;
       margin: 80px auto;
@@ -81,7 +79,6 @@
       margin-bottom: 12px;
     }
 
-    /* ---------- DASHBOARD ---------- */
     .dashboard { display: none; }
     .section {
       display: none;
@@ -103,11 +100,9 @@
       padding: 6px 14px;
       border-radius: 30px;
       font-size: 12px;
-      color: #9ca3af;
     }
     .badge.tier-green { color: #00ff99; font-weight: 600; }
 
-    /* ---------- BOTTOM NAV ---------- */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -135,7 +130,6 @@
     .nav-item .icon { font-size: 24px; }
     .nav-item.active { color: #00ff99; }
 
-    /* ---------- CARDS ---------- */
     .card {
       background: #141824;
       border-radius: 16px;
@@ -158,7 +152,6 @@
     .change.positive { color: #00ff99; }
     .change.negative { color: #ff6b6b; }
 
-    /* ---------- PRO / SUBSCRIPTION ---------- */
     .plan-card {
       display: flex;
       justify-content: space-between;
@@ -169,7 +162,9 @@
       margin-bottom: 12px;
       border: 1px solid transparent;
       transition: 0.2s;
+      cursor: pointer;
     }
+    .plan-card:hover { border-color: #00ff9944; }
     .plan-card.active-plan {
       border-color: #00ff99;
       background: #00ff9911;
@@ -190,7 +185,6 @@
       cursor: not-allowed;
     }
 
-    /* ---------- PROFILE ---------- */
     .referral-box {
       display: flex;
       align-items: center;
@@ -227,7 +221,98 @@
       margin-top: 8px;
     }
 
-    /* ---------- RESPONSIVE ---------- */
+    /* ===== Help Tab / Chat ===== */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 200px);
+      min-height: 350px;
+      border: 1px solid #1e2538;
+      border-radius: 16px;
+      background: #141824;
+      overflow: hidden;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .message-bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: #1e2538;
+      align-self: flex-start;
+      position: relative;
+      word-break: break-word;
+    }
+    .message-bubble.own {
+      align-self: flex-end;
+      background: #00ff9933;
+      border: 1px solid #00ff9944;
+    }
+    .message-bubble.admin {
+      background: #2a3349;
+    }
+    .message-bubble .msg-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .message-bubble .status-tick {
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    .status-sent { color: #666; }
+    .status-delivered { color: #ccc; }
+    .status-read { color: #00ff99; }
+    .msg-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      justify-content: flex-end;
+    }
+    .msg-actions button {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .msg-actions button:hover { color: #00ff99; }
+    .chat-input-area {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      background: #1e2538;
+      border-top: 1px solid #2a3349;
+    }
+    .chat-input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #0a0c15;
+      border: 1px solid #2a3349;
+      border-radius: 30px;
+      color: #fff;
+      font-size: 16px;
+    }
+    .chat-input-area button {
+      padding: 12px 24px;
+      background: #00ff99;
+      border: none;
+      border-radius: 30px;
+      font-weight: 600;
+      color: #0a0c15;
+      cursor: pointer;
+    }
+
     @media (max-width: 480px) {
       .auth-container { margin: 40px 16px; }
     }
@@ -251,10 +336,10 @@
 
   <!-- Register Form -->
   <div id="registerForm" class="hidden">
-    <input type="text" id="regUsername" placeholder="Username">
-    <input type="email" id="regEmail" placeholder="Email">
-    <input type="text" id="regMpesa" placeholder="M-Pesa Number">
-    <input type="password" id="regPassword" placeholder="Password">
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="email" id="regEmail" placeholder="Email" required>
+    <input type="tel" id="regMpesa" placeholder="M-Pesa Number (e.g., 2547XXXXXXXX)" pattern="[0-9]+" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
     <button onclick="register()">Create Account</button>
     <div class="toggle-link">Already have an account? <span onclick="showLogin()">Log In</span></div>
   </div>
@@ -263,7 +348,7 @@
 <!-- ============ DASHBOARD ============ -->
 <div id="dashboard" class="dashboard">
 
-  <!-- HOME SECTION -->
+  <!-- HOME -->
   <div id="sectionHome" class="section active">
     <div class="home-header">
       <h2>Welcome, <span id="userName">User</span></h2>
@@ -275,9 +360,7 @@
         <span class="price" id="btcPrice">—</span>
         <span class="change" id="btcChange">—</span>
       </div>
-      <div style="margin-top:8px; font-size:14px; color:#9ca3af;">
-        BTC/USDT (Binance)
-      </div>
+      <div style="margin-top:8px; font-size:14px; color:#9ca3af;">BTC/USDT (Binance)</div>
     </div>
     <div class="card">
       <h3>📊 ETH/USDT</h3>
@@ -288,35 +371,33 @@
     </div>
   </div>
 
-  <!-- PRO SECTION -->
+  <!-- PRO -->
   <div id="sectionPro" class="section">
     <h2 style="margin-bottom:16px;">🚀 Go Pro</h2>
     <p style="color:#9ca3af; margin-bottom:20px;">Unlock premium features with a subscription.</p>
-
     <div class="card">
       <h3>Your Current Plan</h3>
       <p><strong>Plan:</strong> <span id="proPlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="proExpiry">—</span></p>
     </div>
-
     <h3 style="margin:24px 0 12px;">Choose a Plan</h3>
-    <div class="plan-card" id="planWeekly">
+    <div class="plan-card" id="planWeekly" onclick="subscribe('weekly')">
       <div>
         <div class="plan-name">Weekly</div>
         <div class="plan-price">KES 100 / week</div>
       </div>
-      <button onclick="subscribe('weekly')">Subscribe</button>
+      <button onclick="event.stopPropagation(); subscribe('weekly')">Subscribe</button>
     </div>
-    <div class="plan-card" id="planMonthly">
+    <div class="plan-card" id="planMonthly" onclick="subscribe('monthly')">
       <div>
         <div class="plan-name">Monthly</div>
         <div class="plan-price">KES 350 / month</div>
       </div>
-      <button onclick="subscribe('monthly')">Subscribe</button>
+      <button onclick="event.stopPropagation(); subscribe('monthly')">Subscribe</button>
     </div>
   </div>
 
-  <!-- PROFILE SECTION -->
+  <!-- PROFILE -->
   <div id="sectionProfile" class="section">
     <h2 style="margin-bottom:16px;">👤 Profile</h2>
     <div class="card">
@@ -326,35 +407,41 @@
       <p><strong>Plan:</strong> <span id="profilePlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="profileExpiry">—</span></p>
     </div>
-
     <h3 style="margin:24px 0 12px;">Referral Link</h3>
     <div class="referral-box">
       <input type="text" id="referralLink" value="https://arbimine.onrender.com" readonly>
       <button onclick="copyReferral()">📋 Copy</button>
     </div>
-    <div id="copyStatus">
-      <span>✅</span> Copied!
-    </div>
+    <div id="copyStatus"><span>✅</span> Copied!</div>
     <p style="color:#9ca3af; font-size:13px; margin-top:8px;">Share this link to invite friends.</p>
+  </div>
+
+  <!-- HELP / CHAT -->
+  <div id="sectionHelp" class="section">
+    <h2 style="margin-bottom:8px;">💬 Help & Support</h2>
+    <p style="color:#9ca3af; font-size:14px; margin-bottom:16px;">Send a message to admin. We'll reply shortly.</p>
+    <div class="chat-container">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type your message..." onkeydown="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ============ BOTTOM NAV ============ -->
 <nav class="bottom-nav">
-  <button class="nav-item active" data-section="sectionHome">
-    <span class="icon">🏠</span> Home
-  </button>
-  <button class="nav-item" data-section="sectionPro">
-    <span class="icon">⭐</span> Pro
-  </button>
-  <button class="nav-item" data-section="sectionProfile">
-    <span class="icon">👤</span> Profile
-  </button>
+  <button class="nav-item active" data-section="sectionHome"><span class="icon">🏠</span> Home</button>
+  <button class="nav-item" data-section="sectionPro"><span class="icon">⭐</span> Pro</button>
+  <button class="nav-item" data-section="sectionProfile"><span class="icon">👤</span> Profile</button>
+  <button class="nav-item" data-section="sectionHelp"><span class="icon">💬</span> Help</button>
 </nav>
 
 <script>
   // ========== STATE ==========
   let currentUser = null;
+  let token = null;
 
   // ========== DOM REFS ==========
   const $ = id => document.getElementById(id);
@@ -370,7 +457,6 @@
     $('loginForm').classList.remove('hidden');
     $('authError').classList.add('hidden');
   }
-
   function setAuthError(msg) {
     const el = $('authError');
     el.textContent = msg;
@@ -382,9 +468,9 @@
     const email = $('regEmail').value.trim();
     const mpesa = $('regMpesa').value.trim();
     const password = $('regPassword').value.trim();
-    if (!username || !email || !mpesa || !password) {
-      return setAuthError('All fields are required.');
-    }
+    if (!username || !email || !mpesa || !password) return setAuthError('All fields required.');
+    if (!/^[0-9]+$/.test(mpesa)) return setAuthError('M-Pesa must contain only digits.');
+    if (mpesa.length < 10) return setAuthError('Phone number too short.');
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -396,47 +482,39 @@
       alert('Account created! Please log in.');
       showLogin();
       $('loginUsername').value = username;
-    } catch (err) {
-      setAuthError(err.message);
-    }
+    } catch (err) { setAuthError(err.message); }
   }
 
   async function login() {
-    const username = $('loginUsername').value.trim();
+    const email = $('loginUsername').value.trim();
     const password = $('loginPassword').value.trim();
-    if (!username || !password) return setAuthError('Username and password required.');
+    if (!email || !password) return setAuthError('Email and password required.');
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      currentUser = {
-        _id: data.userId,
-        username: username,
-        subscription: data.subscription
-      };
-      localStorage.setItem('arbimine_user', JSON.stringify(currentUser));
+      token = data.token;
+      currentUser = { username: data.username };
+      localStorage.setItem('arbimine_user', JSON.stringify({ username: data.username, token: data.token }));
       enterDashboard();
-    } catch (err) {
-      setAuthError(err.message);
-    }
+    } catch (err) { setAuthError(err.message); }
   }
 
   // ========== DASHBOARD ==========
   function enterDashboard() {
     $('authContainer').style.display = 'none';
     $('dashboard').style.display = 'block';
-    // Populate user info
     $('userName').textContent = currentUser.username;
     $('profileUsername').textContent = currentUser.username;
     fetchUserProfile();
     updateSubscriptionUI();
     refreshMarketData();
     setInterval(refreshMarketData, 10000);
-    // nav listeners
+    // Nav
     document.querySelectorAll('.nav-item').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -444,18 +522,26 @@
         const sectionId = btn.dataset.section;
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         $(sectionId).classList.add('active');
+        if (sectionId === 'sectionHelp') loadMessages();
       });
     });
+    // Load chat messages initially if Help is active (but it's not by default)
   }
 
   async function fetchUserProfile() {
     try {
-      const res = await fetch(`/api/user/${currentUser._id}`);
+      const res = await fetch('/api/me', { headers: { 'Authorization': token } });
       if (res.ok) {
         const user = await res.json();
         $('profileEmail').textContent = user.email || '—';
         $('profileMpesa').textContent = user.mpesa || '—';
-        currentUser.subscription = user.subscription;
+        currentUser = { ...currentUser, email: user.email, mpesa: user.mpesa };
+      }
+      // Refresh subscription status
+      const subRes = await fetch('/api/user/subscription', { headers: { 'Authorization': token } });
+      if (subRes.ok) {
+        const sub = await subRes.json();
+        currentUser.subscription = sub;
         updateSubscriptionUI();
       }
     } catch (e) {}
@@ -469,8 +555,7 @@
     $('proExpiry').textContent = expires;
     $('profilePlan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     $('profileExpiry').textContent = expires;
-    // Highlight active plan
-    document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active-plan'));
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('active-plan'));
     if (plan === 'weekly') $('planWeekly').classList.add('active-plan');
     else if (plan === 'monthly') $('planMonthly').classList.add('active-plan');
   }
@@ -478,42 +563,36 @@
   // ========== MARKET DATA ==========
   async function refreshMarketData() {
     try {
-      const btcRes = await fetch('/api/ticker/binance/BTC/USDT');
-      const btc = await btcRes.json();
+      const btc = await (await fetch('/api/ticker/binance/BTC/USDT')).json();
       $('btcPrice').textContent = '$' + btc.last.toFixed(2);
       const btcChange = btc.percentage || 0;
       $('btcChange').textContent = (btcChange > 0 ? '+' : '') + btcChange.toFixed(2) + '%';
       $('btcChange').className = 'change ' + (btcChange >= 0 ? 'positive' : 'negative');
 
-      const ethRes = await fetch('/api/ticker/binance/ETH/USDT');
-      const eth = await ethRes.json();
+      const eth = await (await fetch('/api/ticker/binance/ETH/USDT')).json();
       $('ethPrice').textContent = '$' + eth.last.toFixed(2);
       const ethChange = eth.percentage || 0;
       $('ethChange').textContent = (ethChange > 0 ? '+' : '') + ethChange.toFixed(2) + '%';
       $('ethChange').className = 'change ' + (ethChange >= 0 ? 'positive' : 'negative');
-    } catch (err) {
-      console.error('Market data error:', err);
-    }
+    } catch (e) { console.log('Market error', e); }
   }
 
-  // ========== SUBSCRIPTION (Paystack STK Push) ==========
+  // ========== SUBSCRIPTION ==========
   async function subscribe(plan) {
     if (!currentUser) return alert('Please log in first.');
     try {
-      const res = await fetch('/api/subscribe', {
+      const res = await fetch('/api/pesapal/pay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser._id, plan })
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ plan })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Subscription initiation failed');
-      alert(data.message); // "STK push sent to your phone..."
-    } catch (err) {
-      alert(err.message);
-    }
+      if (!res.ok) throw new Error(data.error || 'Init failed');
+      window.location.href = data.authorizationUrl;
+    } catch (err) { alert(err.message); }
   }
 
-  // ========== REFERRAL COPY ==========
+  // ========== REFERRAL ==========
   function copyReferral() {
     const link = $('referralLink');
     link.select();
@@ -523,13 +602,117 @@
     setTimeout(() => { status.style.display = 'none'; }, 3000);
   }
 
+  // ========== HELP / CHAT ==========
+  let messageList = [];
+
+  async function loadMessages() {
+    try {
+      const res = await fetch('/api/messages', { headers: { 'Authorization': token } });
+      const msgs = await res.json();
+      messageList = msgs;
+      renderMessages();
+    } catch (e) { console.log('Load messages error', e); }
+  }
+
+  function renderMessages() {
+    const container = $('chatMessages');
+    container.innerHTML = '';
+    if (!messageList.length) {
+      container.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;">No messages yet.</div>';
+      return;
+    }
+    messageList.forEach(msg => {
+      if (msg.deleted) return;
+      const div = document.createElement('div');
+      div.className = 'message-bubble';
+      if (msg.isAdmin) div.classList.add('admin');
+      else if (msg.user === currentUser.username) div.classList.add('own');
+      let statusHtml = '';
+      if (msg.user === currentUser.username && !msg.isAdmin) {
+        const statusClass = msg.status === 'sent' ? 'status-sent' : msg.status === 'delivered' ? 'status-delivered' : 'status-read';
+        const ticks = msg.status === 'sent' ? '✓' : msg.status === 'delivered' ? '✓✓' : '✓✓';
+        statusHtml = `<span class="status-tick ${statusClass}">${ticks}</span>`;
+      } else if (msg.isAdmin && msg.user === currentUser.username) {
+        // Admin messages to user: show read status only if read
+        if (msg.status === 'read') statusHtml = `<span class="status-tick status-read">✓✓</span>`;
+        else statusHtml = `<span class="status-tick status-delivered">✓✓</span>`;
+      }
+      let actionsHtml = '';
+      if (!msg.isAdmin && msg.user === currentUser.username) {
+        actionsHtml = `
+          <div class="msg-actions">
+            <button onclick="editMessage('${msg._id}')">✎</button>
+            <button onclick="deleteMessage('${msg._id}')">✕</button>
+          </div>
+        `;
+      }
+      div.innerHTML = `
+        <div>${msg.content}${msg.edited ? ' <em style="font-size:12px;color:#9ca3af;">(edited)</em>' : ''}</div>
+        <div class="msg-meta">
+          <span>${new Date(msg.createdAt).toLocaleTimeString()}</span>
+          ${statusHtml}
+        </div>
+        ${actionsHtml}
+      `;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+    // Mark admin messages as read
+    messageList.forEach(msg => {
+      if (msg.isAdmin && msg.user === currentUser.username && msg.status !== 'read') {
+        fetch(`/api/messages/${msg._id}/read`, { method: 'POST', headers: { 'Authorization': token } });
+      }
+    });
+  }
+
+  async function sendMessage() {
+    const input = $('chatInput');
+    const content = input.value.trim();
+    if (!content) return;
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ content })
+      });
+      if (!res.ok) throw new Error('Failed to send');
+      input.value = '';
+      await loadMessages();
+    } catch (err) { alert(err.message); }
+  }
+
+  async function editMessage(id) {
+    const newContent = prompt('Edit your message:');
+    if (newContent === null) return;
+    try {
+      const res = await fetch(`/api/messages/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ content: newContent })
+      });
+      if (res.ok) { await loadMessages(); }
+    } catch (err) { alert(err.message); }
+  }
+
+  async function deleteMessage(id) {
+    if (!confirm('Delete this message?')) return;
+    try {
+      const res = await fetch(`/api/messages/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+      if (res.ok) { await loadMessages(); }
+    } catch (err) { alert(err.message); }
+  }
+
   // ========== AUTO-LOGIN ==========
   (function init() {
     const stored = localStorage.getItem('arbimine_user');
     if (stored) {
       try {
-        const user = JSON.parse(stored);
-        currentUser = user;
+        const data = JSON.parse(stored);
+        token = data.token;
+        currentUser = { username: data.username };
         enterDashboard();
       } catch (e) {}
     }

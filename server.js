@@ -1,449 +1,939 @@
 require("dotenv").config();
 const express = require('express');
+const axios = require('axios');
+const path = require('path');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const ccxt = require('ccxt');
-const crypto = require('crypto');
-const path = require('path');
-const axios = require('axios');
-const http = require('http');
-const socketIo = require('socket.io');
+const nodemailer = require('nodemailer');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } });
-
 const PORT = process.env.PORT || 3000;
 
-// -------------------- MongoDB --------------------
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/crypto_scanner';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
 
-// -------------------- Middleware --------------------
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// -------------------- Schemas --------------------
+// ==================== Email ====================
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 
-// User (extended)
+let transporter = null;
+if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+  console.log('✅ Email transporter configured');
+} else {
+  console.log('⚠️ Email not configured – skipping notifications');
+}
+
+async function sendEmail(to, subject, html) {
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
+    console.log(`📧 Email sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error('Email error:', err.message);
+    return false;
+  }
+}
+
+function sendEmailAsync(to, subject, html) {
+  sendEmail(to, subject, html).catch(() => {});
+}
+
+// ==================== Schemas ====================
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  email:    { type: String, required: true, unique: true },
-  mpesa:    { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  mpesa: { type: String, required: true },
   passwordHash: { type: String, required: true },
   subscription: {
-    plan: { type: String, enum: ['free', 'weekly', 'monthly'], default: 'free' },
+    active: { type: Boolean, default: false },
+    plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
     expiresAt: { type: Date, default: null }
   },
-  isActive: { type: Boolean, default: true },
-  isBlocked: { type: Boolean, default: false }
-}, { timestamps: true });
+  createdAt: { type: Date, default: Date.now }
+});
+const sessionSchema = new mongoose.Schema({
+  token: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: '7d' }
+});
+const transactionSchema = new mongoose.Schema({
+  reference: { type: String, required: true, unique: true },
+  user: { type: String, required: true },
+  plan: { type: String, enum: ['weekly', 'monthly'] },
+  amount: Number,
+  status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
+  paystackResponse: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now }
+});
+const messageSchema = new mongoose.Schema({
+  user: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false },
+  content: { type: String, required: true },
+  status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
+  edited: { type: Boolean, default: false },
+  deleted: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+const blockedUserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  blockedAt: { type: Date, default: Date.now }
+});
 
 const User = mongoose.model('User', userSchema);
-
-// Admin
-const adminSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true }
-});
-const Admin = mongoose.model('Admin', adminSchema);
-
-// Message
-const messageSchema = new mongoose.Schema({
-  from: { type: String, required: true },    // "admin" or userId (string)
-  to: { type: String, required: true },      // "admin" or userId
-  content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  status: { type: String, enum: ['sent','delivered','read'], default: 'sent' },
-  edited: { type: Boolean, default: false },
-  deleted: { type: Boolean, default: false }
-});
+const Session = mongoose.model('Session', sessionSchema);
+const Transaction = mongoose.model('Transaction', transactionSchema);
 const Message = mongoose.model('Message', messageSchema);
+const BlockedUser = mongoose.model('BlockedUser', blockedUserSchema);
 
-// -------------------- Password Helpers --------------------
-function hashPassword(password, salt) {
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      resolve(derivedKey.toString('hex'));
+const hashPassword = p => crypto.createHash('sha256').update(p).digest('hex');
+const generateToken = () => crypto.randomBytes(32).toString('hex');
+
+function formatPhone(phone) {
+  let cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('0')) cleaned = '254' + cleaned.slice(1);
+  else if (cleaned.startsWith('254')) {}
+  else if (cleaned.startsWith('+254')) cleaned = cleaned.slice(1);
+  else cleaned = '254' + cleaned;
+  return cleaned;
+}
+
+// ==================== Exchange API (scanning) ====================
+const SUPPORTED_EXCHANGES = ['mexc', 'kucoin', 'binance', 'bingx', 'htx', 'gateio'];
+
+function buildExchange(exchangeId, apiKey, secret) {
+  const exchangeMap = {
+    binance: ccxt.binance, kucoin: ccxt.kucoin, htx: ccxt.huobi, gateio: ccxt.gateio,
+    mexc: ccxt.mexc, bingx: ccxt.bingx
+  };
+  const ExchangeClass = exchangeMap[exchangeId];
+  if (!ExchangeClass) return null;
+  const config = { enableRateLimit: true };
+  if (apiKey && secret) { config.apiKey = apiKey; config.secret = secret; }
+  return new ExchangeClass(config);
+}
+
+const EXCHANGE_CREDENTIALS = {
+  binance: { apiKey: process.env.BINANCE_API_KEY, secret: process.env.BINANCE_SECRET },
+  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
+  htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
+  gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
+  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
+  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET }
+};
+const exchangeInstances = {};
+for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
+  const ex = buildExchange(id, cred.apiKey, cred.secret);
+  if (ex) exchangeInstances[id] = ex;
+}
+
+async function safeGet(url, name) {
+  try {
+    const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    return res.data;
+  } catch (e) {
+    console.log(`${name} FAILED:`, e.message);
+    return null;
+  }
+}
+
+const EXCHANGES = {
+  mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
+  kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
+  bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
+  bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
+  lbank: 'https://api.lbank.info/v1/ticker.do?symbol=all',
+  coinex: 'https://api.coinex.com/v1/market/ticker/all',
+  gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
+  okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
+  bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
+  htx: 'https://api.huobi.pro/market/tickers',
+  bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
+  poloniex: 'https://api.poloniex.com/markets/ticker24h',
+  cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
+  upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
+};
+
+const MIN_PROFIT = 0.2;
+const MAX_PROFIT = 100;
+
+function extractSymbol(exchange, symbol, t) {
+  let sym = null, price = null, volume = null;
+  try {
+    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
+    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
+    else if (exchange === 'bitmart' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last_price; volume = +t.quote_volume; }
+    else if (exchange === 'bitget') { sym = t.symbol?.replace('USDT', ''); price = +t.close; volume = +t.usdtVol; }
+    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
+    else if (exchange === 'okx' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volCcy24h; }
+    else if (exchange === 'bybit') { sym = t.symbol?.replace('USDT', ''); price = +t.lastPrice; volume = +t.turnover24h; }
+    else if (exchange === 'htx') { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
+    else if (exchange === 'bitfinex' && Array.isArray(t) && t[0]?.startsWith('t')) { sym = t[0].replace('t', '').replace('USD', ''); price = +t[7]; volume = +t[8]; }
+    else if (exchange === 'cryptocom') { const inst = t.i; if (inst?.includes('_USDT')) { sym = inst.replace('_USDT', ''); price = +t.a; volume = +t.v; } }
+    else if (exchange === 'upbit' && t.market?.startsWith('KRW-')) { sym = t.market.replace('KRW-', ''); price = +t.trade_price; volume = +t.acc_trade_price_24h; }
+    if (!sym || !price) return null;
+    return { symbol: sym, price, volume: volume || 0 };
+  } catch { return null; }
+}
+
+let cachedOpportunities = [];
+let detailedCache = new Map();
+let lastFastScan = 0;
+let lastDetailScan = 0;
+const FAST_SCAN_INTERVAL = 60000;
+const DETAIL_SCAN_INTERVAL = 120000;
+const DETAIL_OPP_LIMIT = 200;
+
+async function fetchRealNetworks(exchangeId, coin) {
+  const key = exchangeId.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return null;
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    await ex.loadMarkets();
+    const currencies = await ex.fetchCurrencies();
+    const coinData = currencies[coin];
+    if (!coinData || !coinData.networks) return null;
+    const networks = {};
+    for (const [netName, netInfo] of Object.entries(coinData.networks)) {
+      let feeUnit = netName === 'TRC20' ? 'USDT' : (netName === 'BEP20' ? 'BNB' : 'ETH');
+      networks[netName] = {
+        name: netName,
+        deposit: netInfo.deposit === true,
+        withdraw: netInfo.withdraw === true,
+        fee: netInfo.fee || 0,
+        feeUnit: feeUnit,
+        minWithdraw: netInfo.withdrawMin || 0,
+        arrivalTime: netName === 'TRC20' ? '2-5 min' : (netName === 'BEP20' ? '3-8 min' : '10-20 min')
+      };
+    }
+    return { networks, canWithdraw: coinData.withdraw === true, canDeposit: coinData.deposit === true };
+  } catch (err) {
+    console.log(`Network error ${exchangeId} ${coin}:`, err.message);
+    return null;
+  }
+}
+
+async function fetchLiquidity(exchangeId, symbol) {
+  const key = exchangeId.toLowerCase();
+  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
+  let ex = exchangeInstances[key];
+  if (!ex) {
+    const ExchangeClass = ccxt[key];
+    if (!ExchangeClass) return null;
+    ex = new ExchangeClass({ enableRateLimit: true });
+  }
+  try {
+    const orderbook = await ex.fetchOrderBook(symbol, 5);
+    const bids = orderbook.bids.slice(0, 3);
+    return bids.reduce((sum, [price, amount]) => sum + price * amount, 0);
+  } catch (err) {
+    console.log(`Liquidity error ${exchangeId} ${symbol}:`, err.message);
+    return null;
+  }
+}
+
+async function fastScan() {
+  console.log('🔄 Fast scan (prices)...');
+  const start = Date.now();
+  try {
+    const results = await Promise.all(Object.entries(EXCHANGES).map(([n, u]) => safeGet(u, n)));
+    const allData = {};
+    Object.keys(EXCHANGES).forEach(e => (allData[e] = {}));
+    results.forEach((data, idx) => {
+      const ex = Object.keys(EXCHANGES)[idx];
+      if (!data) return;
+      let tickers = [];
+      if (ex === 'mexc') tickers = data;
+      else if (ex === 'kucoin') tickers = data.data?.ticker || [];
+      else if (ex === 'bitmart') tickers = data.data?.tickers || [];
+      else if (ex === 'bitget') tickers = data.data || [];
+      else if (ex === 'gateio') tickers = data;
+      else if (ex === 'okx') tickers = data.data || [];
+      else if (ex === 'bybit') tickers = data.result?.list || [];
+      else if (ex === 'htx') tickers = data.data || [];
+      else if (ex === 'bitfinex') tickers = data || [];
+      else if (ex === 'poloniex') tickers = data.data || [];
+      else if (ex === 'cryptocom') tickers = data.result?.data || [];
+      else if (ex === 'upbit') tickers = data || [];
+      for (const t of tickers) {
+        const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+        const d = extractSymbol(ex, symKey, t);
+        if (!d) continue;
+        allData[ex][d.symbol] = { price: d.price, volume: d.volume };
+      }
     });
-  });
+    const symbols = new Set();
+    Object.values(allData).forEach(ex => Object.keys(ex).forEach(s => symbols.add(s)));
+    const opportunities = [];
+    for (const symbol of symbols) {
+      const prices = [];
+      for (const ex of Object.keys(allData)) {
+        if (allData[ex][symbol]) prices.push([ex, allData[ex][symbol]]);
+      }
+      if (prices.length < 2) continue;
+      prices.sort((a, b) => a[1].price - b[1].price);
+      const [buyEx, buy] = prices[0];
+      const [sellEx, sell] = prices[prices.length - 1];
+      const spread = ((sell.price - buy.price) / buy.price) * 100;
+      if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
+      let liquidity = buy.volume ? buy.volume * buy.price : 0;
+      if (liquidity === 0) liquidity = buy.price * 50000 * (spread > 10 ? 0.3 : spread > 5 ? 0.6 : 1);
+      opportunities.push({
+        id: `${symbol}-${buyEx}-${sellEx}`,
+        symbol,
+        buyExchange: buyEx.toUpperCase(),
+        sellExchange: sellEx.toUpperCase(),
+        buyPrice: buy.price.toFixed(8),
+        sellPrice: sell.price.toFixed(8),
+        spread: spread.toFixed(2),
+        liquidity: liquidity.toFixed(0)
+      });
+    }
+    cachedOpportunities = opportunities.sort((a,b) => +b.spread - +a.spread);
+    lastFastScan = Date.now();
+    console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
+  } catch (err) {
+    console.error('Fast scan failed:', err);
+  }
 }
-function generateSalt() { return crypto.randomBytes(16).toString('hex'); }
 
-// -------------------- Exchange Helper (public only) --------------------
-function getExchange(exchangeId) {
-  const ExchangeClass = ccxt[exchangeId];
-  if (!ExchangeClass) throw new Error(`Exchange "${exchangeId}" not supported.`);
-  return new ExchangeClass({ enableRateLimit: true });
+function computeTradable(buyNetworks, sellNetworks) {
+  if (!buyNetworks || !sellNetworks) return false;
+  for (const [netName, netInfo] of Object.entries(buyNetworks)) {
+    if (sellNetworks[netName] && netInfo.withdraw === true && sellNetworks[netName].deposit === true) {
+      return true;
+    }
+  }
+  return false;
 }
 
-// -------------------- Routes: Public Exchange Data --------------------
-app.get('/api/exchanges', (req, res) => res.json({ exchanges: ccxt.exchanges }));
-app.get('/api/markets/:exchange', async (req, res) => {
-  try {
-    const exchange = getExchange(req.params.exchange);
-    const markets = await exchange.fetchMarkets();
-    res.json(markets);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+async function detailScan() {
+  console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
+  const start = Date.now();
+  const topOps = cachedOpportunities.slice(0, DETAIL_OPP_LIMIT);
+  let updated = 0;
+  for (const opp of topOps) {
+    const coin = opp.symbol;
+    const buyEx = opp.buyExchange.toLowerCase();
+    const sellEx = opp.sellExchange.toLowerCase();
+    try {
+      const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+        fetchRealNetworks(buyEx, coin),
+        fetchRealNetworks(sellEx, coin),
+        fetchLiquidity(buyEx, opp.symbol),
+        fetchLiquidity(sellEx, opp.symbol)
+      ]);
+      const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+      const spreadNum = parseFloat(opp.spread);
+      let risk = 'medium';
+      if (!tradable) risk = 'high';
+      else if (spreadNum < 1) risk = 'low';
+      else if (spreadNum > 3) risk = 'high';
+      else risk = 'medium';
+      const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+      detailedCache.set(opp.id, {
+        ...opp,
+        liquidity: finalLiquidity,
+        sellLiquidity: sellLiq || opp.liquidity,
+        tradable,
+        risk,
+        buyNetworks: buyNet?.networks || {},
+        sellNetworks: sellNet?.networks || {},
+        buyWithdraw: buyNet?.canWithdraw || false,
+        sellDeposit: sellNet?.canDeposit || false
+      });
+      updated++;
+      await new Promise(r => setTimeout(r, 200));
+    } catch (err) {
+      console.log(`Detail scan failed for ${opp.id}:`, err.message);
+    }
   }
-});
-app.get('/api/ticker/:exchange/:symbol', async (req, res) => {
-  try {
-    const ex = getExchange(req.params.exchange);
-    const ticker = await ex.fetchTicker(req.params.symbol);
-    res.json(ticker);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-app.get('/api/orderbook/:exchange/:symbol', async (req, res) => {
-  try {
-    const ex = getExchange(req.params.exchange);
-    const limit = parseInt(req.query.limit) || 10;
-    const orderbook = await ex.fetchOrderBook(req.params.symbol, limit);
-    res.json(orderbook);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-app.get('/api/ohlcv/:exchange/:symbol', async (req, res) => {
-  try {
-    const ex = getExchange(req.params.exchange);
-    const timeframe = req.query.timeframe || '1m';
-    const limit = parseInt(req.query.limit) || 100;
-    const ohlcv = await ex.fetchOHLCV(req.params.symbol, timeframe, undefined, limit);
-    res.json(ohlcv);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-app.get('/api/balance', (req, res) => {
-  res.status(403).json({ error: 'Private endpoints not supported.' });
-});
+  lastDetailScan = Date.now();
+  console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
+}
 
-// -------------------- Routes: User Management --------------------
+fastScan();
+setInterval(fastScan, FAST_SCAN_INTERVAL);
+setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
+setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
+
+// ==================== Auth Routes ====================
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, mpesa, password } = req.body;
-    if (!username || !email || !mpesa || !password)
-      return res.status(400).json({ error: 'All fields required.' });
+    if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
     const existing = await User.findOne({ $or: [{ username }, { email }] });
-    if (existing) return res.status(409).json({ error: 'Username or email taken.' });
-    const salt = generateSalt();
-    const passwordHash = await hashPassword(password, salt);
-    const user = new User({ username, email, mpesa, passwordHash: `${salt}:${passwordHash}` });
+    if (existing) return res.status(409).json({ error: 'Username or email already exists' });
+    const user = new User({ username, email, mpesa, passwordHash: hashPassword(password) });
     await user.save();
-    res.status(201).json({ message: 'User created.', userId: user._id });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const token = generateToken();
+    await new Session({ token, username }).save();
+    sendEmailAsync(
+      email,
+      'Welcome to ArbiMine!',
+      `<h2>Welcome ${username}!</h2><p>Thank you for joining ArbiMine.</p><p>You can now start scanning live arbitrage opportunities.</p>`
+    );
+    res.json({ success: true, token, username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 app.post('/api/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password required.' });
-    const user = await User.findOne({ username });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials.' });
-    const [salt, storedHash] = user.passwordHash.split(':');
-    const incomingHash = await hashPassword(password, salt);
-    if (incomingHash !== storedHash) return res.status(401).json({ error: 'Invalid credentials.' });
-    res.json({ message: 'Login successful.', userId: user._id, subscription: user.subscription });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const user = await User.findOne({ email });
+    if (!user || user.passwordHash !== hashPassword(password))
+      return res.status(401).json({ error: 'Invalid credentials' });
+    const token = generateToken();
+    await new Session({ token, username: user.username }).save();
+    sendEmailAsync(
+      email,
+      '🔐 New login to your ArbiMine account',
+      `<p>Your ArbiMine account was just logged into at ${new Date().toLocaleString()}.</p><p>If this was you, ignore this message.</p>`
+    );
+    res.json({ success: true, token, username: user.username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// -------------------- Get User Profile (for frontend) --------------------
-app.get('/api/user/:id', async (req, res) => {
+app.get('/api/me', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id, '-passwordHash');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    res.json({ username: user.username, email: user.email, mpesa: user.mpesa });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// -------------------- Paystack Subscription --------------------
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const PLANS = { weekly: { amount: 100, duration: 7 }, monthly: { amount: 350, duration: 30 } };
-function getExpiryDate(plan) {
-  const days = PLANS[plan]?.duration || 0;
-  if (!days) return null;
-  const now = new Date(); now.setDate(now.getDate() + days); return now;
+app.get('/api/user/subscription', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    const now = new Date();
+    const isActive = user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > now;
+    res.json({ active: isActive, plan: user.subscription.plan, expiresAt: user.subscription.expiresAt });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Messaging (User & Admin) ====================
+// Middleware to authenticate user by token
+async function getUserFromToken(token) {
+  if (!token) return null;
+  const session = await Session.findOne({ token });
+  if (!session) return null;
+  return session.username;
 }
 
-app.post('/api/subscribe', async (req, res) => {
+// User sends a message
+app.post('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    const { userId, plan, email } = req.body;
-    if (!userId || !plan || !email) return res.status(400).json({ error: 'userId, plan, email required.' });
-    if (!PLANS[plan]) return res.status(400).json({ error: 'Invalid plan.' });
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    const amountInKobo = PLANS[plan].amount * 100;
-    const reference = `sub_${user._id}_${Date.now()}`;
-    const response = await axios.post('https://api.paystack.co/transaction/initialize',
-      { email, amount: amountInKobo, reference, metadata: { userId: user._id.toString(), plan },
-        callback_url: `${req.protocol}://${req.get('host')}/api/verify-payment` },
-      { headers: { Authorization: `Bearer ${PAYSTACK_SECRET}`, 'Content-Type': 'application/json' } }
-    );
-    if (response.data.status) {
-      res.json({ authorization_url: response.data.data.authorization_url, reference: response.data.data.reference });
-    } else throw new Error(response.data.message || 'Paystack init failed');
-  } catch (error) {
-    res.status(500).json({ error: error.response?.data?.message || error.message });
+    const username = await getUserFromToken(token);
+    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const { content } = req.body;
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
+    const blocked = await BlockedUser.findOne({ username });
+    if (blocked) return res.status(403).json({ error: 'You have been blocked from sending messages' });
+    const msg = new Message({ user: username, isAdmin: false, content: content.trim(), status: 'sent' });
+    await msg.save();
+    // Simulate delivery (in production, admin panel will mark as read)
+    setTimeout(async () => {
+      msg.status = 'delivered';
+      await msg.save();
+    }, 1000);
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.get('/api/verify-payment', async (req, res) => {
+// User gets their messages (including admin replies)
+app.get('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    const { reference } = req.query;
-    if (!reference) return res.status(400).json({ error: 'Reference required.' });
-    const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`,
-      { headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` } }
-    );
-    const data = response.data;
-    if (!data.status || data.data.status !== 'success')
-      return res.status(400).json({ error: 'Payment not successful.' });
-    const metadata = data.data.metadata || {};
-    const userId = metadata.userId, plan = metadata.plan;
-    if (!userId || !plan) return res.status(400).json({ error: 'Missing metadata.' });
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    user.subscription.plan = plan;
-    user.subscription.expiresAt = getExpiryDate(plan);
-    await user.save();
-    res.json({ message: `Subscription updated to ${plan} plan.` });
-  } catch (error) {
-    res.status(500).json({ error: error.response?.data?.message || error.message });
+    const username = await getUserFromToken(token);
+    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const messages = await Message.find({ user: username, deleted: false }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.post('/api/paystack-webhook', async (req, res) => {
-  const paystackSignature = req.headers['x-paystack-signature'];
-  const hash = crypto.createHmac('sha512', PAYSTACK_SECRET).update(JSON.stringify(req.body)).digest('hex');
-  if (hash !== paystackSignature) return res.status(401).send('Unauthorized');
-  const event = req.body;
-  if (event.event === 'charge.success') {
-    const data = event.data, metadata = data.metadata || {};
-    const userId = metadata.userId, plan = metadata.plan;
-    if (userId && plan && PLANS[plan]) {
-      try {
-        const user = await User.findById(userId);
-        if (user) {
-          user.subscription.plan = plan;
-          user.subscription.expiresAt = getExpiryDate(plan);
-          await user.save();
-          console.log(`✅ Webhook: User ${userId} upgraded to ${plan}`);
-        }
-      } catch (err) { console.error('Webhook error:', err); }
+// User edits their own message
+app.put('/api/messages/:id', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const username = await getUserFromToken(token);
+    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const { content } = req.body;
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
+    const msg = await Message.findById(req.params.id);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    // Only allow edit if user owns the message and it's not admin message
+    if (msg.user !== username) return res.status(403).json({ error: 'Not your message' });
+    if (msg.isAdmin) return res.status(403).json({ error: 'Cannot edit admin message' });
+    msg.content = content.trim();
+    msg.edited = true;
+    await msg.save();
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// User deletes their own message (soft delete)
+app.delete('/api/messages/:id', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const username = await getUserFromToken(token);
+    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const msg = await Message.findById(req.params.id);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    if (msg.user !== username) return res.status(403).json({ error: 'Not your message' });
+    if (msg.isAdmin) return res.status(403).json({ error: 'Cannot delete admin message' });
+    msg.deleted = true;
+    await msg.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark a message as read (when admin views it, or user views admin's reply)
+app.post('/api/messages/:id/read', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const username = await getUserFromToken(token);
+    if (!username) return res.status(401).json({ error: 'Invalid session' });
+    const msg = await Message.findById(req.params.id);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    // Only mark as read if the message is not owned by the user (i.e., it's from admin)
+    if (msg.user !== username && !msg.isAdmin) return res.status(403).json({ error: 'Cannot mark this message' });
+    // If the message is from admin and user is reading it, mark as read
+    if (msg.isAdmin && msg.user === username) {
+      msg.status = 'read';
+      await msg.save();
     }
-  }
-  res.sendStatus(200);
-});
-
-// -------------------- Admin Authentication --------------------
-const adminTokens = new Map();
-
-async function ensureAdmin() {
-  const adminExists = await Admin.findOne({ username: 'admin' });
-  if (!adminExists) {
-    const salt = generateSalt();
-    const hash = await hashPassword('admin123', salt);
-    const admin = new Admin({ username: 'admin', passwordHash: `${salt}:${hash}` });
-    await admin.save();
-    console.log('🔐 Default admin created: username=admin, password=admin123');
-  }
-}
-ensureAdmin();
-
-app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password required.' });
-    const admin = await Admin.findOne({ username });
-    if (!admin) return res.status(401).json({ error: 'Invalid credentials.' });
-    const [salt, storedHash] = admin.passwordHash.split(':');
-    const incomingHash = await hashPassword(password, salt);
-    if (incomingHash !== storedHash) return res.status(401).json({ error: 'Invalid credentials.' });
-    const token = crypto.randomBytes(32).toString('hex');
-    adminTokens.set(token, { adminId: admin._id, username: admin.username });
-    res.json({ message: 'Admin login successful.', token });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-function verifyAdmin(req, res, next) {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token || !adminTokens.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized.' });
+// ==================== Admin Messaging ====================
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
-  req.admin = adminTokens.get(token);
   next();
 }
 
-// -------------------- Admin Routes --------------------
-app.get('/api/admin/users', verifyAdmin, async (req, res) => {
+app.get('/admin/messages', adminAuth, async (req, res) => {
   try {
-    const users = await User.find({}, '-passwordHash');
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const users = await Message.distinct('user');
+    const conversations = [];
+    for (const user of users) {
+      const lastMsg = await Message.findOne({ user }).sort({ createdAt: -1 });
+      const count = await Message.countDocuments({ user });
+      const unread = await Message.countDocuments({ user, isAdmin: false, status: { $ne: 'read' } });
+      conversations.push({ _id: user, count, unread, lastMessage: lastMsg });
+    }
+    res.json(conversations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.post('/api/admin/user/:id/activate', verifyAdmin, async (req, res) => {
+app.get('/admin/messages/:user', adminAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    user.isActive = !user.isActive;
-    await user.save();
-    res.json({ message: `User active status toggled to ${user.isActive}.` });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/admin/user/:id/block', verifyAdmin, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    user.isBlocked = !user.isBlocked;
-    await user.save();
-    res.json({ message: `User blocked status toggled to ${user.isBlocked}.` });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// -------------------- Chat Routes (REST) --------------------
-app.get('/api/messages/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const messages = await Message.find({
-      $or: [
-        { from: userId, to: 'admin' },
-        { from: 'admin', to: userId }
-      ],
-      deleted: false
-    }).sort({ timestamp: 1 });
+    const { user } = req.params;
+    const messages = await Message.find({ user }).sort({ createdAt: -1 });
+    // Mark all user messages as read when admin views them
+    await Message.updateMany({ user, isAdmin: false, status: 'delivered' }, { status: 'read' });
     res.json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.post('/api/messages', async (req, res) => {
+app.post('/admin/messages', adminAuth, async (req, res) => {
   try {
-    const { from, to, content } = req.body;
-    if (!from || !to || !content) return res.status(400).json({ error: 'Missing fields.' });
-    const message = new Message({ from, to, content, status: 'sent' });
-    await message.save();
-    io.to(to).emit('new_message', message);
-    io.to(from).emit('new_message', message);
-    res.status(201).json(message);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/api/messages/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { content, userId } = req.body;
-    if (!content || !userId) return res.status(400).json({ error: 'Missing content or userId.' });
-    const message = await Message.findById(id);
-    if (!message) return res.status(404).json({ error: 'Message not found.' });
-    if (message.from !== userId && userId !== 'admin') {
-      return res.status(403).json({ error: 'Not allowed to edit this message.' });
+    const { userId, content } = req.body;
+    if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
+    const msg = new Message({ user: userId, isAdmin: true, content: content.trim(), status: 'sent' });
+    await msg.save();
+    // Auto-deliver for admin messages (since admin is sender)
+    setTimeout(async () => {
+      msg.status = 'delivered';
+      await msg.save();
+    }, 500);
+    const user = await User.findOne({ username: userId });
+    if (user) {
+      sendEmailAsync(
+        user.email,
+        '📩 Admin Reply from ArbiMine Support',
+        `<p>You have received a new reply from ArbiMine admin:</p><p><em>${content}</em></p><p>Login to your account to view the full conversation.</p>`
+      );
     }
-    message.content = content;
-    message.edited = true;
-    await message.save();
-    io.to(message.to).emit('message_edited', message);
-    io.to(message.from).emit('message_edited', message);
-    res.json(message);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.delete('/api/messages/:id', async (req, res) => {
+app.delete('/admin/message/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'Missing userId.' });
-    const message = await Message.findById(id);
-    if (!message) return res.status(404).json({ error: 'Message not found.' });
-    if (message.from !== userId && userId !== 'admin') {
-      return res.status(403).json({ error: 'Not allowed to delete this message.' });
-    }
-    message.deleted = true;
-    await message.save();
-    io.to(message.to).emit('message_deleted', { id: message._id });
-    io.to(message.from).emit('message_deleted', { id: message._id });
-    res.json({ message: 'Message deleted.' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Admin can hard delete (or soft delete – we'll hard delete for simplicity)
+    await Message.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// -------------------- Socket.IO --------------------
-io.on('connection', (socket) => {
-  console.log('🟢 New client connected:', socket.id);
-  socket.on('join', (userId) => {
-    if (userId) {
-      socket.join(userId);
-      console.log(`Socket ${socket.id} joined room ${userId}`);
-    }
-  });
-  socket.on('send_message', async (data) => {
-    try {
-      const { from, to, content } = data;
-      if (!from || !to || !content) return;
-      const message = new Message({ from, to, content, status: 'sent' });
-      await message.save();
-      io.to(to).emit('new_message', message);
-      io.to(from).emit('new_message', message);
-      setTimeout(async () => {
-        message.status = 'delivered';
-        await message.save();
-        io.to(to).emit('message_status', { id: message._id, status: 'delivered' });
-        io.to(from).emit('message_status', { id: message._id, status: 'delivered' });
-      }, 1000);
-    } catch (error) {
-      console.error('Socket send error:', error);
-    }
-  });
-  socket.on('mark_read', async (messageId) => {
-    try {
-      const message = await Message.findById(messageId);
-      if (!message) return;
-      message.status = 'read';
-      await message.save();
-      io.to(message.from).emit('message_status', { id: message._id, status: 'read' });
-      io.to(message.to).emit('message_status', { id: message._id, status: 'read' });
-    } catch (error) {
-      console.error('Read receipt error:', error);
-    }
-  });
-  socket.on('disconnect', () => {
-    console.log('🔴 Client disconnected:', socket.id);
-  });
+app.put('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Content required' });
+    const msg = await Message.findByIdAndUpdate(id, { content: content.trim(), edited: true }, { new: true });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// -------------------- Serve Admin Page --------------------
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.findOneAndUpdate({ username }, { username }, { upsert: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.deleteOne({ username });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== Opportunities ====================
+app.get('/api/opportunities', (req, res) => {
+  const withDetails = cachedOpportunities.map(opp => {
+    const detailed = detailedCache.get(opp.id);
+    if (detailed) return detailed;
+    return { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
+  });
+  res.json({ count: withDetails.length, opportunities: withDetails, lastScan: lastFastScan });
+});
+
+app.get('/api/opportunity/:id/details', async (req, res) => {
+  const { id } = req.params;
+  const cached = detailedCache.get(id);
+  if (cached) return res.json(cached);
+  const opp = cachedOpportunities.find(o => o.id === id);
+  if (!opp) return res.status(404).json({ error: 'Not found' });
+  const coin = opp.symbol;
+  const buyEx = opp.buyExchange.toLowerCase();
+  const sellEx = opp.sellExchange.toLowerCase();
+  const [buyNet, sellNet, buyLiq, sellLiq] = await Promise.all([
+    fetchRealNetworks(buyEx, coin),
+    fetchRealNetworks(sellEx, coin),
+    fetchLiquidity(buyEx, opp.symbol),
+    fetchLiquidity(sellEx, opp.symbol)
+  ]);
+  const tradable = computeTradable(buyNet?.networks, sellNet?.networks);
+  const spreadNum = parseFloat(opp.spread);
+  let risk = 'medium';
+  if (!tradable) risk = 'high';
+  else if (spreadNum < 1) risk = 'low';
+  else if (spreadNum > 3) risk = 'high';
+  else risk = 'medium';
+  const finalLiquidity = (buyLiq && buyLiq > 0) ? buyLiq : (opp.liquidity > 0 ? opp.liquidity : 5000);
+  const result = {
+    ...opp,
+    liquidity: finalLiquidity,
+    sellLiquidity: sellLiq || opp.liquidity,
+    tradable,
+    risk,
+    buyNetworks: buyNet?.networks || {},
+    sellNetworks: sellNet?.networks || {},
+    buyWithdraw: buyNet?.canWithdraw || false,
+    sellDeposit: sellNet?.canDeposit || false
+  };
+  detailedCache.set(id, result);
+  res.json(result);
+});
+
+// ==================== Payment ====================
+function sanitizeReference(str) {
+  return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
+}
+
+app.post('/api/pesapal/pay', async (req, res) => {
+  const { plan } = req.body;
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const user = await User.findOne({ username: session.username });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    let amountInKobo = plan === 'weekly' ? 100 * 100 : 350 * 100;
+    const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecretKey) {
+      console.error('PAYSTACK_SECRET_KEY missing');
+      return res.status(500).json({ error: 'Payment not configured' });
+    }
+    const cleanUsername = sanitizeReference(user.username);
+    const reference = `arbimine_${cleanUsername}_${Date.now()}`;
+    const callbackUrl = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}/api/payment/callback`;
+    console.log(`💰 Initializing Paystack: ${reference} for ${user.email}`);
+    const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+      email: user.email,
+      amount: amountInKobo,
+      currency: 'KES',
+      reference: reference,
+      callback_url: callbackUrl,
+      metadata: { plan, username: user.username, user_id: user._id.toString() }
+    }, {
+      headers: { Authorization: `Bearer ${paystackSecretKey}`, 'Content-Type': 'application/json' }
+    });
+    await Transaction.create({
+      reference,
+      user: user.username,
+      plan,
+      amount: amountInKobo / 100,
+      status: 'pending',
+      paystackResponse: response.data
+    });
+    if (response.data.status) {
+      res.json({ success: true, authorizationUrl: response.data.data.authorization_url, reference });
+    } else {
+      console.error('Paystack init error:', response.data);
+      res.status(400).json({ error: response.data.message || 'Payment initialization failed' });
+    }
+  } catch (err) {
+    console.error('Paystack error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Payment service error' });
+  }
+});
+
+app.get('/api/transaction/:reference', async (req, res) => {
+  const { reference } = req.params;
+  try {
+    const tx = await Transaction.findOne({ reference });
+    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+    res.json({ status: tx.status, plan: tx.plan, amount: tx.amount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/payment/callback', async (req, res) => {
+  const { reference } = req.query;
+  if (!reference) return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+  try {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    const verification = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: { Authorization: `Bearer ${secretKey}` }
+    });
+    const transaction = await Transaction.findOne({ reference });
+    let status = 'failed';
+    if (transaction) {
+      status = verification.data.data.status === 'success' ? 'success' : 'failed';
+      transaction.status = status;
+      transaction.paystackResponse = verification.data;
+      await transaction.save();
+    }
+    if (verification.data.status && verification.data.data.status === 'success') {
+      const meta = verification.data.data.metadata;
+      const plan = meta?.plan;
+      const username = meta?.username;
+      if (username && plan) {
+        const days = plan === 'weekly' ? 7 : 30;
+        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+        await User.findOneAndUpdate(
+          { username },
+          { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
+        );
+        const user = await User.findOne({ username });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '✅ Payment Successful – ArbiMine Pro Activated',
+            `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+          );
+        }
+      }
+      return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=success&reference=${reference}`);
+    } else {
+      const tx = await Transaction.findOne({ reference });
+      if (tx && tx.user) {
+        const user = await User.findOne({ username: tx.user });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '❌ Payment Failed – ArbiMine',
+            `<p>Your payment of KES ${tx.amount} for ${tx.plan} plan failed.</p><p>Reference: ${reference}</p><p>Please try again.</p>`
+          );
+        }
+      }
+      return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+    }
+  } catch (err) {
+    console.error('Verification error:', err);
+    return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+  }
+});
+
+app.post('/api/payment/webhook', async (req, res) => {
+  const event = req.body;
+  console.log('Webhook received:', event);
+  if (event.event === 'charge.success') {
+    const reference = event.data.reference;
+    const transaction = await Transaction.findOne({ reference });
+    if (transaction) {
+      transaction.status = 'success';
+      transaction.paystackResponse = event;
+      await transaction.save();
+    }
+    const metadata = event.data.metadata;
+    const plan = metadata?.plan;
+    const username = metadata?.username;
+    if (username && plan) {
+      const days = plan === 'weekly' ? 7 : 30;
+      const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      await User.findOneAndUpdate(
+        { username },
+        { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
+      );
+      const user = await User.findOne({ username });
+      if (user) {
+        sendEmailAsync(
+          user.email,
+          '✅ Payment Successful – ArbiMine Pro Activated (Webhook)',
+          `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+        );
+      }
+      console.log(`Subscription updated via webhook for ${username}`);
+    }
+  }
+  res.json({ status: 'received' });
+});
+
+// ==================== Admin ====================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+
+global.adminTokens = new Set();
+
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    global.adminTokens.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
+});
+
+app.get('/admin/users', adminAuth, async (req, res) => {
+  const users = await User.find({}, '-passwordHash');
+  res.json(users);
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  const transactions = await Transaction.find().sort({ createdAt: -1 });
+  res.json(transactions);
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const days = plan === 'weekly' ? 7 : 30;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// -------------------- Start Server --------------------
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Admin panel: http://localhost:${PORT}/admin`);
-});
+app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
