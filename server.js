@@ -1326,19 +1326,6 @@ function writeScannerLog(message) {
   );
 }
 
-app.get("/api/logs", (req, res) => {
-
-  if (!fs.existsSync("scanner.log"))
-    return res.send("");
-
-  res.sendFile(
-    require("path").join(
-      __dirname,
-      "scanner.log"
-    )
-  );
-
-});
 // =========================================================
 
 
