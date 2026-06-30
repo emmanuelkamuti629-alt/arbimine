@@ -191,7 +191,7 @@
       <button class="btn-pro" id="monthlyPayBtn" onclick="payPro('monthly', 350)">Pay with M-Pesa</button>
       <div id="monthlyMessage" class="payment-message"></div>
     </div>
-    <!-- Manual payment status check button -->
+    <!-- Manual payment status check -->
     <div style="margin-top:20px; text-align:center;">
       <button class="btn-pro" style="background:#334155; width:auto; padding:12px 24px;" onclick="checkPaymentStatusManually()">🔄 Check Last Payment Status</button>
       <div id="manualStatusResult" class="payment-message" style="margin-top:10px;"></div>
@@ -733,8 +733,6 @@
   // ===== Payment =====
   async function payPro(plan, amount) {
     if (!token) { alert('Please login first'); return; }
-    const phoneInput = plan === 'weekly' ? document.getElementById('weeklyPhone') : document.getElementById('monthlyPhone');
-    const phone = phoneInput.value.trim();
     const btnId = plan === 'weekly' ? 'weeklyPayBtn' : 'monthlyPayBtn';
     const msgDivId = plan === 'weekly' ? 'weeklyMessage' : 'monthlyMessage';
     const btn = document.getElementById(btnId);
@@ -742,7 +740,6 @@
     btn.disabled = true;
     msgDiv.innerText = '⏳ Please wait... Initializing payment.';
     try {
-      // Using /api/paystack/pay (updated endpoint)
       const res = await fetch('/api/paystack/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: token },
