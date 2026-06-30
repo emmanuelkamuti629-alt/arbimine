@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const ccxt = require('ccxt');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,24 +15,49 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
+    console.error('❌ MongoDB error:', err);
     setTimeout(() => mongoose.connect(MONGO_URI), 5000);
   });
 
 // ==================== Middleware ====================
-// Webhook must receive raw body before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== Global Error Handlers ====================
-process.on('uncaughtException', (err) => console.error('💥 Uncaught Exception:', err));
-process.on('unhandledRejection', (reason) => console.error('💥 Unhandled Rejection:', reason));
+// ==================== Email (nodemailer) ====================
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT || 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 
-// ==================== Health Check ====================
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
-});
+let transporter = null;
+if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+  console.log('✅ Email transporter configured');
+} else {
+  console.log('⚠️ Email not configured – skipping notifications');
+}
+
+async function sendEmail(to, subject, html) {
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
+    console.log(`📧 Email sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error('Email error:', err.message);
+    return false;
+  }
+}
+function sendEmailAsync(to, subject, html) {
+  sendEmail(to, subject, html).catch(() => {});
+}
 
 // ==================== Schemas ====================
 const userSchema = new mongoose.Schema({
@@ -39,9 +65,6 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   mpesa: { type: String, required: true },
   passwordHash: { type: String, required: true },
-  referralCode: { type: String, unique: true },
-  referredBy: { type: String, default: null },
-  blocked: { type: Boolean, default: false },
   subscription: {
     active: { type: Boolean, default: false },
     plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
@@ -49,13 +72,11 @@ const userSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now }
 });
-
 const sessionSchema = new mongoose.Schema({
   token: { type: String, required: true, unique: true },
   username: { type: String, required: true },
   createdAt: { type: Date, default: Date.now, expires: '7d' }
 });
-
 const transactionSchema = new mongoose.Schema({
   reference: { type: String, required: true, unique: true },
   user: { type: String, required: true },
@@ -65,20 +86,22 @@ const transactionSchema = new mongoose.Schema({
   paystackResponse: mongoose.Schema.Types.Mixed,
   createdAt: { type: Date, default: Date.now }
 });
-
 const messageSchema = new mongoose.Schema({
   user: { type: String, required: true },
-  content: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
-  read: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const blockedUserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  blockedAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
 const Session = mongoose.model('Session', sessionSchema);
 const Transaction = mongoose.model('Transaction', transactionSchema);
 const Message = mongoose.model('Message', messageSchema);
+const BlockedUser = mongoose.model('BlockedUser', blockedUserSchema);
 
 const hashPassword = p => crypto.createHash('sha256').update(p).digest('hex');
 const generateToken = () => crypto.randomBytes(32).toString('hex');
@@ -86,7 +109,7 @@ function sanitizeReference(str) {
   return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
 }
 
-// ==================== EXCHANGE SCANNER (CCXT) ====================
+// ==================== DYNAMIC EXCHANGE SCANNER (CCXT) ====================
 const EXCHANGE_IDS = [
   'binance', 'bybit', 'okx', 'bitget', 'kucoin', 'gateio', 'htx', 'mexc',
   'kraken', 'coinbase', 'crypto', 'bitfinex', 'gemini', 'bitstamp', 'whitebit',
@@ -121,7 +144,6 @@ let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
 
-// Fetch tickers for one exchange
 async function fetchTickers(exchangeId) {
   const ex = exchangeInstances[exchangeId];
   if (!ex) return null;
@@ -130,17 +152,15 @@ async function fetchTickers(exchangeId) {
     const tickers = await ex.fetchTickers();
     return { exchangeId, tickers };
   } catch (err) {
-    // silent fail for individual exchange
+    // silent fail
     return null;
   }
 }
 
-// Fast scan – parallel fetch from all exchanges
 async function fastScan() {
   console.log('🔄 Fast scan (prices) on', Object.keys(exchangeInstances).length, 'exchanges...');
   const start = Date.now();
   try {
-    // Fetch tickers in parallel with concurrency control
     const ids = Object.keys(exchangeInstances);
     const results = [];
     const chunkSize = 10;
@@ -150,7 +170,6 @@ async function fastScan() {
       results.push(...chunkResults.filter(r => r !== null));
     }
 
-    // Build symbol map: base -> [{ exchange, price, volume }]
     const symbolMap = {};
     for (const { exchangeId, tickers } of results) {
       for (const [symbol, ticker] of Object.entries(tickers)) {
@@ -166,7 +185,6 @@ async function fastScan() {
       }
     }
 
-    // Find arbitrage opportunities
     const opportunities = [];
     for (const [symbol, prices] of Object.entries(symbolMap)) {
       if (prices.length < 2) continue;
@@ -197,7 +215,7 @@ async function fastScan() {
   }
 }
 
-// Helper: fetch network info (withdraw/deposit) for a coin on an exchange
+// ===== Helper functions for detail scan =====
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId];
   if (!ex) return null;
@@ -221,12 +239,11 @@ async function fetchRealNetworks(exchangeId, coin) {
     }
     return { networks, canWithdraw: coinData.withdraw === true, canDeposit: coinData.deposit === true };
   } catch (err) {
-    // console.log(`Network error ${exchangeId} ${coin}:`, err.message);
+    // silent fail
     return null;
   }
 }
 
-// Helper: fetch liquidity (orderbook depth) for a symbol
 async function fetchLiquidity(exchangeId, symbol) {
   const ex = exchangeInstances[exchangeId];
   if (!ex) return null;
@@ -235,7 +252,6 @@ async function fetchLiquidity(exchangeId, symbol) {
     const bids = orderbook.bids.slice(0, 3);
     return bids.reduce((sum, [price, amount]) => sum + price * amount, 0);
   } catch (err) {
-    // console.log(`Liquidity error ${exchangeId} ${symbol}:`, err.message);
     return null;
   }
 }
@@ -250,7 +266,6 @@ function computeTradable(buyNetworks, sellNetworks) {
   return false;
 }
 
-// Detail scan – enrich top opportunities with network and liquidity data
 async function detailScan() {
   const topOps = cachedOpportunities.slice(0, 200);
   if (topOps.length === 0) return;
@@ -306,18 +321,19 @@ setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
 // ==================== AUTH ROUTES ====================
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, email, mpesa, password, referralCode } = req.body;
+    const { username, email, mpesa, password } = req.body;
     if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
     const existing = await User.findOne({ $or: [{ username }, { email }] });
     if (existing) return res.status(409).json({ error: 'Username or email already exists' });
-    const user = new User({ username, email, mpesa, passwordHash: hashPassword(password), referralCode: username });
-    if (referralCode) {
-      const referrer = await User.findOne({ referralCode });
-      if (referrer) user.referredBy = referrer.username;
-    }
+    const user = new User({ username, email, mpesa, passwordHash: hashPassword(password) });
     await user.save();
     const token = generateToken();
     await new Session({ token, username }).save();
+    sendEmailAsync(
+      email,
+      'Welcome to ArbiMine!',
+      `<h2>Welcome ${username}!</h2><p>Thank you for joining ArbiMine.</p><p>You can now start scanning live arbitrage opportunities.</p>`
+    );
     res.json({ success: true, token, username });
   } catch (err) {
     console.error(err);
@@ -334,6 +350,11 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
+    sendEmailAsync(
+      email,
+      '🔐 New login to your ArbiMine account',
+      `<p>Your ArbiMine account was just logged into at ${new Date().toLocaleString()}.</p><p>If this was you, ignore this message.</p>`
+    );
     res.json({ success: true, token, username: user.username });
   } catch (err) {
     console.error(err);
@@ -349,7 +370,7 @@ app.get('/api/me', async (req, res) => {
     if (!session) return res.status(401).json({ error: 'Invalid session' });
     const user = await User.findOne({ username: session.username });
     if (!user) return res.status(401).json({ error: 'User not found' });
-    res.json({ username: user.username, email: user.email, mpesa: user.mpesa, referralCode: user.referralCode, blocked: user.blocked });
+    res.json({ username: user.username, email: user.email, mpesa: user.mpesa });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -371,190 +392,6 @@ app.get('/api/user/subscription', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
-});
-
-// ==================== REFERRAL ====================
-app.get('/api/referral', async (req, res) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = await Session.findOne({ token });
-    if (!session) return res.status(401).json({ error: 'Invalid session' });
-    const user = await User.findOne({ username: session.username });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    const link = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?ref=${user.referralCode}`;
-    res.json({ link });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ==================== MESSAGING ====================
-app.post('/api/messages', async (req, res) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = await Session.findOne({ token });
-    if (!session) return res.status(401).json({ error: 'Invalid session' });
-    const user = await User.findOne({ username: session.username });
-    if (!user) return res.status(401).json({ error: 'User not found' });
-    if (user.blocked) return res.status(403).json({ error: 'You are blocked from sending messages' });
-    const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Content required' });
-    const msg = new Message({ user: session.username, content, isAdmin: false, read: false });
-    await msg.save();
-    res.json({ success: true, message: msg });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.get('/api/messages', async (req, res) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = await Session.findOne({ token });
-    if (!session) return res.status(401).json({ error: 'Invalid session' });
-    const messages = await Message.find({ user: session.username }).sort({ createdAt: 1 });
-    await Message.updateMany({ user: session.username, isAdmin: true, read: false }, { read: true });
-    res.json(messages);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.put('/api/message/:id', async (req, res) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = await Session.findOne({ token });
-    if (!session) return res.status(401).json({ error: 'Invalid session' });
-    const msg = await Message.findById(req.params.id);
-    if (!msg) return res.status(404).json({ error: 'Not found' });
-    if (msg.user !== session.username) return res.status(403).json({ error: 'Not your message' });
-    msg.content = req.body.content;
-    msg.updatedAt = new Date();
-    await msg.save();
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.delete('/api/message/:id', async (req, res) => {
-  try {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = await Session.findOne({ token });
-    if (!session) return res.status(401).json({ error: 'Invalid session' });
-    const msg = await Message.findById(req.params.id);
-    if (!msg) return res.status(404).json({ error: 'Not found' });
-    if (msg.user !== session.username) return res.status(403).json({ error: 'Not your message' });
-    await msg.deleteOne();
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ==================== ADMIN ROUTES ====================
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-
-app.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    const token = crypto.randomBytes(32).toString('hex');
-    if (!global.adminTokens) global.adminTokens = new Set();
-    global.adminTokens.add(token);
-    res.json({ success: true, token });
-  } else {
-    res.status(401).json({ error: 'Invalid admin credentials' });
-  }
-});
-
-function adminAuth(req, res, next) {
-  const token = req.headers.authorization;
-  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
-
-app.get('/admin/users', adminAuth, async (req, res) => {
-  const users = await User.find({}, '-passwordHash');
-  res.json(users);
-});
-
-app.get('/admin/transactions', adminAuth, async (req, res) => {
-  const transactions = await Transaction.find().sort({ createdAt: -1 });
-  res.json(transactions);
-});
-
-app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
-  const { active, plan, expiresAt } = req.body;
-  const updates = { 'subscription.active': active };
-  if (plan) updates['subscription.plan'] = plan;
-  if (expiresAt) updates['subscription.expiresAt'] = new Date(expiresAt);
-  await User.findByIdAndUpdate(req.params.id, updates);
-  res.json({ success: true });
-});
-
-app.delete('/admin/user/:id', adminAuth, async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
-});
-
-app.get('/admin/messages', adminAuth, async (req, res) => {
-  const conversations = await Message.aggregate([
-    { $sort: { createdAt: -1 } },
-    { $group: { _id: '$user', lastMessage: { $first: '$$ROOT' }, count: { $sum: 1 } } },
-    { $sort: { 'lastMessage.createdAt': -1 } }
-  ]);
-  res.json(conversations.map(c => ({ _id: c._id, lastMessage: c.lastMessage, count: c.count })));
-});
-
-app.get('/admin/messages/:username', adminAuth, async (req, res) => {
-  const messages = await Message.find({ user: req.params.username }).sort({ createdAt: 1 });
-  await Message.updateMany({ user: req.params.username, isAdmin: false, read: false }, { read: true });
-  res.json(messages);
-});
-
-app.post('/admin/messages', adminAuth, async (req, res) => {
-  const { userId, content } = req.body;
-  if (!userId || !content) return res.status(400).json({ error: 'Missing fields' });
-  const msg = new Message({ user: userId, content, isAdmin: true, read: true });
-  await msg.save();
-  res.json({ success: true });
-});
-
-app.put('/admin/message/:id', adminAuth, async (req, res) => {
-  const msg = await Message.findById(req.params.id);
-  if (!msg) return res.status(404).json({ error: 'Not found' });
-  msg.content = req.body.content;
-  msg.updatedAt = new Date();
-  await msg.save();
-  res.json({ success: true });
-});
-
-app.delete('/admin/message/:id', adminAuth, async (req, res) => {
-  await Message.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
-});
-
-app.post('/admin/block/:username', adminAuth, async (req, res) => {
-  await User.findOneAndUpdate({ username: req.params.username }, { blocked: true });
-  res.json({ success: true });
-});
-
-app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
-  await User.findOneAndUpdate({ username: req.params.username }, { blocked: false });
-  res.json({ success: true });
 });
 
 // ==================== OPPORTUNITIES ENDPOINTS ====================
@@ -605,14 +442,138 @@ app.get('/api/opportunity/:id/details', async (req, res) => {
   res.json(result);
 });
 
-// ==================== PAYMENT (PAYSTACK) ====================
-app.post('/api/paystack/pay', async (req, res) => {
-  console.log('📩 Incoming payment request body:', req.body);
-  const { plan } = req.body || {};
-  if (!plan) {
-    return res.status(400).json({ error: 'Missing plan (weekly or monthly)' });
+// ==================== MESSAGING (User & Admin) ====================
+app.post('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const { content } = req.body;
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
+    const blocked = await BlockedUser.findOne({ username: session.username });
+    if (blocked) return res.status(403).json({ error: 'You have been blocked from sending messages' });
+    const msg = new Message({ user: session.username, isAdmin: false, content: content.trim() });
+    await msg.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
+});
 
+app.get('/api/messages', async (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const session = await Session.findOne({ token });
+    if (!session) return res.status(401).json({ error: 'Invalid session' });
+    const messages = await Message.find({ user: session.username }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin messaging
+app.get('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const users = await Message.distinct('user');
+    const conversations = [];
+    for (const user of users) {
+      const lastMsg = await Message.findOne({ user }).sort({ createdAt: -1 });
+      const count = await Message.countDocuments({ user });
+      conversations.push({ _id: user, count, lastMessage: lastMsg });
+    }
+    res.json(conversations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/admin/messages/:user', adminAuth, async (req, res) => {
+  try {
+    const { user } = req.params;
+    const messages = await Message.find({ user }).sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const { userId, content } = req.body;
+    if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
+    const msg = new Message({ user: userId, isAdmin: true, content: content.trim() });
+    await msg.save();
+    const user = await User.findOne({ username: userId });
+    if (user) {
+      sendEmailAsync(
+        user.email,
+        '📩 Admin Reply from ArbiMine Support',
+        `<p>You have received a new reply from ArbiMine admin:</p><p><em>${content}</em></p><p>Login to your account to view the full conversation.</p>`
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Message.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Content required' });
+    const msg = await Message.findByIdAndUpdate(id, { content: content.trim() }, { new: true });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.findOneAndUpdate({ username }, { username }, { upsert: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  try {
+    const { username } = req.params;
+    await BlockedUser.deleteOne({ username });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== PAYMENT (Paystack) ====================
+app.post('/api/pesapal/pay', async (req, res) => {
+  const { plan } = req.body;
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
@@ -620,31 +581,26 @@ app.post('/api/paystack/pay', async (req, res) => {
     if (!session) return res.status(401).json({ error: 'Invalid session' });
     const user = await User.findOne({ username: session.username });
     if (!user) return res.status(401).json({ error: 'User not found' });
-    if (user.blocked) return res.status(403).json({ error: 'Account blocked' });
-
-    const amountInKobo = plan === 'weekly' ? 100 * 100 : 350 * 100;
+    let amountInKobo = plan === 'weekly' ? 100 * 100 : 350 * 100;
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    if (!paystackSecretKey) return res.status(500).json({ error: 'Payment not configured' });
-
+    if (!paystackSecretKey) {
+      console.error('PAYSTACK_SECRET_KEY missing');
+      return res.status(500).json({ error: 'Payment not configured' });
+    }
     const cleanUsername = sanitizeReference(user.username);
     const reference = `arbimine_${cleanUsername}_${Date.now()}`;
     const callbackUrl = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}/api/payment/callback`;
-
-    console.log(`💰 Creating Paystack transaction: ${reference} for ${user.email}`);
-    console.log(`📌 Callback URL: ${callbackUrl}`);
-
+    console.log(`💰 Initializing Paystack: ${reference} for ${user.email}`);
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
       amount: amountInKobo,
       currency: 'KES',
-      reference,
+      reference: reference,
       callback_url: callbackUrl,
-      channels: ['mobile_money', 'card'],
       metadata: { plan, username: user.username, user_id: user._id.toString() }
     }, {
       headers: { Authorization: `Bearer ${paystackSecretKey}`, 'Content-Type': 'application/json' }
     });
-
     await Transaction.create({
       reference,
       user: user.username,
@@ -653,10 +609,10 @@ app.post('/api/paystack/pay', async (req, res) => {
       status: 'pending',
       paystackResponse: response.data
     });
-
     if (response.data.status) {
       res.json({ success: true, authorizationUrl: response.data.data.authorization_url, reference });
     } else {
+      console.error('Paystack init error:', response.data);
       res.status(400).json({ error: response.data.message || 'Payment initialization failed' });
     }
   } catch (err) {
@@ -665,28 +621,32 @@ app.post('/api/paystack/pay', async (req, res) => {
   }
 });
 
-// ==================== CALLBACK ====================
-app.get('/api/payment/callback', async (req, res) => {
-  console.log('🔔 CALLBACK HIT! Full URL:', req.originalUrl);
-  console.log('Query params:', req.query);
-
-  const { reference } = req.query;
-  if (!reference) {
-    console.log('❌ No reference in callback');
-    return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
+app.get('/api/transaction/:reference', async (req, res) => {
+  const { reference } = req.params;
+  try {
+    const tx = await Transaction.findOne({ reference });
+    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+    res.json({ status: tx.status, plan: tx.plan, amount: tx.amount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
+});
+
+app.get('/api/payment/callback', async (req, res) => {
+  const { reference } = req.query;
+  if (!reference) return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
   try {
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     const verification = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: { Authorization: `Bearer ${secretKey}` }
     });
-    console.log(`✅ Verification status: ${verification.data.status}`);
     const transaction = await Transaction.findOne({ reference });
+    let status = 'failed';
     if (transaction) {
-      transaction.status = verification.data.data.status === 'success' ? 'success' : 'failed';
+      status = verification.data.data.status === 'success' ? 'success' : 'failed';
+      transaction.status = status;
       transaction.paystackResponse = verification.data;
       await transaction.save();
-      console.log(`📝 Transaction ${reference} status updated to ${transaction.status}`);
     }
     if (verification.data.status && verification.data.data.status === 'success') {
       const meta = verification.data.data.metadata;
@@ -699,88 +659,131 @@ app.get('/api/payment/callback', async (req, res) => {
           { username },
           { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
         );
-        console.log(`✅ Subscription updated for ${username}`);
+        const user = await User.findOne({ username });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '✅ Payment Successful – ArbiMine Pro Activated',
+            `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+          );
+        }
       }
-      const redirectUrl = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=success&reference=${reference}`;
-      console.log('🔄 Redirecting to:', redirectUrl);
-      return res.redirect(redirectUrl);
+      return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=success&reference=${reference}`);
     } else {
-      console.log('❌ Payment verification failed');
+      const tx = await Transaction.findOne({ reference });
+      if (tx && tx.user) {
+        const user = await User.findOne({ username: tx.user });
+        if (user) {
+          sendEmailAsync(
+            user.email,
+            '❌ Payment Failed – ArbiMine',
+            `<p>Your payment of KES ${tx.amount} for ${tx.plan} plan failed.</p><p>Reference: ${reference}</p><p>Please try again.</p>`
+          );
+        }
+      }
       return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
     }
   } catch (err) {
-    console.error('❌ Callback error:', err.message);
+    console.error('Verification error:', err);
     return res.redirect(`${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}?payment_status=failed`);
   }
 });
 
-// ==================== WEBHOOK ====================
-app.post('/api/payment/webhook', (req, res) => {
-  const rawBody = req.body;
-  const hash = crypto
-    .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-    .update(rawBody)
-    .digest('hex');
-
-  if (hash !== req.headers['x-paystack-signature']) {
-    console.warn('❌ Webhook signature mismatch');
-    return res.sendStatus(401);
-  }
-
-  const event = JSON.parse(rawBody.toString());
-  console.log('✅ Webhook verified:', event.event);
-
+app.post('/api/payment/webhook', async (req, res) => {
+  const event = req.body;
+  console.log('Webhook received:', event);
   if (event.event === 'charge.success') {
     const reference = event.data.reference;
-    (async () => {
-      try {
-        const transaction = await Transaction.findOne({ reference });
-        if (transaction) {
-          transaction.status = 'success';
-          transaction.paystackResponse = event;
-          await transaction.save();
-          console.log(`📝 Webhook: ${reference} marked as success`);
-        }
-        const metadata = event.data.metadata;
-        const plan = metadata?.plan;
-        const username = metadata?.username;
-        if (username && plan) {
-          const days = plan === 'weekly' ? 7 : 30;
-          const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-          await User.findOneAndUpdate(
-            { username },
-            { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
-          );
-          console.log(`✅ Webhook: subscription updated for ${username}`);
-        }
-      } catch (err) {
-        console.error('Webhook processing error:', err);
+    const transaction = await Transaction.findOne({ reference });
+    if (transaction) {
+      transaction.status = 'success';
+      transaction.paystackResponse = event;
+      await transaction.save();
+    }
+    const metadata = event.data.metadata;
+    const plan = metadata?.plan;
+    const username = metadata?.username;
+    if (username && plan) {
+      const days = plan === 'weekly' ? 7 : 30;
+      const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      await User.findOneAndUpdate(
+        { username },
+        { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
+      );
+      const user = await User.findOne({ username });
+      if (user) {
+        sendEmailAsync(
+          user.email,
+          '✅ Payment Successful – ArbiMine Pro Activated (Webhook)',
+          `<h2>Thank you for upgrading!</h2><p>Your ${plan} subscription is now active until ${expiresAt.toLocaleString()}.</p><p>Reference: ${reference}</p>`
+        );
       }
-    })();
+      console.log(`Subscription updated via webhook for ${username}`);
+    }
   }
-
   res.json({ status: 'received' });
 });
 
-// ==================== MANUAL TRANSACTION STATUS ====================
-app.get('/api/transaction/status', async (req, res) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  const session = await Session.findOne({ token });
-  if (!session) return res.status(401).json({ error: 'Invalid session' });
+// ==================== ADMIN ====================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 
-  const { reference } = req.query;
-  let query = { user: session.username };
-  if (reference) query.reference = reference;
-
-  const tx = await Transaction.findOne(query).sort({ createdAt: -1 });
-  if (!tx) return res.status(404).json({ error: 'No transaction found' });
-  res.json(tx);
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    if (!global.adminTokens) global.adminTokens = new Set();
+    global.adminTokens.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
 });
 
-// ==================== SERVE ADMIN HTML ====================
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/admin/users', adminAuth, async (req, res) => {
+  const users = await User.find({}, '-passwordHash');
+  res.json(users);
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  const transactions = await Transaction.find().sort({ createdAt: -1 });
+  res.json(transactions);
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const days = plan === 'weekly' ? 7 : 30;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ==================== Health Check ====================
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });
 
 // ==================== START SERVER ====================
