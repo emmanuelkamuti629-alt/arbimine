@@ -10,7 +10,7 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ==================== MongoDB Connection ====================
+// ==================== MongoDB ====================
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
@@ -24,7 +24,7 @@ app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== Email (nodemailer) ====================
+// ==================== Email ====================
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT || 587;
 const SMTP_USER = process.env.SMTP_USER;
@@ -109,17 +109,21 @@ function sanitizeReference(str) {
   return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
 }
 
-// ==================== EXCHANGE SCANNER (memory-optimized) ====================
-// Top 20 most liquid exchanges with USDT pairs
-const TOP_EXCHANGES = [
-  'binance', 'bybit', 'okx', 'kucoin', 'gateio', 'htx', 'mexc',
-  'bitget', 'kraken', 'bitfinex', 'bitstamp', 'crypto', 'whitebit',
-  'bingx', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart'
+// ==================== EXCHANGE SCANNER (CCXT – 50+ exchanges, sequential) ====================
+// Full list of exchanges (all that CCXT supports for public tickers)
+const EXCHANGE_IDS = [
+  'binance', 'bybit', 'okx', 'bitget', 'kucoin', 'gateio', 'htx', 'mexc',
+  'kraken', 'coinbase', 'crypto', 'bitfinex', 'gemini', 'bitstamp', 'whitebit',
+  'bingx', 'xt', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart', 'biconomy',
+  'probit', 'toobit', 'weex', 'digifinex', 'orangex', 'kcex', 'deepcoin', 'coinw',
+  'fameex', 'hibt', 'blofin', 'tapbit', 'cexio', 'backpack', 'novadax', 'coinsph',
+  'bitunix', 'btse', 'coincatch', 'coinstore', 'hotcoin', 'azbit', 'bitrue',
+  'koinbx', 'bvox', 'bithumb', 'upbit'
 ];
 
-// Build public exchange instances (only for supported ones)
+// Build instances (only those that work)
 const exchangeInstances = {};
-for (const id of TOP_EXCHANGES) {
+for (const id of EXCHANGE_IDS) {
   try {
     const ExchangeClass = ccxt[id];
     if (!ExchangeClass) continue;
@@ -138,7 +142,7 @@ let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
 
-// Sequential fast scan to avoid OOM
+// Sequential fast scan (one exchange at a time) to avoid OOM
 async function fastScan() {
   console.log('🔄 Fast scan (prices) on', Object.keys(exchangeInstances).length, 'exchanges...');
   const start = Date.now();
@@ -197,7 +201,7 @@ async function fastScan() {
   if (global.gc) global.gc();
 }
 
-// ===== Detail scan helpers =====
+// ===== Detail scan helpers (unchanged) =====
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId];
   if (!ex) return null;
@@ -291,7 +295,7 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-// Schedule scans (with delay to avoid hammering)
+// Schedule scans (with delay)
 fastScan();
 setInterval(fastScan, 60000);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, 120000);
@@ -756,14 +760,14 @@ app.post('/api/payment/webhook', async (req, res) => {
   res.json({ status: 'received' });
 });
 
-// ==================== SERVE ADMIN HTML ====================
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
 // ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
+// ==================== SERVE ADMIN HTML ====================
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // ==================== START SERVER ====================
