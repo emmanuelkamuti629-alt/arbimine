@@ -19,6 +19,7 @@ mongoose.connect(MONGO_URI)
   });
 
 // ==================== Middleware ====================
+// Webhook must receive raw body before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -85,101 +86,121 @@ function sanitizeReference(str) {
   return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
 }
 
-// ==================== EXCHANGE SCANNING (ccxt) ====================
-const SUPPORTED_EXCHANGES = ['mexc', 'kucoin', 'binance', 'bingx', 'htx', 'gateio'];
+// ==================== EXCHANGE SCANNER (CCXT) ====================
+const EXCHANGE_IDS = [
+  'binance', 'bybit', 'okx', 'bitget', 'kucoin', 'gateio', 'htx', 'mexc',
+  'kraken', 'coinbase', 'crypto', 'bitfinex', 'gemini', 'bitstamp', 'whitebit',
+  'bingx', 'xt', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart', 'biconomy',
+  'probit', 'toobit', 'weex', 'digifinex', 'orangex', 'kcex', 'deepcoin', 'coinw',
+  'fameex', 'hibt', 'blofin', 'tapbit', 'cexio', 'backpack', 'novadax', 'coinsph',
+  'bitunix', 'btse', 'coincatch', 'coinstore', 'hotcoin', 'azbit', 'bitrue',
+  'koinbx', 'bvox', 'bithumb', 'upbit'
+];
 
-function buildExchange(exchangeId, apiKey, secret) {
-  const exchangeMap = {
-    binance: ccxt.binance, kucoin: ccxt.kucoin, htx: ccxt.huobi, gateio: ccxt.gateio,
-    mexc: ccxt.mexc, bingx: ccxt.bingx
-  };
-  const ExchangeClass = exchangeMap[exchangeId];
-  if (!ExchangeClass) return null;
-  const config = { enableRateLimit: true };
-  if (apiKey && secret) { config.apiKey = apiKey; config.secret = secret; }
-  return new ExchangeClass(config);
-}
-
-const EXCHANGE_CREDENTIALS = {
-  binance: { apiKey: process.env.BINANCE_API_KEY, secret: process.env.BINANCE_SECRET },
-  kucoin: { apiKey: process.env.KUCOIN_API_KEY, secret: process.env.KUCOIN_SECRET },
-  htx: { apiKey: process.env.HTX_API_KEY, secret: process.env.HTX_SECRET },
-  gateio: { apiKey: process.env.GATEIO_API_KEY, secret: process.env.GATEIO_SECRET },
-  mexc: { apiKey: process.env.MEXC_API_KEY, secret: process.env.MEXC_SECRET },
-  bingx: { apiKey: process.env.BINGX_API_KEY, secret: process.env.BINGX_SECRET }
-};
+// Build public exchange instances
 const exchangeInstances = {};
-for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
-  const ex = buildExchange(id, cred.apiKey, cred.secret);
-  if (ex) exchangeInstances[id] = ex;
-}
-
-async function safeGet(url, name) {
+for (const id of EXCHANGE_IDS) {
   try {
-    const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    return res.data;
-  } catch (e) {
-    console.log(`${name} FAILED:`, e.message);
-    return null;
+    const ExchangeClass = ccxt[id];
+    if (!ExchangeClass) {
+      console.log(`⚠️ Exchange ${id} not supported by CCXT`);
+      continue;
+    }
+    const ex = new ExchangeClass({ enableRateLimit: true });
+    exchangeInstances[id] = ex;
+  } catch (err) {
+    console.log(`⚠️ Failed to initialize ${id}:`, err.message);
   }
 }
-
-const EXCHANGES = {
-  mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
-  kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
-  bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
-  bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
-  lbank: 'https://api.lbank.info/v1/ticker.do?symbol=all',
-  coinex: 'https://api.coinex.com/v1/market/ticker/all',
-  gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
-  okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
-  bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
-  htx: 'https://api.huobi.pro/market/tickers',
-  bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
-  poloniex: 'https://api.poloniex.com/markets/ticker24h',
-  cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
-  upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
-};
+console.log(`📊 Loaded ${Object.keys(exchangeInstances).length} exchanges`);
 
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
-
-function extractSymbol(exchange, symbol, t) {
-  let sym = null, price = null, volume = null;
-  try {
-    if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT', ''); price = +t.lastPrice; volume = +t.quoteVolume; }
-    else if (exchange === 'kucoin' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volValue; }
-    else if (exchange === 'bitmart' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last_price; volume = +t.quote_volume; }
-    else if (exchange === 'bitget') { sym = t.symbol?.replace('USDT', ''); price = +t.close; volume = +t.usdtVol; }
-    else if (exchange === 'gateio' && symbol.includes('_USDT')) { sym = symbol.replace('_USDT', ''); price = +t.last; volume = +t.quote_volume; }
-    else if (exchange === 'okx' && symbol.includes('-USDT')) { sym = symbol.replace('-USDT', ''); price = +t.last; volume = +t.volCcy24h; }
-    else if (exchange === 'bybit') { sym = t.symbol?.replace('USDT', ''); price = +t.lastPrice; volume = +t.turnover24h; }
-    else if (exchange === 'htx') { sym = symbol.replace('usdt', '').toUpperCase(); price = +t.close; volume = +t.vol; }
-    else if (exchange === 'bitfinex' && Array.isArray(t) && t[0]?.startsWith('t')) { sym = t[0].replace('t', '').replace('USD', ''); price = +t[7]; volume = +t[8]; }
-    else if (exchange === 'cryptocom') { const inst = t.i; if (inst?.includes('_USDT')) { sym = inst.replace('_USDT', ''); price = +t.a; volume = +t.v; } }
-    else if (exchange === 'upbit' && t.market?.startsWith('KRW-')) { sym = t.market.replace('KRW-', ''); price = +t.trade_price; volume = +t.acc_trade_price_24h; }
-    if (!sym || !price) return null;
-    return { symbol: sym, price, volume: volume || 0 };
-  } catch { return null; }
-}
-
 let cachedOpportunities = [];
 let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
-const FAST_SCAN_INTERVAL = 60000;
-const DETAIL_SCAN_INTERVAL = 120000;
-const DETAIL_OPP_LIMIT = 200;
 
-async function fetchRealNetworks(exchangeId, coin) {
-  const key = exchangeId.toLowerCase();
-  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
-  let ex = exchangeInstances[key];
-  if (!ex) {
-    const ExchangeClass = ccxt[key];
-    if (!ExchangeClass) return null;
-    ex = new ExchangeClass({ enableRateLimit: true });
+// Fetch tickers for one exchange
+async function fetchTickers(exchangeId) {
+  const ex = exchangeInstances[exchangeId];
+  if (!ex) return null;
+  try {
+    await ex.loadMarkets();
+    const tickers = await ex.fetchTickers();
+    return { exchangeId, tickers };
+  } catch (err) {
+    // silent fail for individual exchange
+    return null;
   }
+}
+
+// Fast scan – parallel fetch from all exchanges
+async function fastScan() {
+  console.log('🔄 Fast scan (prices) on', Object.keys(exchangeInstances).length, 'exchanges...');
+  const start = Date.now();
+  try {
+    // Fetch tickers in parallel with concurrency control
+    const ids = Object.keys(exchangeInstances);
+    const results = [];
+    const chunkSize = 10;
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
+      const chunkResults = await Promise.all(chunk.map(id => fetchTickers(id)));
+      results.push(...chunkResults.filter(r => r !== null));
+    }
+
+    // Build symbol map: base -> [{ exchange, price, volume }]
+    const symbolMap = {};
+    for (const { exchangeId, tickers } of results) {
+      for (const [symbol, ticker] of Object.entries(tickers)) {
+        if (!ticker.last || ticker.last <= 0) continue;
+        if (!symbol.endsWith('/USDT')) continue;
+        const base = symbol.replace('/USDT', '');
+        if (!symbolMap[base]) symbolMap[base] = [];
+        symbolMap[base].push({
+          exchange: exchangeId,
+          price: ticker.last,
+          volume: ticker.quoteVolume || ticker.baseVolume || 0
+        });
+      }
+    }
+
+    // Find arbitrage opportunities
+    const opportunities = [];
+    for (const [symbol, prices] of Object.entries(symbolMap)) {
+      if (prices.length < 2) continue;
+      prices.sort((a, b) => a.price - b.price);
+      const buy = prices[0];
+      const sell = prices[prices.length - 1];
+      const spread = ((sell.price - buy.price) / buy.price) * 100;
+      if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
+      let liquidity = buy.volume ? buy.volume * buy.price : 0;
+      if (liquidity === 0) liquidity = buy.price * 50000;
+      opportunities.push({
+        id: `${symbol}-${buy.exchange}-${sell.exchange}`,
+        symbol,
+        buyExchange: buy.exchange.toUpperCase(),
+        sellExchange: sell.exchange.toUpperCase(),
+        buyPrice: buy.price.toFixed(8),
+        sellPrice: sell.price.toFixed(8),
+        spread: spread.toFixed(2),
+        liquidity: liquidity.toFixed(0)
+      });
+    }
+
+    cachedOpportunities = opportunities.sort((a, b) => +b.spread - +a.spread);
+    lastFastScan = Date.now();
+    console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
+  } catch (err) {
+    console.error('Fast scan failed:', err);
+  }
+}
+
+// Helper: fetch network info (withdraw/deposit) for a coin on an exchange
+async function fetchRealNetworks(exchangeId, coin) {
+  const ex = exchangeInstances[exchangeId];
+  if (!ex) return null;
   try {
     await ex.loadMarkets();
     const currencies = await ex.fetchCurrencies();
@@ -200,92 +221,22 @@ async function fetchRealNetworks(exchangeId, coin) {
     }
     return { networks, canWithdraw: coinData.withdraw === true, canDeposit: coinData.deposit === true };
   } catch (err) {
-    console.log(`Network error ${exchangeId} ${coin}:`, err.message);
+    // console.log(`Network error ${exchangeId} ${coin}:`, err.message);
     return null;
   }
 }
 
+// Helper: fetch liquidity (orderbook depth) for a symbol
 async function fetchLiquidity(exchangeId, symbol) {
-  const key = exchangeId.toLowerCase();
-  if (!SUPPORTED_EXCHANGES.includes(key)) return null;
-  let ex = exchangeInstances[key];
-  if (!ex) {
-    const ExchangeClass = ccxt[key];
-    if (!ExchangeClass) return null;
-    ex = new ExchangeClass({ enableRateLimit: true });
-  }
+  const ex = exchangeInstances[exchangeId];
+  if (!ex) return null;
   try {
     const orderbook = await ex.fetchOrderBook(symbol, 5);
     const bids = orderbook.bids.slice(0, 3);
     return bids.reduce((sum, [price, amount]) => sum + price * amount, 0);
   } catch (err) {
-    console.log(`Liquidity error ${exchangeId} ${symbol}:`, err.message);
+    // console.log(`Liquidity error ${exchangeId} ${symbol}:`, err.message);
     return null;
-  }
-}
-
-async function fastScan() {
-  console.log('🔄 Fast scan (prices)...');
-  const start = Date.now();
-  try {
-    const results = await Promise.all(Object.entries(EXCHANGES).map(([n, u]) => safeGet(u, n)));
-    const allData = {};
-    Object.keys(EXCHANGES).forEach(e => (allData[e] = {}));
-    results.forEach((data, idx) => {
-      const ex = Object.keys(EXCHANGES)[idx];
-      if (!data) return;
-      let tickers = [];
-      if (ex === 'mexc') tickers = data;
-      else if (ex === 'kucoin') tickers = data.data?.ticker || [];
-      else if (ex === 'bitmart') tickers = data.data?.tickers || [];
-      else if (ex === 'bitget') tickers = data.data || [];
-      else if (ex === 'gateio') tickers = data;
-      else if (ex === 'okx') tickers = data.data || [];
-      else if (ex === 'bybit') tickers = data.result?.list || [];
-      else if (ex === 'htx') tickers = data.data || [];
-      else if (ex === 'bitfinex') tickers = data || [];
-      else if (ex === 'poloniex') tickers = data.data || [];
-      else if (ex === 'cryptocom') tickers = data.result?.data || [];
-      else if (ex === 'upbit') tickers = data || [];
-      for (const t of tickers) {
-        const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
-        const d = extractSymbol(ex, symKey, t);
-        if (!d) continue;
-        allData[ex][d.symbol] = { price: d.price, volume: d.volume };
-      }
-    });
-    const symbols = new Set();
-    Object.values(allData).forEach(ex => Object.keys(ex).forEach(s => symbols.add(s)));
-    const opportunities = [];
-    for (const symbol of symbols) {
-      const prices = [];
-      for (const ex of Object.keys(allData)) {
-        if (allData[ex][symbol]) prices.push([ex, allData[ex][symbol]]);
-      }
-      if (prices.length < 2) continue;
-      prices.sort((a, b) => a[1].price - b[1].price);
-      const [buyEx, buy] = prices[0];
-      const [sellEx, sell] = prices[prices.length - 1];
-      const spread = ((sell.price - buy.price) / buy.price) * 100;
-      if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
-      let liquidity = buy.volume ? buy.volume * buy.price : 0;
-      if (liquidity === 0) liquidity = buy.price * 50000 * (spread > 10 ? 0.3 : spread > 5 ? 0.6 : 1);
-      opportunities.push({
-        id: `${symbol}-${buyEx}-${sellEx}`,
-        symbol,
-        buyExchange: buyEx.toUpperCase(),
-        sellExchange: sellEx.toUpperCase(),
-        buyPrice: buy.price.toFixed(8),
-        sellPrice: sell.price.toFixed(8),
-        spread: spread.toFixed(2),
-        liquidity: liquidity.toFixed(0)
-      });
-    }
-    cachedOpportunities = opportunities.sort((a,b) => +b.spread - +a.spread);
-    lastFastScan = Date.now();
-    console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
-  } catch (err) {
-    console.error('Fast scan failed:', err);
   }
 }
 
@@ -299,10 +250,12 @@ function computeTradable(buyNetworks, sellNetworks) {
   return false;
 }
 
+// Detail scan – enrich top opportunities with network and liquidity data
 async function detailScan() {
-  console.log('🔍 Detail scan (networks & liquidity) for top', DETAIL_OPP_LIMIT, 'opportunities...');
+  const topOps = cachedOpportunities.slice(0, 200);
+  if (topOps.length === 0) return;
+  console.log('🔍 Detail scan (networks & liquidity) for top', topOps.length, 'opportunities...');
   const start = Date.now();
-  const topOps = cachedOpportunities.slice(0, DETAIL_OPP_LIMIT);
   let updated = 0;
   for (const opp of topOps) {
     const coin = opp.symbol;
@@ -335,21 +288,22 @@ async function detailScan() {
         sellDeposit: sellNet?.canDeposit || false
       });
       updated++;
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 100));
     } catch (err) {
-      console.log(`Detail scan failed for ${opp.id}:`, err.message);
+      // skip
     }
   }
   lastDetailScan = Date.now();
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
+// Schedule scans
 fastScan();
-setInterval(fastScan, FAST_SCAN_INTERVAL);
-setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
+setInterval(fastScan, 60000);
+setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, 120000);
 setTimeout(() => { if (cachedOpportunities.length > 0) detailScan(); }, 30000);
 
-// ==================== USER AUTH ROUTES ====================
+// ==================== AUTH ROUTES ====================
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, mpesa, password, referralCode } = req.body;
