@@ -109,30 +109,24 @@ function sanitizeReference(str) {
   return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
 }
 
-// ==================== DYNAMIC EXCHANGE SCANNER (CCXT) ====================
-const EXCHANGE_IDS = [
-  'binance', 'bybit', 'okx', 'bitget', 'kucoin', 'gateio', 'htx', 'mexc',
-  'kraken', 'coinbase', 'crypto', 'bitfinex', 'gemini', 'bitstamp', 'whitebit',
-  'bingx', 'xt', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart', 'biconomy',
-  'probit', 'toobit', 'weex', 'digifinex', 'orangex', 'kcex', 'deepcoin', 'coinw',
-  'fameex', 'hibt', 'blofin', 'tapbit', 'cexio', 'backpack', 'novadax', 'coinsph',
-  'bitunix', 'btse', 'coincatch', 'coinstore', 'hotcoin', 'azbit', 'bitrue',
-  'koinbx', 'bvox', 'bithumb', 'upbit'
+// ==================== EXCHANGE SCANNER (memory-optimized) ====================
+// Top 20 most liquid exchanges with USDT pairs
+const TOP_EXCHANGES = [
+  'binance', 'bybit', 'okx', 'kucoin', 'gateio', 'htx', 'mexc',
+  'bitget', 'kraken', 'bitfinex', 'bitstamp', 'crypto', 'whitebit',
+  'bingx', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart'
 ];
 
-// Build public exchange instances
+// Build public exchange instances (only for supported ones)
 const exchangeInstances = {};
-for (const id of EXCHANGE_IDS) {
+for (const id of TOP_EXCHANGES) {
   try {
     const ExchangeClass = ccxt[id];
-    if (!ExchangeClass) {
-      console.log(`⚠️ Exchange ${id} not supported by CCXT`);
-      continue;
-    }
+    if (!ExchangeClass) continue;
     const ex = new ExchangeClass({ enableRateLimit: true });
     exchangeInstances[id] = ex;
   } catch (err) {
-    console.log(`⚠️ Failed to initialize ${id}:`, err.message);
+    // skip
   }
 }
 console.log(`📊 Loaded ${Object.keys(exchangeInstances).length} exchanges`);
@@ -144,78 +138,66 @@ let detailedCache = new Map();
 let lastFastScan = 0;
 let lastDetailScan = 0;
 
-async function fetchTickers(exchangeId) {
-  const ex = exchangeInstances[exchangeId];
-  if (!ex) return null;
-  try {
-    await ex.loadMarkets();
-    const tickers = await ex.fetchTickers();
-    return { exchangeId, tickers };
-  } catch (err) {
-    // silent fail
-    return null;
-  }
-}
-
+// Sequential fast scan to avoid OOM
 async function fastScan() {
   console.log('🔄 Fast scan (prices) on', Object.keys(exchangeInstances).length, 'exchanges...');
   const start = Date.now();
-  try {
-    const ids = Object.keys(exchangeInstances);
-    const results = [];
-    const chunkSize = 10;
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      const chunk = ids.slice(i, i + chunkSize);
-      const chunkResults = await Promise.all(chunk.map(id => fetchTickers(id)));
-      results.push(...chunkResults.filter(r => r !== null));
-    }
-
-    const symbolMap = {};
-    for (const { exchangeId, tickers } of results) {
+  const symbolMap = {}; // base -> [{exchange, price, volume}]
+  const ids = Object.keys(exchangeInstances);
+  
+  for (const id of ids) {
+    try {
+      const ex = exchangeInstances[id];
+      await ex.loadMarkets();
+      const tickers = await ex.fetchTickers();
       for (const [symbol, ticker] of Object.entries(tickers)) {
         if (!ticker.last || ticker.last <= 0) continue;
         if (!symbol.endsWith('/USDT')) continue;
         const base = symbol.replace('/USDT', '');
         if (!symbolMap[base]) symbolMap[base] = [];
         symbolMap[base].push({
-          exchange: exchangeId,
+          exchange: id,
           price: ticker.last,
           volume: ticker.quoteVolume || ticker.baseVolume || 0
         });
       }
+    } catch (err) {
+      // skip failing exchange
     }
-
-    const opportunities = [];
-    for (const [symbol, prices] of Object.entries(symbolMap)) {
-      if (prices.length < 2) continue;
-      prices.sort((a, b) => a.price - b.price);
-      const buy = prices[0];
-      const sell = prices[prices.length - 1];
-      const spread = ((sell.price - buy.price) / buy.price) * 100;
-      if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
-      let liquidity = buy.volume ? buy.volume * buy.price : 0;
-      if (liquidity === 0) liquidity = buy.price * 50000;
-      opportunities.push({
-        id: `${symbol}-${buy.exchange}-${sell.exchange}`,
-        symbol,
-        buyExchange: buy.exchange.toUpperCase(),
-        sellExchange: sell.exchange.toUpperCase(),
-        buyPrice: buy.price.toFixed(8),
-        sellPrice: sell.price.toFixed(8),
-        spread: spread.toFixed(2),
-        liquidity: liquidity.toFixed(0)
-      });
-    }
-
-    cachedOpportunities = opportunities.sort((a, b) => +b.spread - +a.spread);
-    lastFastScan = Date.now();
-    console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
-  } catch (err) {
-    console.error('Fast scan failed:', err);
   }
+
+  // Build opportunities
+  const opportunities = [];
+  for (const [symbol, prices] of Object.entries(symbolMap)) {
+    if (prices.length < 2) continue;
+    prices.sort((a, b) => a.price - b.price);
+    const buy = prices[0];
+    const sell = prices[prices.length - 1];
+    const spread = ((sell.price - buy.price) / buy.price) * 100;
+    if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
+    let liquidity = buy.volume ? buy.volume * buy.price : 0;
+    if (liquidity === 0) liquidity = buy.price * 50000;
+    opportunities.push({
+      id: `${symbol}-${buy.exchange}-${sell.exchange}`,
+      symbol,
+      buyExchange: buy.exchange.toUpperCase(),
+      sellExchange: sell.exchange.toUpperCase(),
+      buyPrice: buy.price.toFixed(8),
+      sellPrice: sell.price.toFixed(8),
+      spread: spread.toFixed(2),
+      liquidity: liquidity.toFixed(0)
+    });
+  }
+
+  cachedOpportunities = opportunities.sort((a, b) => +b.spread - +a.spread);
+  lastFastScan = Date.now();
+  console.log(`✅ Fast scan: ${cachedOpportunities.length} opportunities in ${Date.now() - start}ms`);
+  
+  // Suggest garbage collection (Node may ignore, but helps)
+  if (global.gc) global.gc();
 }
 
-// ===== Helper functions for detail scan =====
+// ===== Detail scan helpers =====
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId];
   if (!ex) return null;
@@ -239,7 +221,6 @@ async function fetchRealNetworks(exchangeId, coin) {
     }
     return { networks, canWithdraw: coinData.withdraw === true, canDeposit: coinData.deposit === true };
   } catch (err) {
-    // silent fail
     return null;
   }
 }
@@ -269,7 +250,7 @@ function computeTradable(buyNetworks, sellNetworks) {
 async function detailScan() {
   const topOps = cachedOpportunities.slice(0, 200);
   if (topOps.length === 0) return;
-  console.log('🔍 Detail scan (networks & liquidity) for top', topOps.length, 'opportunities...');
+  console.log('🔍 Detail scan for top', topOps.length, 'opportunities...');
   const start = Date.now();
   let updated = 0;
   for (const opp of topOps) {
@@ -304,15 +285,13 @@ async function detailScan() {
       });
       updated++;
       await new Promise(r => setTimeout(r, 100));
-    } catch (err) {
-      // skip
-    }
+    } catch (err) {}
   }
   lastDetailScan = Date.now();
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-// Schedule scans
+// Schedule scans (with delay to avoid hammering)
 fastScan();
 setInterval(fastScan, 60000);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, 120000);
@@ -442,7 +421,7 @@ app.get('/api/opportunity/:id/details', async (req, res) => {
   res.json(result);
 });
 
-// ==================== MESSAGING (User & Admin) ====================
+// ==================== MESSAGING (User) ====================
 app.post('/api/messages', async (req, res) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -476,7 +455,60 @@ app.get('/api/messages', async (req, res) => {
   }
 });
 
-// Admin messaging
+// ==================== ADMIN ====================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = crypto.randomBytes(32).toString('hex');
+    if (!global.adminTokens) global.adminTokens = new Set();
+    global.adminTokens.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid admin credentials' });
+  }
+});
+
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/admin/users', adminAuth, async (req, res) => {
+  const users = await User.find({}, '-passwordHash');
+  res.json(users);
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  const transactions = await Transaction.find().sort({ createdAt: -1 });
+  res.json(transactions);
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const days = plan === 'weekly' ? 7 : 30;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+// Admin Messaging
 app.get('/admin/messages', adminAuth, async (req, res) => {
   try {
     const users = await Message.distinct('user');
@@ -724,64 +756,12 @@ app.post('/api/payment/webhook', async (req, res) => {
   res.json({ status: 'received' });
 });
 
-// ==================== ADMIN ====================
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-
-app.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    const token = crypto.randomBytes(32).toString('hex');
-    if (!global.adminTokens) global.adminTokens = new Set();
-    global.adminTokens.add(token);
-    res.json({ success: true, token });
-  } else {
-    res.status(401).json({ error: 'Invalid admin credentials' });
-  }
-});
-
-function adminAuth(req, res, next) {
-  const token = req.headers.authorization;
-  if (!token || !global.adminTokens || !global.adminTokens.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
-
-app.get('/admin/users', adminAuth, async (req, res) => {
-  const users = await User.find({}, '-passwordHash');
-  res.json(users);
-});
-
-app.get('/admin/transactions', adminAuth, async (req, res) => {
-  const transactions = await Transaction.find().sort({ createdAt: -1 });
-  res.json(transactions);
-});
-
-app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
-  const { active, plan, expiresAt } = req.body;
-  const updates = { 'subscription.active': active };
-  if (plan) updates['subscription.plan'] = plan;
-  if (active && !expiresAt) {
-    const days = plan === 'weekly' ? 7 : 30;
-    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-  } else if (expiresAt) {
-    updates['subscription.expiresAt'] = new Date(expiresAt);
-  }
-  await User.findByIdAndUpdate(req.params.id, updates);
-  res.json({ success: true });
-});
-
-app.delete('/admin/user/:id', adminAuth, async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
-});
-
+// ==================== SERVE ADMIN HTML ====================
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ==================== Health Check ====================
+// ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });
