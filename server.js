@@ -158,62 +158,31 @@ for (const [id, cred] of Object.entries(EXCHANGE_CREDENTIALS)) {
   if (ex) exchangeInstances[id] = ex;
 }
 
-// Ticker fetching: use CCXT for all exchanges (simpler, more reliable)
-// We'll use CCXT to fetch tickers for all 50 exchanges.
-// Create CCXT instances (public, no keys needed for tickers)
-const ccxtExchanges = {
-  binance: new ccxt.binance({ enableRateLimit: true }),
-  bybit: new ccxt.bybit({ enableRateLimit: true }),
-  okx: new ccxt.okx({ enableRateLimit: true }),
-  bitget: new ccxt.bitget({ enableRateLimit: true }),
-  kucoin: new ccxt.kucoin({ enableRateLimit: true }),
-  gateio: new ccxt.gateio({ enableRateLimit: true }),
-  htx: new ccxt.htx({ enableRateLimit: true }),
-  mexc: new ccxt.mexc({ enableRateLimit: true }),
-  kraken: new ccxt.kraken({ enableRateLimit: true }),
-  coinbase: new ccxt.coinbase({ enableRateLimit: true }),
-  cryptocom: new ccxt.cryptocom({ enableRateLimit: true }),
-  bitfinex: new ccxt.bitfinex({ enableRateLimit: true }),
-  gemini: new ccxt.gemini({ enableRateLimit: true }),
-  bitstamp: new ccxt.bitstamp({ enableRateLimit: true }),
-  whitebit: new ccxt.whitebit({ enableRateLimit: true }),
-  xt: new ccxt.xt({ enableRateLimit: true }),
-  lbank: new ccxt.lbank({ enableRateLimit: true }),
-  phemex: new ccxt.phemex({ enableRateLimit: true }),
-  coinex: new ccxt.coinex({ enableRateLimit: true }),
-  ascendex: new ccxt.ascendex({ enableRateLimit: true }),
-  bitmart: new ccxt.bitmart({ enableRateLimit: true }),
-  probit: new ccxt.probit({ enableRateLimit: true }),
-  toobit: new ccxt.toobit({ enableRateLimit: true }),
-  weex: new ccxt.weex({ enableRateLimit: true }),
-  digifinex: new ccxt.digifinex({ enableRateLimit: true }),
-  orangex: new ccxt.orangex({ enableRateLimit: true }),
-  kcex: new ccxt.kcex({ enableRateLimit: true }),
-  deepcoin: new ccxt.deepcoin({ enableRateLimit: true }),
-  coinw: new ccxt.coinw({ enableRateLimit: true }),
-  fameex: new ccxt.fameex({ enableRateLimit: true }),
-  hibt: new ccxt.hibt({ enableRateLimit: true }),
-  blofin: new ccxt.blofin({ enableRateLimit: true }),
-  tapbit: new ccxt.tapbit({ enableRateLimit: true }),
-  cexio: new ccxt.cexio({ enableRateLimit: true }),
-  backpack: new ccxt.backpack({ enableRateLimit: true }),
-  novadax: new ccxt.novadax({ enableRateLimit: true }),
-  coinsph: new ccxt.coinsph({ enableRateLimit: true }),
-  bitunix: new ccxt.bitunix({ enableRateLimit: true }),
-  btse: new ccxt.btse({ enableRateLimit: true }),
-  coincatch: new ccxt.coincatch({ enableRateLimit: true }),
-  coinstore: new ccxt.coinstore({ enableRateLimit: true }),
-  hotcoin: new ccxt.hotcoin({ enableRateLimit: true }),
-  azbit: new ccxt.azbit({ enableRateLimit: true }),
-  bitrue: new ccxt.bitrue({ enableRateLimit: true }),
-  koinbx: new ccxt.koinbx({ enableRateLimit: true }),
-  bvox: new ccxt.bvox({ enableRateLimit: true }),
-  bithumb: new ccxt.bithumb({ enableRateLimit: true }),
-  upbit: new ccxt.upbit({ enableRateLimit: true })
-};
-// Note: some exchanges may not support USDT pairs; we'll handle errors gracefully.
+// List of 50 exchange IDs for ticker scanning
+const EXCHANGE_IDS = [
+  'binance', 'bybit', 'okx', 'bitget', 'kucoin', 'gateio', 'htx', 'mexc',
+  'kraken', 'coinbase', 'cryptocom', 'bitfinex', 'gemini', 'bitstamp',
+  'whitebit', 'xt', 'lbank', 'phemex', 'coinex', 'ascendex', 'bitmart',
+  'probit', 'toobit', 'weex', 'digifinex', 'orangex', 'kcex', 'deepcoin',
+  'coinw', 'fameex', 'hibt', 'blofin', 'tapbit', 'cexio', 'backpack',
+  'novadax', 'coinsph', 'bitunix', 'btse', 'coincatch', 'coinstore',
+  'hotcoin', 'azbit', 'bitrue', 'koinbx', 'bvox', 'bithumb', 'upbit'
+];
 
-const EXCHANGE_IDS = Object.keys(ccxtExchanges);
+// Create CCXT exchange instances (public, no keys needed)
+const ccxtExchanges = {};
+for (const id of EXCHANGE_IDS) {
+  try {
+    const ExchangeClass = ccxt[id];
+    if (ExchangeClass && typeof ExchangeClass === 'function') {
+      ccxtExchanges[id] = new ExchangeClass({ enableRateLimit: true });
+    } else {
+      console.log(`⚠️ Exchange ${id} not supported by CCXT, skipping.`);
+    }
+  } catch (err) {
+    console.log(`⚠️ Failed to instantiate exchange ${id}:`, err.message);
+  }
+}
 
 // Helper to fetch ticker for a symbol from an exchange
 async function fetchTicker(exchangeId, symbol) {
@@ -226,7 +195,6 @@ async function fetchTicker(exchangeId, symbol) {
     }
     return null;
   } catch (err) {
-    // silently ignore
     return null;
   }
 }
@@ -253,16 +221,16 @@ const SYMBOLS = [
 ];
 
 async function fastScan() {
-  console.log(`🔄 Fast scan (${EXCHANGE_IDS.length} exchanges)...`);
+  const activeExchanges = Object.keys(ccxtExchanges);
+  console.log(`🔄 Fast scan (${activeExchanges.length} exchanges)...`);
   const start = Date.now();
   try {
     const allData = {};
-    // Initialize all exchanges
-    EXCHANGE_IDS.forEach(id => allData[id] = {});
+    activeExchanges.forEach(id => allData[id] = {});
 
-    // For each symbol, fetch tickers from all exchanges in parallel
+    // For each symbol, fetch tickers from all active exchanges in parallel
     const symbolPromises = SYMBOLS.map(async (symbol) => {
-      const tickerPromises = EXCHANGE_IDS.map(async (exId) => {
+      const tickerPromises = activeExchanges.map(async (exId) => {
         const ticker = await fetchTicker(exId, symbol);
         if (ticker) {
           allData[exId][symbol] = { price: (ticker.bid + ticker.ask) / 2, volume: 0 };
@@ -276,7 +244,7 @@ async function fastScan() {
     const opportunities = [];
     for (const symbol of SYMBOLS) {
       const prices = [];
-      for (const exId of EXCHANGE_IDS) {
+      for (const exId of activeExchanges) {
         if (allData[exId][symbol]) {
           prices.push([exId, allData[exId][symbol]]);
         }
@@ -684,7 +652,6 @@ app.post('/api/paystack/pay', async (req, res) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    // Validate plan
     if (!["weekly", "monthly"].includes(plan)) {
       return res.status(400).json({ error: "Invalid subscription plan" });
     }
