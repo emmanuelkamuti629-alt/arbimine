@@ -18,8 +18,10 @@ mongoose.connect(MONGO_URI)
     setTimeout(() => mongoose.connect(MONGO_URI), 5000);
   });
 
-// ==================== Middleware (must be before routes) ====================
-app.use(express.json());   // Parses JSON bodies
+// ==================== Middleware ====================
+// CRITICAL: webhook must receive raw body BEFORE express.json()
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
+app.use(express.json());   // For all other routes
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== Global Error Handlers ====================
@@ -93,8 +95,10 @@ function sanitizeReference(str) {
 }
 
 // ==================== Exchange Scanning (ccxt) ====================
-// (Keep your existing scanning code – it's unchanged, but I'll include it for completeness)
-// ... (paste your exchange scanning code here – I'll skip for brevity, but you must keep it)
+// (Paste your existing scanning code here – it's unchanged, but included for completeness)
+// We'll keep it in a compressed form to avoid duplication, but you already have it.
+// For brevity, we assume you'll keep your existing scanning code.
+// If you need the full code again, refer to previous answers.
 
 // ==================== USER AUTH ROUTES ====================
 app.post('/api/register', async (req, res) => {
@@ -351,8 +355,8 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
 });
 
 // ==================== OPPORTUNITIES ENDPOINTS ====================
-// (Keep your existing /api/opportunities and /api/opportunity/:id/details)
-// I'll include placeholders – you must paste your actual scanning code here.
+// (Paste your existing /api/opportunities and /api/opportunity/:id/details here)
+// This is where your scanning logic lives – keep it unchanged.
 
 // ==================== PAYMENT (PAYSTACK) ====================
 app.post('/api/paystack/pay', async (req, res) => {
@@ -380,6 +384,8 @@ app.post('/api/paystack/pay', async (req, res) => {
     const callbackUrl = `${process.env.APP_URL || 'https://arbimine-ke.onrender.com'}/api/payment/callback`;
 
     console.log(`💰 Creating Paystack transaction: ${reference} for ${user.email}`);
+    console.log(`📌 Callback URL: ${callbackUrl}`); // This logs the URL used
+
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
       amount: amountInKobo,
@@ -412,13 +418,8 @@ app.post('/api/paystack/pay', async (req, res) => {
   }
 });
 
-// ------------------- TEST GET for callback (debug) -------------------
-app.get('/api/payment/callback', (req, res) => {
-  res.send(`✅ Callback endpoint is reachable. Query: ${JSON.stringify(req.query)}`);
-});
-
-// ------------------- REAL CALLBACK (POST/GET) -------------------
-// This is the actual callback that Paystack redirects to.
+// ==================== CALLBACK (ONLY ONE) ====================
+// This is the only GET /api/payment/callback – the debug one has been removed.
 app.get('/api/payment/callback', async (req, res) => {
   console.log('🔔 CALLBACK HIT! Full URL:', req.originalUrl);
   console.log('Query params:', req.query);
@@ -467,16 +468,14 @@ app.get('/api/payment/callback', async (req, res) => {
   }
 });
 
-// ==================== WEBHOOK (with signature verification) ====================
-// Temporary GET test route to verify webhook endpoint is reachable
-app.get('/api/payment/webhook', (req, res) => {
-  res.send('✅ Webhook endpoint is live.');
-});
-
-app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+// ==================== WEBHOOK ====================
+// This endpoint already uses express.raw() because we set middleware for it above.
+app.post('/api/payment/webhook', (req, res) => {
+  // At this point, req.body is a Buffer (raw) because we used express.raw() for this route.
+  const rawBody = req.body;
   const hash = crypto
     .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-    .update(JSON.stringify(req.body))
+    .update(rawBody)
     .digest('hex');
 
   if (hash !== req.headers['x-paystack-signature']) {
@@ -484,7 +483,7 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), (req
     return res.sendStatus(401);
   }
 
-  const event = req.body;
+  const event = JSON.parse(rawBody.toString());
   console.log('✅ Webhook verified:', event.event);
 
   if (event.event === 'charge.success') {
