@@ -908,7 +908,7 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
 const PLANS = {
-  weekly: { amount: 1, duration: 7 },
+  weekly: { amount: 100, duration: 7 },
   monthly: { amount: 350, duration: 30 }
 };
 
