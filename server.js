@@ -81,8 +81,9 @@ const transactionSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  mpesa: { type: String, required: true },
+  mpesa: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
+  isBlocked: { type: Boolean, default: false },
   subscription: {
     active: { type: Boolean, default: false },
     plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
@@ -145,7 +146,7 @@ async function authMiddleware(req, res, next) {
     const session = await Session.findOne({ token });
     if (!session) return res.status(401).json({ error: 'Invalid session' });
     req.user = session.username;
-    
+
     // Check and auto-expire subscription
     const user = await User.findOne({ username: req.user });
     if (user && user.subscription && user.subscription.expiresAt) {
@@ -157,7 +158,7 @@ async function authMiddleware(req, res, next) {
         console.log(`⏰ Subscription expired for ${req.user}`);
       }
     }
-    
+
     next();
   } catch (err) {
     console.error('Auth error:', err);
@@ -170,8 +171,17 @@ app.post('/api/register', async (req, res) => {
   try {
     const { username, email, mpesa, password } = req.body;
     if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
-    const existing = await User.findOne({ $or: [{ username }, { email }] });
-    if (existing) return res.status(409).json({ error: 'Username or email already exists' });
+
+    // Check existing (unique index will also catch, but we give clear message)
+    const existing = await User.findOne({ $or: [{ username }, { email }, { mpesa }] });
+    if (existing) {
+      let error = 'Username, email, or M-Pesa already exists.';
+      if (existing.username === username) error = 'Username already taken.';
+      else if (existing.email === email) error = 'Email already registered.';
+      else if (existing.mpesa === mpesa) error = 'M-Pesa number already in use.';
+      return res.status(409).json({ error });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = new User({ username, email, mpesa, passwordHash: hashedPassword });
     await user.save();
@@ -186,16 +196,29 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    const identifier = username || email;
+    const { username, email, password, mpesa } = req.body;
+    const identifier = username || email || mpesa;
     if (!identifier || !password) {
-      return res.status(400).json({ error: 'Username/email and password required' });
+      return res.status(400).json({ error: 'Identifier (username/email/mpesa) and password required' });
     }
-    let user = await User.findOne({ username: identifier });
-    if (!user) user = await User.findOne({ email: identifier });
+
+    let user = await User.findOne({
+      $or: [
+        { username: identifier },
+        { email: identifier },
+        { mpesa: identifier }
+      ]
+    });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked. Contact support.' });
+    }
+
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
     res.json({ success: true, token, username: user.username });
@@ -241,10 +264,15 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
 // ==================== Messaging ====================
 app.post('/api/messages', authMiddleware, async (req, res) => {
   try {
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account is blocked. You cannot send messages.' });
+    }
+
     const { content } = req.body;
     if (!content || !content.trim()) return res.status(400).json({ error: 'Message required' });
-    const blocked = await BlockedUser.findOne({ username: req.user });
-    if (blocked) return res.status(403).json({ error: 'You have been blocked' });
+
     const msg = new Message({ user: req.user, isAdmin: false, content: content.trim(), status: 'sent' });
     await msg.save();
     setTimeout(async () => {
@@ -346,14 +374,31 @@ app.put('/admin/message/:id', adminAuth, async (req, res) => {
   res.json({ success: true, message: msg });
 });
 
+// ==================== Admin Block/Unblock ====================
 app.post('/admin/block/:username', adminAuth, async (req, res) => {
-  await BlockedUser.findOneAndUpdate({ username: req.params.username }, { username: req.params.username }, { upsert: true });
-  res.json({ success: true });
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isBlocked = true;
+    await user.save();
+    res.json({ success: true, message: `User ${req.params.username} blocked` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
-  await BlockedUser.deleteOne({ username: req.params.username });
-  res.json({ success: true });
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isBlocked = false;
+    await user.save();
+    res.json({ success: true, message: `User ${req.params.username} unblocked` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ==================== CCXT Exchange Integration ====================
@@ -684,21 +729,21 @@ app.get('/api/opportunities', authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(401).json({ error: 'User not found' });
-    
+
     const isPro = user.subscription && user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > new Date();
-    
+
     let filteredOpps = cachedOpportunities.map(opp => {
       const detailed = detailedCache.get(opp.id);
       return detailed || { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
     });
-    
+
     if (!isPro) {
       filteredOpps = filteredOpps.filter(opp => {
         const spread = parseFloat(opp.spread) || 0;
         return spread <= FREE_TIER_MAX_SPREAD;
       });
     }
-    
+
     const top20 = filteredOpps.slice(0, 20);
     const aiPromises = top20.map(async (opp) => {
       const ai = await getAIAnalysisCached(opp);
@@ -711,11 +756,11 @@ app.get('/api/opportunities', authMiddleware, async (req, res) => {
       return opp;
     });
     await Promise.all(aiPromises);
-    
+
     const scanning = cachedOpportunities.length === 0 && Date.now() - lastFastScan > 5000;
     const totalAvailable = cachedOpportunities.length;
     const shownCount = filteredOpps.length;
-    
+
     res.json({
       count: filteredOpps.length,
       opportunities: filteredOpps,
