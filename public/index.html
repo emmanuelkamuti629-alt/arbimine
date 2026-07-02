@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* (All styles are the same as before – no changes needed) */
+    /* (All styles exactly as before – no changes) */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -320,13 +320,20 @@
   <div id="arbitrageOpportunities"></div>
 </div>
 
-<!-- ===== TOP COINS ===== -->
+<!-- ===== TOP COINS (with upgrade notice for free users) ===== -->
 <div id="page-topcoins" class="page">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-2xl font-bold">🏆 Top Coins</h2>
     <button class="btn btn-sm" onclick="refreshTopCoins()">🔄 Refresh</button>
   </div>
-  <p class="text-slate-400 text-sm mb-3">BTC, ETH, SOL, XRP, BNB, DOGE, TRX, LTC, ADA, AVAX, LINK, TON, SUI</p>
+  <!-- Upgrade notice for free users -->
+  <div id="topCoinsUpgrade" class="upgrade-notice hidden">
+    <div>
+      <span class="icon">🔒</span>
+      <span class="text">Upgrade to Pro to access the Top Coins list.</span>
+    </div>
+    <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
+  </div>
   <div id="topCoinsOpportunities"></div>
 </div>
 
@@ -647,7 +654,7 @@
         refreshTimer = setInterval(() => {
           const activePages = ['dashboard', 'arbitrage', 'topcoins', 'watchlist'];
           if (activePages.some(id => document.getElementById('page-'+id).classList.contains('active'))) {
-            loadOpportunities();
+            loadOpportunities(); // silent update – no page reload
           }
         }, 30000);
       } else {
@@ -792,7 +799,7 @@
 
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
-      if (page === 'topcoins') refreshTopCoins();
+      if (page === 'topcoins' && isPro) refreshTopCoins();
       if (page === 'watchlist') renderWatchlist();
     }
     if (page === 'help') loadMessages();
@@ -889,9 +896,25 @@
         noticeArbitrage.classList.add('hidden');
       }
 
+      // Handle Top Coins tab
+      const topCoinsUpgrade = document.getElementById('topCoinsUpgrade');
+      const topCoinsContainer = document.getElementById('topCoinsOpportunities');
+      if (!isPro) {
+        // Free user: hide top coins, show upgrade prompt
+        topCoinsUpgrade.classList.remove('hidden');
+        topCoinsContainer.innerHTML = '';
+      } else {
+        topCoinsUpgrade.classList.add('hidden');
+        if (document.getElementById('page-topcoins').classList.contains('active')) {
+          refreshTopCoins();
+        }
+      }
+
       updateStats(allOpportunities);
       renderAllOpportunityLists(allOpportunities);
-      refreshTopCoins();
+      if (isPro && document.getElementById('page-topcoins').classList.contains('active')) {
+        refreshTopCoins();
+      }
       if (document.getElementById('page-watchlist').classList.contains('active')) renderWatchlist();
     } catch (e) {
       showToast('Failed to load opportunities: ' + e.message, 'error');
@@ -922,7 +945,7 @@
     const sell = parseFloat(opp.sellPrice) || 0;
     if (buy <= 0 || sell <= 0 || amount <= 0) return 0;
     const gross = (sell - buy) * amount;
-    const fee = gross * 0.002; // 0.2% trading fee estimate
+    const fee = gross * 0.002;
     return gross - fee;
   }
 
@@ -1027,86 +1050,11 @@
   }
 
   function refreshTopCoins() {
+    if (!isPro) return;
     const topSymbols = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE', 'TRX', 'LTC', 'ADA', 'AVAX', 'LINK', 'TON', 'SUI'];
     const filtered = allOpportunities.filter(o => topSymbols.includes(o.symbol));
     const container = document.getElementById('topCoinsOpportunities');
     container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
-  }
-
-  // ==========================================
-  // DETAILS MODAL
-  // ==========================================
-  function openDetailsModal(oppId) {
-    const opp = allOpportunities.find(o => o.id === oppId);
-    if (!opp) { showToast('Opportunity not found', 'error'); return; }
-    currentDetailOpp = opp;
-
-    document.getElementById('detailSymbol').textContent = opp.symbol;
-    document.getElementById('detailSubtitle').textContent = `${opp.buyExchange} → ${opp.sellExchange}`;
-    document.getElementById('detailSpread').textContent = `${opp.spread}%`;
-    document.getElementById('detailLiquidity').textContent = `$${Number(opp.liquidity || 0).toLocaleString()}`;
-    document.getElementById('detailVolume').textContent = `$${Number(opp.volume || 0).toLocaleString()}`;
-    const profit100 = calculateProfit(opp, 100);
-    document.getElementById('detailProfit100').textContent = `$${profit100.toFixed(2)}`;
-    document.getElementById('detailProfit100').className = `value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}`;
-
-    // Networks
-    const netContainer = document.getElementById('detailNetworks');
-    netContainer.innerHTML = '';
-    const buyNets = opp.buyNetworks || {};
-    const sellNets = opp.sellNetworks || {};
-    const allNets = new Set([...Object.keys(buyNets), ...Object.keys(sellNets)]);
-    if (allNets.size === 0) {
-      netContainer.innerHTML = '<span class="text-slate-400 text-sm">No network data available</span>';
-    } else {
-      allNets.forEach(net => {
-        const buyInfo = buyNets[net];
-        const sellInfo = sellNets[net];
-        const buyStatus = buyInfo?.withdraw ? '✅' : '❌';
-        const sellStatus = sellInfo?.deposit ? '✅' : '❌';
-        const div = document.createElement('span');
-        div.className = 'net';
-        div.innerHTML = `<strong>${net}</strong> Buy: ${buyStatus} | Sell: ${sellStatus}`;
-        netContainer.appendChild(div);
-      });
-    }
-
-    // Expiry / Countdown
-    const expiryMs = opp.timestamp ? opp.timestamp + 3600000 : Date.now() + 3600000;
-    const expiryDate = new Date(expiryMs);
-    document.getElementById('detailExpiryDate').textContent = expiryDate.toLocaleString();
-
-    if (countdownInterval) clearInterval(countdownInterval);
-    updateCountdown(expiryMs);
-    countdownInterval = setInterval(() => updateCountdown(expiryMs), 1000);
-
-    // Modal profit calculator
-    document.getElementById('modalProfitAmount').value = 100;
-    updateModalProfit();
-
-    document.getElementById('detailsModal').classList.add('show');
-  }
-
-  function updateCountdown(targetMs) {
-    const now = Date.now();
-    let diff = targetMs - now;
-    if (diff < 0) diff = 0;
-    const hours = Math.floor(diff / 3600000);
-    const mins = Math.floor((diff % 3600000) / 60000);
-    const secs = Math.floor((diff % 60000) / 1000);
-    document.getElementById('detailCountdown').textContent =
-      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    if (diff === 0) {
-      clearInterval(countdownInterval);
-    }
-  }
-
-  function closeDetailsModal() {
-    document.getElementById('detailsModal').classList.remove('show');
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-      countdownInterval = null;
-    }
   }
 
   // ==========================================
@@ -1136,7 +1084,7 @@
   }
 
   // ==========================================
-  // HELP / CHAT (with toast confirmation)
+  // HELP / CHAT
   // ==========================================
   async function loadMessages() {
     try {
@@ -1189,7 +1137,6 @@
       container.appendChild(div);
     });
     container.scrollTop = container.scrollHeight;
-    // Mark admin messages as read
     messageList.forEach(msg => {
       if (msg.isAdmin && msg.user === currentUser.username && msg.status !== 'read') {
         fetch(`/api/messages/${msg._id}/read`, { method: 'POST', headers: { 'Authorization': token } });
@@ -1210,20 +1157,14 @@
       });
 
       if (!res.ok) throw new Error('Failed to send');
-
-      // Clear input and show success toast
       input.value = '';
       showToast('✅ Message sent successfully!', 'success');
-
-      // Reload messages to show the new one with status
       await loadMessages();
-
     } catch (err) {
       showToast('❌ ' + err.message, 'error');
     }
   }
 
-  // ===== Edit / Delete messages (same as before) =====
   async function editMessage(id) {
     const newContent = prompt('Edit your message:');
     if (newContent === null) return;
@@ -1256,6 +1197,79 @@
         showToast('Failed to delete message', 'error');
       }
     } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  // ==========================================
+  // DETAILS MODAL
+  // ==========================================
+  function openDetailsModal(oppId) {
+    const opp = allOpportunities.find(o => o.id === oppId);
+    if (!opp) { showToast('Opportunity not found', 'error'); return; }
+    currentDetailOpp = opp;
+
+    document.getElementById('detailSymbol').textContent = opp.symbol;
+    document.getElementById('detailSubtitle').textContent = `${opp.buyExchange} → ${opp.sellExchange}`;
+    document.getElementById('detailSpread').textContent = `${opp.spread}%`;
+    document.getElementById('detailLiquidity').textContent = `$${Number(opp.liquidity || 0).toLocaleString()}`;
+    document.getElementById('detailVolume').textContent = `$${Number(opp.volume || 0).toLocaleString()}`;
+    const profit100 = calculateProfit(opp, 100);
+    document.getElementById('detailProfit100').textContent = `$${profit100.toFixed(2)}`;
+    document.getElementById('detailProfit100').className = `value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}`;
+
+    const netContainer = document.getElementById('detailNetworks');
+    netContainer.innerHTML = '';
+    const buyNets = opp.buyNetworks || {};
+    const sellNets = opp.sellNetworks || {};
+    const allNets = new Set([...Object.keys(buyNets), ...Object.keys(sellNets)]);
+    if (allNets.size === 0) {
+      netContainer.innerHTML = '<span class="text-slate-400 text-sm">No network data available</span>';
+    } else {
+      allNets.forEach(net => {
+        const buyInfo = buyNets[net];
+        const sellInfo = sellNets[net];
+        const buyStatus = buyInfo?.withdraw ? '✅' : '❌';
+        const sellStatus = sellInfo?.deposit ? '✅' : '❌';
+        const div = document.createElement('span');
+        div.className = 'net';
+        div.innerHTML = `<strong>${net}</strong> Buy: ${buyStatus} | Sell: ${sellStatus}`;
+        netContainer.appendChild(div);
+      });
+    }
+
+    const expiryMs = opp.timestamp ? opp.timestamp + 3600000 : Date.now() + 3600000;
+    const expiryDate = new Date(expiryMs);
+    document.getElementById('detailExpiryDate').textContent = expiryDate.toLocaleString();
+
+    if (countdownInterval) clearInterval(countdownInterval);
+    updateCountdown(expiryMs);
+    countdownInterval = setInterval(() => updateCountdown(expiryMs), 1000);
+
+    document.getElementById('modalProfitAmount').value = 100;
+    updateModalProfit();
+
+    document.getElementById('detailsModal').classList.add('show');
+  }
+
+  function updateCountdown(targetMs) {
+    const now = Date.now();
+    let diff = targetMs - now;
+    if (diff < 0) diff = 0;
+    const hours = Math.floor(diff / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('detailCountdown').textContent =
+      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    if (diff === 0) {
+      clearInterval(countdownInterval);
+    }
+  }
+
+  function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.remove('show');
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
   }
 
   // ==========================================
@@ -1307,7 +1321,7 @@
   window.updateProfit = updateProfit;
   window.updateModalProfit = updateModalProfit;
 
-  console.log('🚀 ArbiMine Pro v3.0 – 13 Exchanges, Help Chat with Toast');
+  console.log('🚀 ArbiMine Pro v3.0 – 13 Exchanges, Help Chat with Toast, Auto-refresh');
 </script>
 </body>
 </html>
