@@ -6,366 +6,276 @@
   <title>ArbiMine Admin</title>
 
   <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      -webkit-tap-highlight-color:transparent;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
+    body {
+      background: #0a0c15;
+      font-family: Inter, system-ui, sans-serif;
+      color: #eef2ff;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #00ff99;
+    }
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      box-shadow: 0 0 18px rgba(0,0,0,0.25);
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .logout-btn {
+      background: #5a1a1a;
+      color: #ff8a8a;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid #1f2937;
+      padding: 16px;
+      border-radius: 16px;
+    }
+    .stat-box h3 {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .stat-box p {
+      font-size: 22px;
+      font-weight: 700;
+      color: #00ff99;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #1f2937;
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-nav button {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      padding: 8px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .tab-nav button.active {
+      background: #00ff9933;
+      color: #00ff99;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 550px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid #1f2937;
+      font-size: 14px;
+      vertical-align: top;
+    }
+    th {
+      color: #00ff99;
+      background: #0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 14px;
+    }
+    button {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 4px 4px 4px 0;
+    }
+    .success { background: #0f5132; color: #00ff99; }
+    .danger { background: #5a1a1a; color: #ff8a8a; }
+    .refresh { background: #1d4ed8; color: white; }
+    .quick-msg { background: #1a2a5a; color: #60a5fa; }
+    input, textarea {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: white;
+      padding: 14px;
+      border-radius: 14px;
+      margin-top: 10px;
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 380px;
+      margin: 80px auto;
+      background: #111827;
+      border: 1px solid #1f2937;
+      padding: 28px 22px;
+      border-radius: 24px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.35);
+    }
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00ff99;
+    }
+    .login-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #00ff99;
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .hidden { display: none; }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .badge-success { background: rgba(0,255,153,0.15); color: #00ff99; }
+    .badge-failed { background: rgba(255,77,77,0.15); color: #ff8a8a; }
+    .badge-pending { background: rgba(255,204,0,0.15); color: #ffcc00; }
+    .user-info { line-height: 1.5; }
+    .user-info .username { font-weight: 700; margin-bottom: 4px; }
+    .user-info .email { font-size: 12px; color: #94a3b8; word-break: break-all; }
+    .user-info .mobile { font-size: 12px; color: #94a3b8; word-break: break-all; }
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: white;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border-left: 4px solid;
+      z-index: 9999;
+      min-width: 220px;
+      text-align: center;
+      animation: fadeIn .3s ease;
+    }
+    .toast.success { border-left-color: #00ff99; }
+    .toast.error { border-left-color: #ff4d4d; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .action-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
 
-    body{
-      background:#0a0c15;
-      font-family:Inter,system-ui,sans-serif;
-      color:#eef2ff;
-      padding:12px;
-      overflow-x:hidden;
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
     }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 24px;
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+    }
+    .modal-box h3 {
+      color: #00ff99;
+      margin-bottom: 12px;
+    }
+    .modal-box p {
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .modal-box .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .modal-box .btn-row button { flex: 1; }
 
-    .container{
-      width:100%;
-      max-width:1400px;
-      margin:auto;
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      h1 { font-size: 22px; }
+      .card { padding: 14px; border-radius: 18px; }
+      table { min-width: 480px; }
+      th, td { font-size: 13px; padding: 10px; }
+      .topbar { align-items: flex-start; }
+      .logout-btn { width: 100%; }
+      button { width: auto; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
-
-    h1{
-      font-size:28px;
-      margin-bottom:20px;
-      color:#00ff99;
-    }
-
-    h2{
-      font-size:18px;
-      margin-bottom:16px;
-      color:#fff;
-    }
-
-    .card{
-      background:#111827;
-      border:1px solid #1f2937;
-      border-radius:20px;
-      padding:16px;
-      margin-bottom:18px;
-      overflow:hidden;
-      box-shadow:0 0 18px rgba(0,0,0,0.25);
-    }
-
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:20px;
-      flex-wrap:wrap;
-    }
-
-    .logout-btn{
-      background:#5a1a1a;
-      color:#ff8a8a;
-      border:none;
-      padding:10px 16px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:600;
-    }
-
-    .stats-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-      gap:14px;
-    }
-
-    .stat-box{
-      background:#0f172a;
-      border:1px solid #1f2937;
-      padding:16px;
-      border-radius:16px;
-    }
-
-    .stat-box h3{
-      font-size:13px;
-      color:#94a3b8;
-      margin-bottom:8px;
-    }
-
-    .stat-box p{
-      font-size:22px;
-      font-weight:700;
-      color:#00ff99;
-    }
-
-    .tab-nav{
-      display:flex;
-      gap:8px;
-      margin-bottom:16px;
-      border-bottom:1px solid #1f2937;
-      padding-bottom:8px;
-      flex-wrap:wrap;
-    }
-
-    .tab-nav button{
-      background:none;
-      border:none;
-      color:#94a3b8;
-      padding:8px 16px;
-      border-radius:30px;
-      cursor:pointer;
-      font-weight:600;
-      font-size:14px;
-    }
-
-    .tab-nav button.active{
-      background:#00ff9933;
-      color:#00ff99;
-    }
-
-    .tab-content{
-      display:none;
-    }
-
-    .tab-content.active{
-      display:block;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:550px;
-    }
-
-    th,td{
-      text-align:left;
-      padding:12px;
-      border-bottom:1px solid #1f2937;
-      font-size:14px;
-      vertical-align:top;
-    }
-
-    th{
-      color:#00ff99;
-      background:#0f172a;
-      position:sticky;
-      top:0;
-      z-index:1;
-    }
-
-    .table-wrapper{
-      width:100%;
-      overflow-x:auto;
-      border-radius:14px;
-    }
-
-    button{
-      border:none;
-      padding:8px 12px;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:13px;
-      font-weight:600;
-      margin:4px 4px 4px 0;
-    }
-
-    .success{
-      background:#0f5132;
-      color:#00ff99;
-    }
-
-    .danger{
-      background:#5a1a1a;
-      color:#ff8a8a;
-    }
-
-    .refresh{
-      background:#1d4ed8;
-      color:white;
-    }
-
-    input, textarea{
-      width:100%;
-      background:#1f2937;
-      border:1px solid #374151;
-      color:white;
-      padding:14px;
-      border-radius:14px;
-      margin-top:10px;
-      font-size:15px;
-      outline:none;
-      font-family:inherit;
-    }
-
-    textarea{
-      resize:vertical;
-      min-height:60px;
-    }
-
-    .login-container{
-      width:100%;
-      max-width:380px;
-      margin:80px auto;
-      background:#111827;
-      border:1px solid #1f2937;
-      padding:28px 22px;
-      border-radius:24px;
-      box-shadow:0 0 25px rgba(0,0,0,0.35);
-    }
-
-    .login-container h2{
-      text-align:center;
-      margin-bottom:20px;
-      color:#00ff99;
-    }
-
-    .login-btn{
-      width:100%;
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:#00ff99;
-      color:#000;
-      font-weight:700;
-      font-size:15px;
-    }
-
-    .hidden{
-      display:none;
-    }
-
-    .badge{
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      display:inline-block;
-    }
-
-    .badge-success{
-      background:rgba(0,255,153,0.15);
-      color:#00ff99;
-    }
-
-    .badge-failed{
-      background:rgba(255,77,77,0.15);
-      color:#ff8a8a;
-    }
-
-    .badge-pending{
-      background:rgba(255,204,0,0.15);
-      color:#ffcc00;
-    }
-
-    .user-info{
-      line-height:1.5;
-    }
-    .user-info .username{
-      font-weight:700;
-      margin-bottom:4px;
-    }
-    .user-info .email{
-      font-size:12px;
-      color:#94a3b8;
-      word-break:break-all;
-    }
-    .user-info .mobile{
-      font-size:12px;
-      color:#94a3b8;
-      word-break:break-all;
-    }
-
-    .toast{
-      position:fixed;
-      bottom:18px;
-      left:50%;
-      transform:translateX(-50%);
-      background:#111827;
-      color:white;
-      padding:14px 18px;
-      border-radius:14px;
-      border-left:4px solid;
-      z-index:9999;
-      min-width:220px;
-      text-align:center;
-      animation:fadeIn .3s ease;
-    }
-
-    .toast.success{
-      border-left-color:#00ff99;
-    }
-
-    .toast.error{
-      border-left-color:#ff4d4d;
-    }
-
-    @keyframes fadeIn{
-      from{
-        opacity:0;
-        transform:translateX(-50%) translateY(20px);
-      }
-      to{
-        opacity:1;
-        transform:translateX(-50%) translateY(0);
-      }
-    }
-
-    .reply-form{
-      background:#0f172a;
-      border-radius:12px;
-      padding:12px;
-      margin-top:8px;
-    }
-
-    .reply-form textarea{
-      margin-top:4px;
-    }
-
-    /* Mobile adjustments */
-    @media(max-width:768px){
-      body{
-        padding:10px;
-      }
-      h1{
-        font-size:22px;
-      }
-      .card{
-        padding:14px;
-        border-radius:18px;
-      }
-      table{
-        min-width:480px;
-      }
-      th,td{
-        font-size:13px;
-        padding:10px;
-      }
-      .topbar{
-        align-items:flex-start;
-      }
-      .logout-btn{
-        width:100%;
-      }
-      button{
-        width:auto;
-      }
-      .action-buttons{
-        display:flex;
-        flex-direction:column;
-      }
-      .stats-grid{
-        grid-template-columns:1fr 1fr;
-      }
-    }
-
-    @media(max-width:480px){
-      .stats-grid{
-        grid-template-columns:1fr;
-      }
-      h1{
-        font-size:20px;
-      }
-      .login-container{
-        margin-top:60px;
-      }
-      button{
-        width:100%;
-      }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 20px; }
+      .login-container { margin-top: 60px; }
+      button { width: 100%; }
     }
   </style>
 </head>
@@ -374,10 +284,8 @@
 
 <div id="loginDiv" class="login-container">
   <h2>ArbiMine Admin</h2>
-
   <input type="text" id="adminUser" placeholder="Username" value="admin">
   <input type="password" id="adminPass" placeholder="Password">
-
   <button class="login-btn" onclick="adminLogin()">Login</button>
 </div>
 
@@ -397,7 +305,6 @@
   </div>
 
   <div class="card">
-    <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="active" data-tab="users" onclick="switchTab('users')">Users</button>
       <button data-tab="transactions" onclick="switchTab('transactions')">Transactions</button>
@@ -442,298 +349,367 @@
   </div>
 </div>
 
-<!-- Reply Modal (hidden by default) -->
-<div id="replyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; padding:16px;">
-  <div style="background:#111827; border:1px solid #1f2937; border-radius:24px; max-width:500px; width:100%; padding:24px;">
-    <h3 style="margin-bottom:12px; color:#00ff99;">Reply to User</h3>
-    <p id="replyUser" style="color:#94a3b8; margin-bottom:8px;">User: <strong></strong></p>
+<!-- Quick Message Modal (from Users tab) -->
+<div id="quickMsgModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>💬 Quick Message</h3>
+    <p>User: <strong id="quickUserDisplay"></strong></p>
+    <textarea id="quickMsgContent" placeholder="Type your message..." rows="3"></textarea>
+    <div class="btn-row">
+      <button class="success" onclick="sendQuickMessage()">Send</button>
+      <button class="danger" onclick="closeQuickModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reply Modal (from Messages tab) -->
+<div id="replyModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>📩 Reply to User</h3>
+    <p>User: <strong id="replyUserDisplay"></strong></p>
     <textarea id="replyContent" placeholder="Type your reply..." rows="3"></textarea>
-    <div style="display:flex; gap:10px; margin-top:12px;">
-      <button class="success" onclick="sendReply()" style="flex:1;">Send Reply</button>
-      <button class="danger" onclick="closeReplyModal()" style="flex:1;">Cancel</button>
+    <div class="btn-row">
+      <button class="success" onclick="sendReply()">Send Reply</button>
+      <button class="danger" onclick="closeReplyModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
+  let adminToken = localStorage.getItem("adminToken");
+  let currentQuickUser = null;
+  let currentReplyUser = null;
 
-let adminToken = localStorage.getItem("adminToken");
-let currentReplyUser = null;
+  if (adminToken) showDashboard();
 
-if(adminToken) showDashboard();
-
-async function adminLogin(){
-  const username = document.getElementById("adminUser").value;
-  const password = document.getElementById("adminPass").value;
-  try{
-    const res = await fetch("/admin/login",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username,password})
-    });
-    const data = await res.json();
-    if(data.token){
-      localStorage.setItem("adminToken",data.token);
-      showToast("Login successful","success");
-      showDashboard();
-    }else{
-      showToast("Invalid login","error");
+  async function adminLogin() {
+    const username = document.getElementById("adminUser").value;
+    const password = document.getElementById("adminPass").value;
+    try {
+      const res = await fetch("/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem("adminToken", data.token);
+        showToast("Login successful", "success");
+        showDashboard();
+      } else {
+        showToast("Invalid login", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
     }
-  }catch(err){
-    showToast("Server error","error");
   }
-}
 
-async function showDashboard(){
-  document.getElementById("loginDiv").style.display = "none";
-  document.getElementById("dashboardDiv").classList.remove("hidden");
-  await refreshAll();
-}
+  async function showDashboard() {
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("dashboardDiv").classList.remove("hidden");
+    await refreshAll();
+  }
 
-async function refreshAll(){
-  await Promise.all([loadUsers(), loadTransactions(), loadMessages(), loadStats()]);
-}
+  async function refreshAll() {
+    await Promise.all([loadUsers(), loadTransactions(), loadMessages(), loadStats()]);
+  }
 
-function logoutAdmin(){
-  localStorage.removeItem("adminToken");
-  location.reload();
-}
+  function logoutAdmin() {
+    localStorage.removeItem("adminToken");
+    location.reload();
+  }
 
-function switchTab(tab){
-  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-nav button[data-tab="${tab}"]`).classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-}
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-nav button[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
 
-async function loadUsers(){
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch("/admin/users",{headers:{"Authorization":token}});
-    const users = await res.json();
-    const tbody = document.querySelector("#usersTable tbody");
-    tbody.innerHTML = "";
-    users.forEach(user => {
-      const row = tbody.insertRow();
-      row.insertCell(0).innerHTML = `
-        <div class="user-info">
-          <div class="username">${escapeHtml(user.username)}</div>
-          <div class="email">${escapeHtml(user.email)}</div>
-          <div class="mobile">${escapeHtml(user.mpesa)}</div>
-        </div>
+  // ===== Users =====
+  async function loadUsers() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch("/admin/users", { headers: { "Authorization": token } });
+      const users = await res.json();
+      const tbody = document.querySelector("#usersTable tbody");
+      tbody.innerHTML = "";
+      users.forEach(user => {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerHTML = `
+          <div class="user-info">
+            <div class="username">${escapeHtml(user.username)}</div>
+            <div class="email">${escapeHtml(user.email)}</div>
+            <div class="mobile">${escapeHtml(user.mpesa)}</div>
+          </div>
+        `;
+        row.insertCell(1).innerHTML = user.subscription?.active
+          ? `<span class="badge badge-success">${user.subscription.plan || "ACTIVE"}</span>`
+          : `<span class="badge badge-failed">FREE</span>`;
+        row.insertCell(2).innerText = user.subscription?.expiresAt
+          ? new Date(user.subscription.expiresAt).toLocaleString()
+          : "N/A";
+        const actions = row.insertCell(3);
+        actions.className = "action-buttons";
+
+        // Quick Message button
+        const msgBtn = document.createElement("button");
+        msgBtn.className = "quick-msg";
+        msgBtn.innerText = "💬 Quick Msg";
+        msgBtn.onclick = () => openQuickModal(user.username);
+        actions.appendChild(msgBtn);
+
+        // Activate/Deactivate
+        const activateBtn = document.createElement("button");
+        activateBtn.className = "success";
+        activateBtn.innerText = user.subscription?.active ? "Deactivate" : "Activate Weekly";
+        activateBtn.onclick = () => updateSubscription(user._id, !user.subscription?.active, "weekly", null);
+        actions.appendChild(activateBtn);
+
+        // Delete User
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "danger";
+        deleteBtn.innerText = "Delete";
+        deleteBtn.onclick = () => deleteUser(user._id);
+        actions.appendChild(deleteBtn);
+      });
+    } catch (err) {
+      showToast("Failed loading users", "error");
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === "&") return "&amp;";
+      if (m === "<") return "&lt;";
+      if (m === ">") return "&gt;";
+      return m;
+    });
+  }
+
+  async function updateSubscription(userId, active, plan, expiresAt) {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch(`/admin/user/${userId}/update-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ active, plan, expiresAt })
+      });
+      if (res.ok) {
+        showToast("Subscription updated", "success");
+        loadUsers();
+        loadStats();
+      } else {
+        showToast("Update failed", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
+    }
+  }
+
+  async function deleteUser(userId) {
+    if (!confirm("Delete this user permanently?")) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch(`/admin/user/${userId}`, { method: "DELETE", headers: { "Authorization": token } });
+      if (res.ok) {
+        showToast("User deleted", "success");
+        loadUsers();
+        loadStats();
+      } else {
+        showToast("Delete failed", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
+    }
+  }
+
+  // ===== Quick Message (from Users tab) =====
+  function openQuickModal(username) {
+    currentQuickUser = username;
+    document.getElementById("quickUserDisplay").textContent = username;
+    document.getElementById("quickMsgContent").value = "";
+    document.getElementById("quickMsgModal").classList.add("active");
+  }
+
+  function closeQuickModal() {
+    document.getElementById("quickMsgModal").classList.remove("active");
+    currentQuickUser = null;
+  }
+
+  async function sendQuickMessage() {
+    const content = document.getElementById("quickMsgContent").value.trim();
+    if (!content) {
+      showToast("Please enter a message", "error");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch("/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ userId: currentQuickUser, content })
+      });
+      if (res.ok) {
+        showToast(`✅ Message sent to ${currentQuickUser}`, "success");
+        closeQuickModal();
+        loadMessages(); // refresh messages tab
+      } else {
+        showToast("Failed to send message", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
+    }
+  }
+
+  // ===== Transactions =====
+  async function loadTransactions() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch("/admin/transactions", { headers: { "Authorization": token } });
+      const transactions = await res.json();
+      const tbody = document.querySelector("#transactionsTable tbody");
+      tbody.innerHTML = "";
+      transactions.forEach(tx => {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerText = tx.reference || "N/A";
+        row.insertCell(1).innerText = tx.user || "N/A";
+        row.insertCell(2).innerText = tx.plan || "N/A";
+        row.insertCell(3).innerText = `KES ${tx.amount || 0}`;
+        let badgeClass = "badge-pending";
+        if (tx.status === "success") badgeClass = "badge-success";
+        if (tx.status === "failed") badgeClass = "badge-failed";
+        row.insertCell(4).innerHTML = `<span class="badge ${badgeClass}">${tx.status || "pending"}</span>`;
+        row.insertCell(5).innerText = tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A";
+      });
+    } catch (err) {
+      showToast("Failed loading transactions", "error");
+    }
+  }
+
+  // ===== Messages =====
+  async function loadMessages() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch("/admin/messages", { headers: { "Authorization": token } });
+      const messages = await res.json();
+      const tbody = document.querySelector("#messagesTable tbody");
+      tbody.innerHTML = "";
+      messages.forEach(msg => {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerText = msg.user || "Unknown";
+        row.insertCell(1).innerText = msg.content || "";
+        row.insertCell(2).innerText = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : "N/A";
+        const actions = row.insertCell(3);
+
+        // Reply button
+        const replyBtn = document.createElement("button");
+        replyBtn.className = "success";
+        replyBtn.innerText = "Reply";
+        replyBtn.onclick = () => openReplyModal(msg.user);
+        actions.appendChild(replyBtn);
+
+        // Delete button
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "danger";
+        deleteBtn.innerText = "Delete";
+        deleteBtn.onclick = () => deleteMessage(msg._id);
+        actions.appendChild(deleteBtn);
+      });
+    } catch (err) {
+      showToast("Failed loading messages", "error");
+    }
+  }
+
+  async function deleteMessage(msgId) {
+    if (!confirm("Delete this message?")) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch(`/admin/message/${msgId}`, { method: "DELETE", headers: { "Authorization": token } });
+      if (res.ok) {
+        showToast("Message deleted", "success");
+        loadMessages();
+      } else {
+        showToast("Delete failed", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
+    }
+  }
+
+  // ===== Reply Modal (from Messages tab) =====
+  function openReplyModal(username) {
+    currentReplyUser = username;
+    document.getElementById("replyUserDisplay").textContent = username;
+    document.getElementById("replyContent").value = "";
+    document.getElementById("replyModal").classList.add("active");
+  }
+
+  function closeReplyModal() {
+    document.getElementById("replyModal").classList.remove("active");
+    currentReplyUser = null;
+  }
+
+  async function sendReply() {
+    const content = document.getElementById("replyContent").value.trim();
+    if (!content) {
+      showToast("Please enter a reply", "error");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await fetch("/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ userId: currentReplyUser, content })
+      });
+      if (res.ok) {
+        showToast(`✅ Reply sent to ${currentReplyUser}`, "success");
+        closeReplyModal();
+        loadMessages();
+      } else {
+        showToast("Failed to send reply", "error");
+      }
+    } catch (err) {
+      showToast("Server error", "error");
+    }
+  }
+
+  // ===== Stats =====
+  async function loadStats() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const [usersRes, txRes] = await Promise.all([
+        fetch("/admin/users", { headers: { "Authorization": token } }),
+        fetch("/admin/transactions", { headers: { "Authorization": token } })
+      ]);
+      const users = await usersRes.json();
+      const transactions = await txRes.json();
+      const totalUsers = users.length;
+      const activeSubs = users.filter(u => u.subscription?.active).length;
+      const successfulPayments = transactions.filter(t => t.status === "success");
+      const totalRevenue = successfulPayments.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      const failedPayments = transactions.filter(t => t.status === "failed").length;
+      document.getElementById("statsGrid").innerHTML = `
+        <div class="stat-box"><h3>Total Users</h3><p>${totalUsers}</p></div>
+        <div class="stat-box"><h3>Active Subs</h3><p>${activeSubs}</p></div>
+        <div class="stat-box"><h3>Total Revenue</h3><p>KES ${totalRevenue}</p></div>
+        <div class="stat-box"><h3>Failed Payments</h3><p>${failedPayments}</p></div>
       `;
-      row.insertCell(1).innerHTML = user.subscription?.active
-        ? `<span class="badge badge-success">${user.subscription.plan || "ACTIVE"}</span>`
-        : `<span class="badge badge-failed">FREE</span>`;
-      row.insertCell(2).innerText = user.subscription?.expiresAt
-        ? new Date(user.subscription.expiresAt).toLocaleString()
-        : "N/A";
-      const actions = row.insertCell(3);
-      actions.className = "action-buttons";
-      const activateBtn = document.createElement("button");
-      activateBtn.className = "success";
-      activateBtn.innerText = user.subscription?.active ? "Deactivate" : "Activate Weekly";
-      activateBtn.onclick = () => updateSubscription(user._id, !user.subscription?.active, "weekly", null);
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "danger";
-      deleteBtn.innerText = "Delete";
-      deleteBtn.onclick = () => deleteUser(user._id);
-      actions.appendChild(activateBtn);
-      actions.appendChild(deleteBtn);
-    });
-  }catch(err){
-    showToast("Failed loading users","error");
-  }
-}
-
-function escapeHtml(str){
-  if(!str) return "";
-  return str.replace(/[&<>]/g, function(m){
-    if(m === "&") return "&amp;";
-    if(m === "<") return "&lt;";
-    if(m === ">") return "&gt;";
-    return m;
-  });
-}
-
-async function updateSubscription(userId, active, plan, expiresAt){
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch(`/admin/user/${userId}/update-subscription`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","Authorization":token},
-      body:JSON.stringify({active, plan, expiresAt})
-    });
-    if(res.ok){
-      showToast("Subscription updated","success");
-      loadUsers();
-      loadStats();
-    }else{
-      showToast("Update failed","error");
+    } catch (err) {
+      showToast("Failed loading stats", "error");
     }
-  }catch(err){
-    showToast("Server error","error");
   }
-}
 
-async function deleteUser(userId){
-  if(!confirm("Delete this user permanently?")) return;
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch(`/admin/user/${userId}`,{method:"DELETE",headers:{"Authorization":token}});
-    if(res.ok){
-      showToast("User deleted","success");
-      loadUsers();
-      loadStats();
-    }else{
-      showToast("Delete failed","error");
-    }
-  }catch(err){
-    showToast("Server error","error");
+  function showToast(msg, type) {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerText = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   }
-}
-
-async function loadTransactions(){
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch("/admin/transactions",{headers:{"Authorization":token}});
-    const transactions = await res.json();
-    const tbody = document.querySelector("#transactionsTable tbody");
-    tbody.innerHTML = "";
-    transactions.forEach(tx => {
-      const row = tbody.insertRow();
-      row.insertCell(0).innerText = tx.reference || "N/A";
-      row.insertCell(1).innerText = tx.user || "N/A";
-      row.insertCell(2).innerText = tx.plan || "N/A";
-      row.insertCell(3).innerText = `KES ${tx.amount || 0}`;
-      let badgeClass = "badge-pending";
-      if(tx.status === "success") badgeClass = "badge-success";
-      if(tx.status === "failed") badgeClass = "badge-failed";
-      row.insertCell(4).innerHTML = `<span class="badge ${badgeClass}">${tx.status || "pending"}</span>`;
-      row.insertCell(5).innerText = tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A";
-    });
-  }catch(err){
-    showToast("Failed loading transactions","error");
-  }
-}
-
-async function loadMessages(){
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch("/admin/messages",{headers:{"Authorization":token}});
-    const messages = await res.json();
-    const tbody = document.querySelector("#messagesTable tbody");
-    tbody.innerHTML = "";
-    messages.forEach(msg => {
-      const row = tbody.insertRow();
-      row.insertCell(0).innerText = msg.user || "Unknown";
-      row.insertCell(1).innerText = msg.content || "";
-      row.insertCell(2).innerText = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : "N/A";
-      const actions = row.insertCell(3);
-      // Reply button
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "success";
-      replyBtn.innerText = "Reply";
-      replyBtn.onclick = () => openReplyModal(msg.user);
-      actions.appendChild(replyBtn);
-      // Delete button (admin can delete any message)
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "danger";
-      deleteBtn.innerText = "Delete";
-      deleteBtn.onclick = () => deleteMessage(msg._id);
-      actions.appendChild(deleteBtn);
-    });
-  }catch(err){
-    showToast("Failed loading messages","error");
-  }
-}
-
-async function deleteMessage(msgId){
-  if(!confirm("Delete this message?")) return;
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch(`/admin/message/${msgId}`,{method:"DELETE",headers:{"Authorization":token}});
-    if(res.ok){
-      showToast("Message deleted","success");
-      loadMessages();
-    }else{
-      showToast("Delete failed","error");
-    }
-  }catch(err){
-    showToast("Server error","error");
-  }
-}
-
-function openReplyModal(username){
-  currentReplyUser = username;
-  document.getElementById("replyUser").innerHTML = `<strong>${escapeHtml(username)}</strong>`;
-  document.getElementById("replyContent").value = "";
-  document.getElementById("replyModal").style.display = "flex";
-}
-
-function closeReplyModal(){
-  document.getElementById("replyModal").style.display = "none";
-  currentReplyUser = null;
-}
-
-async function sendReply(){
-  const content = document.getElementById("replyContent").value.trim();
-  if(!content){
-    showToast("Please enter a reply","error");
-    return;
-  }
-  try{
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch("/admin/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","Authorization":token},
-      body:JSON.stringify({ userId: currentReplyUser, content })
-    });
-    if(res.ok){
-      showToast("Reply sent successfully","success");
-      closeReplyModal();
-      loadMessages();
-    }else{
-      showToast("Failed to send reply","error");
-    }
-  }catch(err){
-    showToast("Server error","error");
-  }
-}
-
-async function loadStats(){
-  try{
-    const token = localStorage.getItem("adminToken");
-    const [usersRes, txRes] = await Promise.all([
-      fetch("/admin/users",{headers:{"Authorization":token}}),
-      fetch("/admin/transactions",{headers:{"Authorization":token}})
-    ]);
-    const users = await usersRes.json();
-    const transactions = await txRes.json();
-    const totalUsers = users.length;
-    const activeSubs = users.filter(u => u.subscription?.active).length;
-    const successfulPayments = transactions.filter(t => t.status === "success");
-    const totalRevenue = successfulPayments.reduce((sum,t) => sum + Number(t.amount || 0), 0);
-    const failedPayments = transactions.filter(t => t.status === "failed").length;
-    document.getElementById("statsGrid").innerHTML = `
-      <div class="stat-box"><h3>Total Users</h3><p>${totalUsers}</p></div>
-      <div class="stat-box"><h3>Active Subs</h3><p>${activeSubs}</p></div>
-      <div class="stat-box"><h3>Total Revenue</h3><p>KES ${totalRevenue}</p></div>
-      <div class="stat-box"><h3>Failed Payments</h3><p>${failedPayments}</p></div>
-    `;
-  }catch(err){
-    showToast("Failed loading stats","error");
-  }
-}
-
-function showToast(msg,type){
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerText = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
 </script>
+
 </body>
 </html>
