@@ -189,7 +189,6 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
 });
 
 // ==================== Messaging ====================
-// (Same as before – unchanged)
 app.post('/api/messages', authMiddleware, async (req, res) => {
   try {
     const { content } = req.body;
@@ -307,23 +306,22 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-// ==================== CCXT Exchange Integration (working list) ====================
-// Exchanges that are publicly accessible from most regions
+// ==================== CCXT Exchange Integration (Memory-Optimized) ====================
+// Only use reliable exchanges that work from most regions
 const EXCHANGE_IDS = [
-  'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp', 'coinbase',
-  'gemini', 'upbit', 'bithumb', 'poloniex', 'cex', 'lbank',
-  'whitebit', 'coinex', 'xt', 'bitmart', 'bitget', 'bingx',
-  'okx', 'ascendex', 'bitrue', 'deepcoin'
+  'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
+  'coinbase', 'gemini', 'upbit', 'poloniex', 'cex',
+  'lbank', 'whitebit', 'coinex', 'bitmart', 'bitget',
+  'okx', 'bingx'
 ];
 
 const EXCHANGE_NAMES = {
   kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
   bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
-  upbit: 'Upbit', bithumb: 'Bithumb', poloniex: 'Poloniex',
-  cex: 'CEX.IO', lbank: 'LBank', whitebit: 'WhiteBIT',
-  coinex: 'CoinEx', xt: 'XT.COM', bitmart: 'BitMart',
-  bitget: 'Bitget', bingx: 'BingX', okx: 'OKX',
-  ascendex: 'AscendEX', bitrue: 'Bitrue', deepcoin: 'Deepcoin'
+  upbit: 'Upbit', poloniex: 'Poloniex', cex: 'CEX.IO',
+  lbank: 'LBank', whitebit: 'WhiteBIT', coinex: 'CoinEx',
+  bitmart: 'BitMart', bitget: 'Bitget', okx: 'OKX',
+  bingx: 'BingX'
 };
 
 const exchangeInstances = {};
@@ -331,7 +329,7 @@ for (const id of EXCHANGE_IDS) {
   try {
     const ExchangeClass = ccxt[id];
     if (!ExchangeClass) {
-      console.warn(`⚠️ Exchange ${id} not supported by CCXT – skipping`);
+      console.warn(`⚠️ Exchange ${id} not supported – skipping`);
       continue;
     }
     const ex = new ExchangeClass({
@@ -346,7 +344,7 @@ for (const id of EXCHANGE_IDS) {
   }
 }
 
-// ==================== Arbitrage Scanning ====================
+// ==================== Arbitrage Scanning (Sequential – Memory-Safe) ====================
 let cachedOpportunities = [];
 let detailedCache = new Map();
 let aiCache = new Map();
@@ -365,23 +363,26 @@ const SYMBOL_BLACKLIST = new Set([
 ]);
 
 async function fastScan() {
-  console.log('🔄 Fast scan using CCXT across available exchanges...');
+  console.log('🔄 Fast scan (sequential) across', EXCHANGE_IDS.length, 'exchanges...');
   const start = Date.now();
   const allTickers = {};
 
-  const fetchPromises = EXCHANGE_IDS.map(async (id) => {
+  // Fetch exchanges ONE BY ONE to avoid memory spikes
+  for (const id of EXCHANGE_IDS) {
     const ex = exchangeInstances[id];
-    if (!ex) return;
+    if (!ex) continue;
     try {
       await ex.loadMarkets();
       const tickers = await ex.fetchTickers();
       allTickers[id] = tickers;
+      // Small delay to avoid rate limits and keep memory low
+      await new Promise(r => setTimeout(r, 300));
     } catch (err) {
       console.log(`❌ ${id} ticker fetch failed:`, err.message);
     }
-  });
-  await Promise.all(fetchPromises);
+  }
 
+  // Build opportunities from collected tickers
   const pairMap = {};
   for (const [exId, tickers] of Object.entries(allTickers)) {
     if (!tickers) continue;
@@ -444,7 +445,8 @@ async function fastScan() {
   }
 }
 
-// ==================== Detail Scan ====================
+// ==================== Detail Scan (Networks/Liquidity) ====================
+// (Kept as before – only runs on a few top opportunities)
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -504,7 +506,8 @@ async function detailScan() {
     .slice(0, DETAIL_OPP_LIMIT);
 
   let updated = 0;
-  const updatePromises = validOpps.map(async (opp) => {
+  // Process detail scans sequentially to save memory
+  for (const opp of validOpps) {
     const coin = opp.symbol;
     const buyEx = opp.buyExchange.toLowerCase();
     const sellEx = opp.sellExchange.toLowerCase();
@@ -535,16 +538,18 @@ async function detailScan() {
         sellDeposit: sellNet?.canDeposit || false
       });
       updated++;
+      // Short delay to avoid overwhelming the system
+      await new Promise(r => setTimeout(r, 100));
     } catch (err) {
       console.log(`Detail scan failed for ${opp.id}:`, err.message);
     }
-  });
+  }
 
-  await Promise.all(updatePromises);
   lastDetailScan = Date.now();
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
+// Initial scan and periodic
 fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
@@ -714,7 +719,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== Paystack M-PESA STK Push (with phone input) ====================
+// ==================== Paystack M-PESA STK Push ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
