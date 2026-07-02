@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* All styles remain exactly as in the previous version – unchanged */
+    /* All styles remain exactly as before – no changes needed */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -992,7 +992,6 @@
     try {
       const res = await fetch('/api/opportunities', { headers: { Authorization: token } });
       if (!res.ok) {
-        // Silently handle – no ugly errors
         showToast('Could not load opportunities', 'error');
         return;
       }
@@ -1055,7 +1054,6 @@
       }
       if (document.getElementById('page-watchlist').classList.contains('active')) renderWatchlist();
     } catch (e) {
-      // Silently handle
       console.warn('Opportunities load error:', e);
     }
   }
@@ -1119,7 +1117,6 @@
 
   function fillCalculatorFromOpp(opp) {
     if (!opp) return;
-    // Auto-fill fields
     document.getElementById('calcBuyExchange').value = opp.buyExchange || '';
     document.getElementById('calcSellExchange').value = opp.sellExchange || '';
     document.getElementById('calcBuyPrice').value = parseFloat(opp.buyPrice) || 0;
@@ -1137,7 +1134,7 @@
     document.getElementById('calcLiquidityAdj').value = 1;
     // Switch to calculator tab and run
     showPage('calculator');
-    setTimeout(runCalculator, 100); // ensure DOM is ready
+    setTimeout(runCalculator, 100);
   }
 
   function runCalculator() {
@@ -1414,14 +1411,22 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     `;
   }
 
+  // ==========================================
+  // RENDER OPPORTUNITY LISTS
+  // ==========================================
   function renderAllOpportunityLists(opps) {
     const dashContainer = document.getElementById('dashboardOpportunities');
     dashContainer.innerHTML = opps.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities</div>';
+    // Also apply filters for the arbitrage tab
     applyFilters();
   }
 
+  // ==========================================
+  // FILTERS – APPLY SEARCH, EXCHANGE, RISK
+  // ==========================================
   function applyFilters() {
     const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
+    const risk = document.getElementById('riskFilter')?.value || 'all';
     let filtered = allOpportunities.filter(o => {
       if (search && !o.symbol.toUpperCase().startsWith(search)) return false;
       if (!selectedExchanges.has('all')) {
@@ -1435,13 +1440,18 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         }
         if (!match) return false;
       }
+      // If you have a risk filter dropdown, add it here
+      // if (risk !== 'all' && o.risk !== risk) return false;
       return true;
     });
-    document.getElementById('arbitrageOpportunities').innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities match filters</div>';
+    const container = document.getElementById('arbitrageOpportunities');
+    if (container) {
+      container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities match filters</div>';
+    }
   }
 
   // ==========================================
-  // TOP COINS (FIXED!)
+  // TOP COINS
   // ==========================================
   function refreshTopCoins() {
     if (!isPro) {
@@ -1619,7 +1629,9 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     document.getElementById('loginModal').classList.add('show');
   }
 
-  // Expose global functions
+  // ==========================================
+  // EXPOSE GLOBAL FUNCTIONS
+  // ==========================================
   window.loginUser = loginUser;
   window.registerUser = registerUser;
   window.showLogin = showLogin;
