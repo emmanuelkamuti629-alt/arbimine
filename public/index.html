@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* (All styles are exactly the same as in the previous version – no changes needed) */
+    /* All styles remain exactly as in the previous version – unchanged */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -991,7 +991,11 @@
   async function loadOpportunities() {
     try {
       const res = await fetch('/api/opportunities', { headers: { Authorization: token } });
-      if (!res.ok) throw new Error('Failed to load');
+      if (!res.ok) {
+        // Silently handle – no ugly errors
+        showToast('Could not load opportunities', 'error');
+        return;
+      }
       const data = await res.json();
       allOpportunities = data.opportunities || [];
       totalAvailable = data.totalAvailable || 0;
@@ -1051,7 +1055,8 @@
       }
       if (document.getElementById('page-watchlist').classList.contains('active')) renderWatchlist();
     } catch (e) {
-      showToast('Failed to load opportunities: ' + e.message, 'error');
+      // Silently handle
+      console.warn('Opportunities load error:', e);
     }
   }
 
@@ -1114,6 +1119,7 @@
 
   function fillCalculatorFromOpp(opp) {
     if (!opp) return;
+    // Auto-fill fields
     document.getElementById('calcBuyExchange').value = opp.buyExchange || '';
     document.getElementById('calcSellExchange').value = opp.sellExchange || '';
     document.getElementById('calcBuyPrice').value = parseFloat(opp.buyPrice) || 0;
@@ -1129,8 +1135,9 @@
     document.getElementById('calcNetworkFee').value = 0.3;
     document.getElementById('calcConversionFee').value = 0;
     document.getElementById('calcLiquidityAdj').value = 1;
+    // Switch to calculator tab and run
     showPage('calculator');
-    runCalculator();
+    setTimeout(runCalculator, 100); // ensure DOM is ready
   }
 
   function runCalculator() {
