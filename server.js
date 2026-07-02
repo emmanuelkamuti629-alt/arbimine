@@ -808,7 +808,7 @@ async function getAIAnalysisCached(opp) {
   return result;
 }
 
-// ==================== Opportunities API ====================
+// ==================== Opportunities API (with tiered access) ====================
 app.get('/api/opportunities', authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.user });
@@ -939,7 +939,7 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
 const PLANS = {
-  weekly: { amount: 100, duration: 7 },
+  weekly: { amount: 130, duration: 7 },   // ← Updated to 130 KES
   monthly: { amount: 350, duration: 30 }
 };
 
