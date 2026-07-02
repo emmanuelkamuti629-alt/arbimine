@@ -22,7 +22,6 @@ mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .catch(err => console.error('❌ MongoDB error:', err.message));
 
 // ==================== Middleware ====================
-// Webhook raw body for Paystack (if you keep STK push, otherwise can remove)
 app.post('/api/paystack/webhook',
   express.raw({ type: 'application/json' }),
   async (req, res) => {
@@ -36,7 +35,6 @@ app.post('/api/paystack/webhook',
     }
     const event = JSON.parse(req.body.toString());
     console.log('Paystack Webhook received:', event);
-    // Process webhook (optional – you can leave this for the STK route)
     res.sendStatus(200);
   }
 );
@@ -136,6 +134,7 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// ==================== Auth Middleware with Subscription Check ====================
 async function authMiddleware(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -147,6 +146,20 @@ async function authMiddleware(req, res, next) {
     const session = await Session.findOne({ token });
     if (!session) return res.status(401).json({ error: 'Invalid session' });
     req.user = session.username;
+    
+    // Check and auto-expire subscription
+    const user = await User.findOne({ username: req.user });
+    if (user && user.subscription && user.subscription.expiresAt) {
+      const now = new Date();
+      if (user.subscription.expiresAt < now) {
+        // Subscription expired - downgrade immediately
+        user.subscription.active = false;
+        user.subscription.plan = null;
+        await user.save();
+        console.log(`⏰ Subscription expired for ${req.user}`);
+      }
+    }
+    
     next();
   } catch (err) {
     console.error('Auth error:', err);
@@ -347,19 +360,11 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
 });
 
 // ==================== CCXT Exchange Integration ====================
-const EXCHANGE_IDS = [
-  'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
-  'coinbase', 'gemini', 'upbit', 'poloniex',
-  'whitebit', 'coinex', 'bitmart', 'bitget',
-  'okx', 'bingx'
-];
-
+const EXCHANGE_IDS = ['kucoin', 'mexc', 'kraken'];
 const EXCHANGE_NAMES = {
-  kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
-  bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
-  upbit: 'Upbit', poloniex: 'Poloniex',
-  whitebit: 'WhiteBIT', coinex: 'CoinEx', bitmart: 'BitMart',
-  bitget: 'Bitget', okx: 'OKX', bingx: 'BingX'
+  kucoin: 'KuCoin',
+  mexc: 'MEXC',
+  kraken: 'Kraken'
 };
 
 const exchangeInstances = {};
@@ -409,14 +414,16 @@ const DETAIL_OPP_LIMIT = 200;
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
+// FREE TIER SPREAD LIMIT - users on free plan only see opportunities <= 2%
+const FREE_TIER_MAX_SPREAD = 2.0;
+
 const SYMBOL_BLACKLIST = new Set([
   'US', 'USD', 'MEA', 'SCA', 'AVAIL', 'HOME', 'GUA', 'ESPORTS', 'KRL',
   'SIREN', 'STG', 'VANRY', 'PRCL', 'DGB', 'SWEAT', 'NAVX', 'TAIKO',
   'DEXE', 'IOTX', 'VELODROME', 'SAND', 'MANA', 'CHZ', 'GALA'
 ]);
 
-// AI cache TTL
-const AI_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const AI_CACHE_TTL = 60 * 60 * 1000;
 setInterval(() => {
   aiCache.clear();
   console.log('🧹 AI cache cleared');
@@ -433,7 +440,8 @@ async function fastScan() {
     try {
       const tickers = await ex.fetchTickers();
       allTickers[id] = tickers;
-      await new Promise(r => setTimeout(r, 300));
+      console.log(`✅ ${id} tickers fetched (${Object.keys(tickers).length})`);
+      await new Promise(r => setTimeout(r, 500));
     } catch (err) {
       console.log(`❌ ${id} ticker fetch failed:`, err.message);
     }
@@ -602,7 +610,7 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-fastScan();
+setTimeout(fastScan, 5000);
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
 
@@ -668,35 +676,62 @@ async function getAIAnalysisCached(opp) {
   return result;
 }
 
-// ==================== Opportunities API ====================
+// ==================== Opportunities API (with tiered access) ====================
 app.get('/api/opportunities', authMiddleware, async (req, res) => {
-  const withDetails = cachedOpportunities.map(opp => {
-    const detailed = detailedCache.get(opp.id);
-    const base = detailed || { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
-    return base;
-  });
-
-  const top20 = withDetails.slice(0, 20);
-  const aiPromises = top20.map(async (opp) => {
-    const ai = await getAIAnalysisCached(opp);
-    if (ai) {
-      opp.aiScore = ai.score;
-      opp.aiRisk = ai.risk;
-      opp.aiRecommendation = ai.recommendation;
-      opp.aiSummary = ai.summary;
+  try {
+    // Get user to check subscription
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    
+    const isPro = user.subscription && user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > new Date();
+    
+    // Start with all opportunities
+    let filteredOpps = cachedOpportunities.map(opp => {
+      const detailed = detailedCache.get(opp.id);
+      return detailed || { ...opp, tradable: false, risk: 'medium', buyNetworks: {}, sellNetworks: {}, buyWithdraw: false, sellDeposit: false };
+    });
+    
+    // If not pro, filter to only <= 2% spread
+    if (!isPro) {
+      filteredOpps = filteredOpps.filter(opp => {
+        const spread = parseFloat(opp.spread) || 0;
+        return spread <= FREE_TIER_MAX_SPREAD;
+      });
     }
-    return opp;
-  });
-  await Promise.all(aiPromises);
-
-  const scanning = cachedOpportunities.length === 0 && Date.now() - lastFastScan > 5000;
-  res.json({
-    count: withDetails.length,
-    opportunities: withDetails,
-    lastScan: lastFastScan,
-    lastDetail: lastDetailScan,
-    scanning
-  });
+    
+    // AI analysis for top opportunities
+    const top20 = filteredOpps.slice(0, 20);
+    const aiPromises = top20.map(async (opp) => {
+      const ai = await getAIAnalysisCached(opp);
+      if (ai) {
+        opp.aiScore = ai.score;
+        opp.aiRisk = ai.risk;
+        opp.aiRecommendation = ai.recommendation;
+        opp.aiSummary = ai.summary;
+      }
+      return opp;
+    });
+    await Promise.all(aiPromises);
+    
+    const scanning = cachedOpportunities.length === 0 && Date.now() - lastFastScan > 5000;
+    const totalAvailable = cachedOpportunities.length;
+    const shownCount = filteredOpps.length;
+    
+    res.json({
+      count: filteredOpps.length,
+      opportunities: filteredOpps,
+      totalAvailable,
+      shownCount,
+      isPro,
+      freeTierLimit: FREE_TIER_MAX_SPREAD,
+      lastScan: lastFastScan,
+      lastDetail: lastDetailScan,
+      scanning
+    });
+  } catch (err) {
+    console.error('Opportunities error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/opportunity/:id/details', authMiddleware, async (req, res) => {
@@ -771,12 +806,12 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== PAYSTACK HOSTED CHECKOUT (Redirect) ====================
+// ==================== PAYSTACK HOSTED CHECKOUT ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
 const PLANS = {
-  weekly: { amount: 100, duration: 7 },
+  weekly: { amount: 10, duration: 7 },
   monthly: { amount: 350, duration: 30 }
 };
 
@@ -796,7 +831,7 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const amount = PLANS[plan].amount * 100; // in kobo
+    const amount = PLANS[plan].amount * 100;
     const reference = `arbimine_${user.username}_${Date.now()}`;
 
     const payload = {
@@ -826,7 +861,6 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
     );
 
     if (response.data.status) {
-      // Save transaction as pending
       await Transaction.create({
         reference,
         user: user.username,
@@ -850,7 +884,6 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
   }
 });
 
-// Callback after user returns from Paystack
 app.get('/api/paystack/callback', async (req, res) => {
   const { reference, status } = req.query;
   console.log('Paystack callback:', { reference, status });
@@ -860,7 +893,6 @@ app.get('/api/paystack/callback', async (req, res) => {
   }
 
   try {
-    // Verify transaction
     const verification = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
@@ -874,13 +906,11 @@ app.get('/api/paystack/callback', async (req, res) => {
       const plan = metadata.plan;
       const username = metadata.username;
 
-      // Update transaction
       await Transaction.findOneAndUpdate(
         { reference },
         { status: 'success', paymentData: data.data }
       );
 
-      // Activate subscription
       if (username && plan) {
         const expiresAt = getExpiryDate(plan);
         await User.findOneAndUpdate(
@@ -939,4 +969,5 @@ app.get('/api/test', (req, res) => res.json({ ok: true }));
 app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
   console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'on your domain'}`);
+  console.log(`📊 Free tier max spread: ${FREE_TIER_MAX_SPREAD}%`);
 });

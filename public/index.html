@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>ArbiMine Pro • 15 Exchanges</title>
+  <title>ArbiMine Pro • 3 Exchanges</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* (ALL CSS SAME AS BEFORE – unchanged) */
+    /* ====== STYLES ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -48,9 +48,9 @@
     .badge-low { background: #14532d; color: #4ade80; }
     .badge-medium { background: #5a4a1a; color: #fbbf24; }
     .badge-high { background: #5a1a1a; color: #f87171; }
-    .badge-tradable { background: #14532d; color: #4ade80; }
-    .badge-nontradable { background: #5a1a1a; color: #f87171; }
     .badge-ai { background: #1a2a5a; color: #60a5fa; }
+    .badge-free { background: #5a4a1a; color: #fbbf24; }
+    .badge-pro { background: #14532d; color: #4ade80; }
     .detail-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.05); }
     .detail-item { background: rgba(255,255,255,.02); border-radius: 12px; padding: 6px 10px; text-align: center; }
     .detail-item .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -94,6 +94,7 @@
     .referral-box input { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; padding: 6px 0; outline: none; }
     .referral-box button { background: #00ff99; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; color: #0a0c15; cursor: pointer; }
     .tier-green { color: #00ff99; font-weight: 600; }
+    .tier-yellow { color: #fbbf24; font-weight: 600; }
     #copyStatus { display: none; align-items: center; gap: 6px; color: #00ff99; font-size: 14px; margin-top: 8px; }
 
     .chat-container { display: flex; flex-direction: column; height: calc(100vh - 200px); min-height: 350px; border: 1px solid #1e2538; border-radius: 16px; background: #141824; overflow: hidden; }
@@ -129,6 +130,17 @@
     .exchange-filter-btn .check { display: none; }
     .exchange-filter-btn.active .check { display: inline; }
 
+    .tier-box { background: #0f172a; border-radius: 16px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.06); }
+    .tier-box .tier-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+    .tier-box .tier-name { font-size: 22px; font-weight: 700; }
+    .tier-box .tier-desc { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .tier-box .upgrade-btn { margin-top: 10px; }
+
+    .upgrade-notice { background: #5a4a1a33; border: 1px solid #fbbf2444; border-radius: 12px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .upgrade-notice .icon { font-size: 20px; }
+    .upgrade-notice .text { color: #fbbf24; font-size: 14px; }
+    .upgrade-notice .btn-sm { width: auto; }
+
     @media (max-width: 640px) {
       .header-left .logo { font-size: 20px; }
       .nav-tabs button { font-size: 11px; padding: 6px 10px; }
@@ -140,6 +152,7 @@
       .modal-content { padding: 18px; }
       .footer .badge-container img { width: 280px; }
       .exchange-filter-btn { font-size: 10px; padding: 4px 10px; }
+      .upgrade-notice { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
@@ -201,7 +214,7 @@
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
-  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 15 Exchanges</div>
+  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 3 Exchanges</div>
 </div>
 
 <!-- ===== APP CONTENT ===== -->
@@ -242,7 +255,7 @@
     <div class="stat-card"><div class="stat-label">Total Opportunities</div><div id="oppCount" class="stat-value text-green-400">0</div></div>
     <div class="stat-card"><div class="stat-label">Highest Spread</div><div id="bestSpread" class="stat-value text-green-400">0%</div></div>
     <div class="stat-card"><div class="stat-label">Tradable</div><div id="tradableCount" class="stat-value text-green-400">0</div></div>
-    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">15</div></div>
+    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">3</div></div>
   </div>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
     <div class="stat-card"><div class="stat-label">Daily Profit Est.</div><div id="dailyProfit" class="stat-value text-blue-400">$0</div></div>
@@ -250,6 +263,30 @@
     <div class="stat-card"><div class="stat-label">Avg Spread</div><div id="avgSpread" class="stat-value text-yellow-400">0%</div></div>
     <div class="stat-card"><div class="stat-label">API Status</div><div id="apiStatus" class="stat-value text-green-400">✅ Online</div></div>
   </div>
+
+  <!-- ===== TIER DISPLAY ===== -->
+  <div class="tier-box mt-4">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+      <div>
+        <div class="tier-label">Your Tier</div>
+        <div class="tier-name" id="userTierDisplay">Free</div>
+        <div class="tier-desc" id="userTierLimit">Showing opportunities up to 2% spread</div>
+      </div>
+      <div id="upgradePrompt" class="hidden">
+        <button class="btn btn-sm" onclick="showPage('pro')">⬆ Upgrade to Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== UPGRADE NOTICE (for free users with locked opportunities) ===== -->
+  <div id="upgradeNotice" class="upgrade-notice hidden">
+    <div>
+      <span class="icon">🔒</span>
+      <span class="text"><strong id="lockedCount">0</strong> opportunities above 2% are locked.</span>
+    </div>
+    <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
+  </div>
+
   <div id="dashboardOpportunities" class="mt-3"></div>
 </div>
 
@@ -265,6 +302,14 @@
       <option value="high">High</option>
     </select>
     <button class="btn btn-sm" onclick="refreshOpportunities()">🔄 Refresh</button>
+  </div>
+  <!-- ===== UPGRADE NOTICE (same as dashboard) ===== -->
+  <div id="upgradeNoticeArbitrage" class="upgrade-notice hidden">
+    <div>
+      <span class="icon">🔒</span>
+      <span class="text"><strong id="lockedCountArbitrage">0</strong> opportunities above 2% are locked.</span>
+    </div>
+    <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
   </div>
   <div id="arbitrageOpportunities"></div>
 </div>
@@ -294,7 +339,6 @@
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
 
-    <!-- Phone input is kept but not used for hosted checkout – Paystack will ask for it -->
     <div class="mt-4">
       <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
       <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
@@ -303,8 +347,8 @@
 
     <div class="grid grid-cols-2 gap-4 mt-6">
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold">KES 100</div>
-        <div class="mt-2 text-slate-400">Weekly</div>
+        <div class="text-3xl font-bold">KES 10</div>
+        <div class="mt-2 text-slate-400">Weekly (Test)</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
       </div>
       <div class="glass p-5 text-center">
@@ -358,7 +402,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <div>ArbiMine Pro v3.0 • 15 Exchanges</div>
+  <div>ArbiMine Pro v3.0 • 3 Exchanges</div>
   <div class="flex gap-4">
     <span>🟢 Server Online</span>
     <span>🟢 DB Online</span>
@@ -395,18 +439,11 @@
   // ==========================================
   // CONSTANTS
   // ==========================================
-  const EXCHANGE_IDS = [
-    'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
-    'coinbase', 'gemini', 'upbit', 'poloniex',
-    'whitebit', 'coinex', 'bitmart', 'bitget',
-    'okx', 'bingx'
-  ];
+  const EXCHANGE_IDS = ['kucoin', 'mexc', 'kraken'];
   const EXCHANGE_NAMES = {
-    kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
-    bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
-    upbit: 'Upbit', poloniex: 'Poloniex',
-    whitebit: 'WhiteBIT', coinex: 'CoinEx', bitmart: 'BitMart',
-    bitget: 'Bitget', okx: 'OKX', bingx: 'BingX'
+    kucoin: 'KuCoin',
+    mexc: 'MEXC',
+    kraken: 'Kraken'
   };
 
   // ==========================================
@@ -419,6 +456,9 @@
   let currentUser = null;
   let messageList = [];
   let refreshTimer = null;
+  let isPro = false;
+  let totalAvailable = 0;
+  let shownCount = 0;
 
   // ==========================================
   // UI HELPERS
@@ -596,10 +636,12 @@
         document.getElementById('profilePlan').textContent = data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
         document.getElementById('profileExpiry').textContent = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : '—';
         document.getElementById('subPlanDisplay').textContent = data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
+        isPro = true;
       } else {
         document.getElementById('profilePlan').textContent = 'Free';
         document.getElementById('profileExpiry').textContent = '—';
         document.getElementById('subPlanDisplay').textContent = 'Free';
+        isPro = false;
       }
     } catch (e) {}
   }
@@ -612,6 +654,7 @@
       msgEl.innerHTML = '✅ Payment successful! Your Pro plan is now active.';
       msgEl.className = 'text-green-400 text-center';
       loadSubscription();
+      loadOpportunities();
     } else if (status === 'failed') {
       msgEl.innerHTML = '❌ Payment failed. Please try again.';
       msgEl.className = 'text-red-400 text-center';
@@ -620,7 +663,7 @@
   }
 
   // ==========================================
-  // PAYSTACK SUBSCRIPTION (Hosted Checkout – Redirect)
+  // PAYSTACK SUBSCRIPTION
   // ==========================================
   async function subscribeWithPaystack(plan, btn) {
     btn.disabled = true;
@@ -644,7 +687,6 @@
         throw new Error(data.error || 'Payment initialization failed');
       }
 
-      // Redirect to Paystack checkout
       window.location.href = data.authorization_url;
 
     } catch (err) {
@@ -657,7 +699,7 @@
   }
 
   // ==========================================
-  // REFERRAL COPY (using clipboard API)
+  // REFERRAL COPY
   // ==========================================
   function copyReferral() {
     const link = document.getElementById('referralLink');
@@ -675,7 +717,7 @@
   }
 
   // ==========================================
-  // PAGE NAVIGATION (fixed active class)
+  // PAGE NAVIGATION
   // ==========================================
   function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -751,6 +793,45 @@
       if (!res.ok) throw new Error('Failed to load');
       const data = await res.json();
       allOpportunities = data.opportunities || [];
+      totalAvailable = data.totalAvailable || 0;
+      shownCount = data.shownCount || 0;
+
+      // Update tier display
+      const tierDisplay = document.getElementById('userTierDisplay');
+      const tierLimit = document.getElementById('userTierLimit');
+      const upgradePrompt = document.getElementById('upgradePrompt');
+
+      if (data.isPro) {
+        isPro = true;
+        tierDisplay.textContent = '⭐ Pro';
+        tierDisplay.className = 'tier-name text-green-400';
+        tierLimit.textContent = 'Full access to all opportunities';
+        upgradePrompt.classList.add('hidden');
+      } else {
+        isPro = false;
+        tierDisplay.textContent = 'Free';
+        tierDisplay.className = 'tier-name text-yellow-400';
+        tierLimit.textContent = `Showing opportunities up to ${data.freeTierLimit || 2}% spread. Upgrade for full access.`;
+        upgradePrompt.classList.remove('hidden');
+      }
+
+      // Update upgrade notice
+      const lockedCount = totalAvailable - shownCount;
+      const noticeDashboard = document.getElementById('upgradeNotice');
+      const noticeArbitrage = document.getElementById('upgradeNoticeArbitrage');
+      const lockedDisplay = document.getElementById('lockedCount');
+      const lockedDisplayArb = document.getElementById('lockedCountArbitrage');
+
+      if (!isPro && lockedCount > 0) {
+        noticeDashboard.classList.remove('hidden');
+        noticeArbitrage.classList.remove('hidden');
+        if (lockedDisplay) lockedDisplay.textContent = lockedCount;
+        if (lockedDisplayArb) lockedDisplayArb.textContent = lockedCount;
+      } else {
+        noticeDashboard.classList.add('hidden');
+        noticeArbitrage.classList.add('hidden');
+      }
+
       updateStats(allOpportunities);
       renderAllOpportunityLists(allOpportunities);
       refreshTopCoins();
@@ -766,11 +847,11 @@
     opps.forEach(o => {
       const sp = parseFloat(o.spread) || 0;
       if (sp > highest) highest = sp;
-      if (o.tradable) tradable++;
+      // tradable removed
       totalSpread += sp;
     });
     document.getElementById('bestSpread').innerText = highest.toFixed(2) + '%';
-    document.getElementById('tradableCount').innerText = tradable;
+    document.getElementById('tradableCount').innerText = '—';
     const avg = opps.length ? (totalSpread / opps.length) : 0;
     document.getElementById('avgSpread').innerText = avg.toFixed(2) + '%';
     const daily = opps.reduce((sum, o) => sum + (parseFloat(o.spread) || 0) * 10, 0);
@@ -784,8 +865,6 @@
     const sellPrice = parseFloat(o.sellPrice) || 0;
     const profit = (sellPrice - buyPrice) * 100;
     const riskClass = o.risk === 'low' ? 'badge-low' : o.risk === 'high' ? 'badge-high' : 'badge-medium';
-    const tradableClass = o.tradable ? 'badge-tradable' : 'badge-nontradable';
-    const tradableText = o.tradable ? 'Tradable' : 'Non-Tradable';
     const starClass = watchlist.includes(o.id) ? 'active' : 'inactive';
     const buyExDisplay = EXCHANGE_NAMES[o.buyExchange?.toLowerCase()] || o.buyExchange;
     const sellExDisplay = EXCHANGE_NAMES[o.sellExchange?.toLowerCase()] || o.sellExchange;
@@ -815,7 +894,6 @@
           <div class="detail-item"><div class="label">Liquidity</div><div class="value">$${Number(o.liquidity || 0).toLocaleString()}</div></div>
           <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit.toFixed(2)}</div></div>
           <div class="detail-item"><div class="label">Risk</div><div class="value"><span class="badge ${riskClass}">${o.risk || 'medium'}</span></div></div>
-          <div class="detail-item"><div class="label">Tradable</div><div class="value"><span class="badge ${tradableClass}">${tradableText}</span></div></div>
         </div>
       </div>
     `;
@@ -1028,7 +1106,7 @@
   window.togglePwd = togglePwd;
   window.toggleTheme = toggleTheme;
 
-  console.log('🚀 ArbiMine Pro v3.0 – 15 Exchanges, Paystack Hosted Checkout');
+  console.log('🚀 ArbiMine Pro v3.0 – 3 Exchanges, Tiered Access');
 </script>
 </body>
 </html>
