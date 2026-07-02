@@ -93,6 +93,39 @@
       color:#00ff99;
     }
 
+    .tab-nav{
+      display:flex;
+      gap:8px;
+      margin-bottom:16px;
+      border-bottom:1px solid #1f2937;
+      padding-bottom:8px;
+      flex-wrap:wrap;
+    }
+
+    .tab-nav button{
+      background:none;
+      border:none;
+      color:#94a3b8;
+      padding:8px 16px;
+      border-radius:30px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:14px;
+    }
+
+    .tab-nav button.active{
+      background:#00ff9933;
+      color:#00ff99;
+    }
+
+    .tab-content{
+      display:none;
+    }
+
+    .tab-content.active{
+      display:block;
+    }
+
     table{
       width:100%;
       border-collapse:collapse;
@@ -146,7 +179,7 @@
       color:white;
     }
 
-    input{
+    input, textarea{
       width:100%;
       background:#1f2937;
       border:1px solid #374151;
@@ -156,6 +189,12 @@
       margin-top:10px;
       font-size:15px;
       outline:none;
+      font-family:inherit;
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:60px;
     }
 
     .login-container{
@@ -266,6 +305,17 @@
       }
     }
 
+    .reply-form{
+      background:#0f172a;
+      border-radius:12px;
+      padding:12px;
+      margin-top:8px;
+    }
+
+    .reply-form textarea{
+      margin-top:4px;
+    }
+
     /* Mobile adjustments */
     @media(max-width:768px){
       body{
@@ -347,34 +397,69 @@
   </div>
 
   <div class="card">
-    <h2>Users</h2>
-    <div class="table-wrapper">
-      <table id="usersTable">
-        <thead>
-          <tr><th>User</th><th>Tier</th><th>Expires</th><th>Actions</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="active" data-tab="users" onclick="switchTab('users')">Users</button>
+      <button data-tab="transactions" onclick="switchTab('transactions')">Transactions</button>
+      <button data-tab="messages" onclick="switchTab('messages')">Messages</button>
+    </div>
+
+    <!-- Users Tab -->
+    <div id="tab-users" class="tab-content active">
+      <div class="table-wrapper">
+        <table id="usersTable">
+          <thead>
+            <tr><th>User</th><th>Tier</th><th>Expires</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div id="tab-transactions" class="tab-content">
+      <div class="table-wrapper">
+        <table id="transactionsTable">
+          <thead>
+            <tr><th>Reference</th><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Messages Tab -->
+    <div id="tab-messages" class="tab-content">
+      <div class="table-wrapper">
+        <table id="messagesTable">
+          <thead>
+            <tr><th>User</th><th>Content</th><th>Sent</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
+</div>
 
-  <div class="card">
-    <h2>Payment Transactions</h2>
-    <div class="table-wrapper">
-      <table id="transactionsTable">
-        <thead>
-          <tr><th>Reference</th><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+<!-- Reply Modal (hidden by default) -->
+<div id="replyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div style="background:#111827; border:1px solid #1f2937; border-radius:24px; max-width:500px; width:100%; padding:24px;">
+    <h3 style="margin-bottom:12px; color:#00ff99;">Reply to User</h3>
+    <p id="replyUser" style="color:#94a3b8; margin-bottom:8px;">User: <strong></strong></p>
+    <textarea id="replyContent" placeholder="Type your reply..." rows="3"></textarea>
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="success" onclick="sendReply()" style="flex:1;">Send Reply</button>
+      <button class="danger" onclick="closeReplyModal()" style="flex:1;">Cancel</button>
     </div>
   </div>
-
 </div>
 
 <script>
 
 let adminToken = localStorage.getItem("adminToken");
+let currentReplyUser = null;
+
 if(adminToken) showDashboard();
 
 async function adminLogin(){
@@ -406,12 +491,19 @@ async function showDashboard(){
 }
 
 async function refreshAll(){
-  await Promise.all([loadUsers(), loadTransactions(), loadStats()]);
+  await Promise.all([loadUsers(), loadTransactions(), loadMessages(), loadStats()]);
 }
 
 function logoutAdmin(){
   localStorage.removeItem("adminToken");
   location.reload();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.tab-nav button[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
 }
 
 async function loadUsers(){
@@ -423,7 +515,6 @@ async function loadUsers(){
     tbody.innerHTML = "";
     users.forEach(user => {
       const row = tbody.insertRow();
-      // User column: username, email, mobile stacked
       row.insertCell(0).innerHTML = `
         <div class="user-info">
           <div class="username">${escapeHtml(user.username)}</div>
@@ -431,15 +522,12 @@ async function loadUsers(){
           <div class="mobile">${escapeHtml(user.mpesa)}</div>
         </div>
       `;
-      // Tier column
       row.insertCell(1).innerHTML = user.subscription?.active
         ? `<span class="badge badge-success">${user.subscription.plan || "ACTIVE"}</span>`
         : `<span class="badge badge-failed">FREE</span>`;
-      // Expires column
       row.insertCell(2).innerText = user.subscription?.expiresAt
         ? new Date(user.subscription.expiresAt).toLocaleString()
         : "N/A";
-      // Actions column
       const actions = row.insertCell(3);
       actions.className = "action-buttons";
       const activateBtn = document.createElement("button");
@@ -526,6 +614,90 @@ async function loadTransactions(){
     });
   }catch(err){
     showToast("Failed loading transactions","error");
+  }
+}
+
+async function loadMessages(){
+  try{
+    const token = localStorage.getItem("adminToken");
+    const res = await fetch("/admin/messages",{headers:{"Authorization":token}});
+    const messages = await res.json();
+    const tbody = document.querySelector("#messagesTable tbody");
+    tbody.innerHTML = "";
+    messages.forEach(msg => {
+      const row = tbody.insertRow();
+      row.insertCell(0).innerText = msg.user || "Unknown";
+      row.insertCell(1).innerText = msg.content || "";
+      row.insertCell(2).innerText = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : "N/A";
+      const actions = row.insertCell(3);
+      // Reply button
+      const replyBtn = document.createElement("button");
+      replyBtn.className = "success";
+      replyBtn.innerText = "Reply";
+      replyBtn.onclick = () => openReplyModal(msg.user);
+      actions.appendChild(replyBtn);
+      // Delete button (admin can delete any message)
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "danger";
+      deleteBtn.innerText = "Delete";
+      deleteBtn.onclick = () => deleteMessage(msg._id);
+      actions.appendChild(deleteBtn);
+    });
+  }catch(err){
+    showToast("Failed loading messages","error");
+  }
+}
+
+async function deleteMessage(msgId){
+  if(!confirm("Delete this message?")) return;
+  try{
+    const token = localStorage.getItem("adminToken");
+    const res = await fetch(`/admin/message/${msgId}`,{method:"DELETE",headers:{"Authorization":token}});
+    if(res.ok){
+      showToast("Message deleted","success");
+      loadMessages();
+    }else{
+      showToast("Delete failed","error");
+    }
+  }catch(err){
+    showToast("Server error","error");
+  }
+}
+
+function openReplyModal(username){
+  currentReplyUser = username;
+  document.getElementById("replyUser").innerHTML = `<strong>${escapeHtml(username)}</strong>`;
+  document.getElementById("replyContent").value = "";
+  document.getElementById("replyModal").style.display = "flex";
+}
+
+function closeReplyModal(){
+  document.getElementById("replyModal").style.display = "none";
+  currentReplyUser = null;
+}
+
+async function sendReply(){
+  const content = document.getElementById("replyContent").value.trim();
+  if(!content){
+    showToast("Please enter a reply","error");
+    return;
+  }
+  try{
+    const token = localStorage.getItem("adminToken");
+    const res = await fetch("/admin/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":token},
+      body:JSON.stringify({ userId: currentReplyUser, content })
+    });
+    if(res.ok){
+      showToast("Reply sent successfully","success");
+      closeReplyModal();
+      loadMessages();
+    }else{
+      showToast("Failed to send reply","error");
+    }
+  }catch(err){
+    showToast("Server error","error");
   }
 }
 
