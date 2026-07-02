@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    /* ====== STYLES (same as before – only minor additions for calculator) ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -144,6 +145,13 @@
     .network-status { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .network-status .net { background: #1e2538; border-radius: 6px; padding: 4px 10px; font-size: 12px; border: 1px solid rgba(255,255,255,.06); }
 
+    .profit-calc { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.05); }
+    .profit-calc label { font-size: 13px; color: #94a3b8; }
+    .profit-calc input { background: #1e2538; border: 1px solid #2a3349; border-radius: 8px; padding: 4px 10px; color: white; width: 100px; font-size: 14px; }
+    .profit-calc input:focus { border-color: #22c55e; outline: none; }
+    .profit-calc .result { font-weight: 600; font-size: 16px; color: #4ade80; }
+    .profit-calc .result.negative { color: #f87171; }
+
     @media (max-width: 640px) {
       .header-left .logo { font-size: 20px; }
       .nav-tabs button { font-size: 11px; padding: 6px 10px; }
@@ -156,6 +164,8 @@
       .footer .badge-container img { width: 280px; }
       .exchange-filter-btn { font-size: 10px; padding: 4px 10px; }
       .upgrade-notice { flex-direction: column; text-align: center; }
+      .profit-calc { flex-direction: column; align-items: stretch; }
+      .profit-calc input { width: 100%; }
     }
   </style>
 </head>
@@ -407,7 +417,7 @@
       <div class="detail-item"><div class="label">Spread</div><div class="value text-green-400" id="detailSpread">—</div></div>
       <div class="detail-item"><div class="label">Liquidity</div><div class="value" id="detailLiquidity">—</div></div>
       <div class="detail-item"><div class="label">24h Volume</div><div class="value" id="detailVolume">—</div></div>
-      <div class="detail-item"><div class="label">Tradable</div><div class="value" id="detailTradable">—</div></div>
+      <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value text-green-400" id="detailProfit100">—</div></div>
     </div>
 
     <div class="mt-4">
@@ -421,6 +431,17 @@
         <span id="detailExpiryDate" class="text-sm text-slate-300">—</span>
         <span class="countdown" id="detailCountdown">--:--:--</span>
       </div>
+    </div>
+
+    <!-- Profit Calculator in Modal -->
+    <div class="mt-4 p-3 bg-slate-900/30 rounded-xl border border-slate-700">
+      <div class="label text-slate-400 text-sm">Profit Calculator</div>
+      <div class="profit-calc" style="border-top: none; padding-top: 0; margin-top: 4px;">
+        <label>Amount (USDT):</label>
+        <input type="number" id="modalProfitAmount" value="100" min="1" step="10" oninput="updateModalProfit()">
+        <span class="result" id="modalProfitResult">$0.00</span>
+      </div>
+      <div class="text-xs text-slate-500 mt-1">* Estimated net profit after 0.2% trading fee</div>
     </div>
 
     <button class="btn btn-sm mt-4" onclick="closeDetailsModal()">Close</button>
@@ -881,15 +902,48 @@
     document.getElementById('activeNetworks').innerText = opps.length > 0 ? Math.min(5, opps.length) : 0;
   }
 
+  // ===== PROFIT CALCULATOR =====
+  function calculateProfit(opp, amount) {
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    if (buy <= 0 || sell <= 0 || amount <= 0) return 0;
+    const gross = (sell - buy) * amount;
+    const fee = gross * 0.002; // 0.2% trading fee estimate
+    return gross - fee;
+  }
+
+  function updateProfit(oppId) {
+    const opp = allOpportunities.find(o => o.id === oppId);
+    if (!opp) return;
+    const input = document.getElementById(`profit-amount-${oppId}`);
+    const display = document.getElementById(`profit-display-${oppId}`);
+    const amount = parseFloat(input.value) || 0;
+    const profit = calculateProfit(opp, amount);
+    display.textContent = `$${profit.toFixed(2)}`;
+    display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  }
+
+  function updateModalProfit() {
+    if (!currentDetailOpp) return;
+    const input = document.getElementById('modalProfitAmount');
+    const display = document.getElementById('modalProfitResult');
+    const amount = parseFloat(input.value) || 0;
+    const profit = calculateProfit(currentDetailOpp, amount);
+    display.textContent = `$${profit.toFixed(2)}`;
+    display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  }
+
+  // ==========================================
+  // BUILD OPPORTUNITY CARD (with profit calculator)
+  // ==========================================
   function buildOpportunityCard(o) {
     const spread = parseFloat(o.spread) || 0;
     const buyPrice = parseFloat(o.buyPrice) || 0;
     const sellPrice = parseFloat(o.sellPrice) || 0;
-    const profit = (sellPrice - buyPrice) * 100;
+    const profit100 = calculateProfit(o, 100);
     const starClass = watchlist.includes(o.id) ? 'active' : 'inactive';
     const buyExDisplay = EXCHANGE_NAMES[o.buyExchange?.toLowerCase()] || o.buyExchange;
     const sellExDisplay = EXCHANGE_NAMES[o.sellExchange?.toLowerCase()] || o.sellExchange;
-    const expiryDate = o.timestamp ? new Date(o.timestamp + 3600000) : new Date(Date.now() + 3600000);
 
     return `
       <div class="opportunity-card">
@@ -915,8 +969,16 @@
         <div class="detail-row">
           <div class="detail-item"><div class="label">Liquidity</div><div class="value">$${Number(o.liquidity || 0).toLocaleString()}</div></div>
           <div class="detail-item"><div class="label">24h Volume</div><div class="value">$${Number(o.volume || 0).toLocaleString()}</div></div>
-          <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit.toFixed(2)}</div></div>
+          <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit100.toFixed(2)}</div></div>
         </div>
+
+        <!-- Profit Calculator -->
+        <div class="profit-calc">
+          <label>Amount (USDT):</label>
+          <input type="number" id="profit-amount-${o.id}" value="100" min="1" step="10" oninput="updateProfit('${o.id}')">
+          <span class="result" id="profit-display-${o.id}">$${calculateProfit(o, 100).toFixed(2)}</span>
+        </div>
+
         <div class="mt-3 flex justify-end">
           <button class="btn btn-sm" onclick="event.stopPropagation(); openDetailsModal('${o.id}')">📋 Check Details</button>
         </div>
@@ -970,7 +1032,9 @@
     document.getElementById('detailSpread').textContent = `${opp.spread}%`;
     document.getElementById('detailLiquidity').textContent = `$${Number(opp.liquidity || 0).toLocaleString()}`;
     document.getElementById('detailVolume').textContent = `$${Number(opp.volume || 0).toLocaleString()}`;
-    document.getElementById('detailTradable').innerHTML = opp.tradable ? '✅ Yes' : '❌ No';
+    const profit100 = calculateProfit(opp, 100);
+    document.getElementById('detailProfit100').textContent = `$${profit100.toFixed(2)}`;
+    document.getElementById('detailProfit100').className = `value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}`;
 
     // Networks
     const netContainer = document.getElementById('detailNetworks');
@@ -1001,6 +1065,10 @@
     if (countdownInterval) clearInterval(countdownInterval);
     updateCountdown(expiryMs);
     countdownInterval = setInterval(() => updateCountdown(expiryMs), 1000);
+
+    // Modal profit calculator
+    document.getElementById('modalProfitAmount').value = 100;
+    updateModalProfit();
 
     document.getElementById('detailsModal').classList.add('show');
   }
@@ -1200,8 +1268,10 @@
   window.toggleTheme = toggleTheme;
   window.openDetailsModal = openDetailsModal;
   window.closeDetailsModal = closeDetailsModal;
+  window.updateProfit = updateProfit;
+  window.updateModalProfit = updateModalProfit;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Details Modal with Countdown');
+  console.log('🚀 ArbiMine Pro v3.0 – Profit Calculator, Details Modal with Countdown');
 </script>
 </body>
 </html>
