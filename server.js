@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const ccxt = require('ccxt');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const app = express();
