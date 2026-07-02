@@ -135,6 +135,7 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// ==================== Combined Auth Middleware ====================
 async function authMiddleware(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -344,8 +345,12 @@ app.post('/api/messages/:id/read', authMiddleware, async (req, res) => {
 
 // ==================== Admin Routes ====================
 app.get('/admin/messages', adminAuth, async (req, res) => {
-  const messages = await Message.find().sort({ createdAt: -1 });
-  res.json(messages);
+  try {
+    const messages = await Message.find().sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/admin/messages', adminAuth, async (req, res) => {
@@ -361,15 +366,23 @@ app.post('/admin/messages', adminAuth, async (req, res) => {
 });
 
 app.delete('/admin/message/:id', adminAuth, async (req, res) => {
-  await Message.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    await Message.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.put('/admin/message/:id', adminAuth, async (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: 'Content required' });
-  const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
-  res.json({ success: true, message: msg });
+  try {
+    const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/admin/block/:username', adminAuth, async (req, res) => {
@@ -394,6 +407,52 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
     res.json({ success: true, message: `User ${req.params.username} unblocked` });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Admin Users & Transactions ====================
+app.get('/admin/users', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find({}, '-passwordHash');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  try {
+    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    res.json(transactions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  try {
+    const { active, plan, expiresAt } = req.body;
+    const updates = { 'subscription.active': active };
+    if (plan) updates['subscription.plan'] = plan;
+    if (active && !expiresAt) {
+      const days = plan === 'weekly' ? 7 : 30;
+      updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    } else if (expiresAt) {
+      updates['subscription.expiresAt'] = new Date(expiresAt);
+    }
+    await User.findByIdAndUpdate(req.params.id, updates);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -844,7 +903,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== PAYSTACK HOSTED CHECKOUT (with sanitised reference) ====================
+// ==================== PAYSTACK HOSTED CHECKOUT ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
@@ -859,7 +918,6 @@ function getExpiryDate(plan) {
   const now = new Date(); now.setDate(now.getDate() + days); return now;
 }
 
-// Sanitise reference to only safe characters
 function sanitizeReference(str) {
   return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
 }
@@ -977,36 +1035,10 @@ app.get('/api/paystack/callback', async (req, res) => {
   }
 });
 
-// ==================== Admin Routes ====================
-app.get('/admin/users', adminAuth, async (req, res) => {
-  const users = await User.find({}, '-passwordHash');
-  res.json(users);
-});
-
-app.get('/admin/transactions', adminAuth, async (req, res) => {
-  const transactions = await Transaction.find().sort({ createdAt: -1 });
-  res.json(transactions);
-});
-
-app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
-  const { active, plan, expiresAt } = req.body;
-  const updates = { 'subscription.active': active };
-  if (plan) updates['subscription.plan'] = plan;
-  if (active && !expiresAt) {
-    const days = plan === 'weekly' ? 7 : 30;
-    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-  } else if (expiresAt) {
-    updates['subscription.expiresAt'] = new Date(expiresAt);
-  }
-  await User.findByIdAndUpdate(req.params.id, updates);
-  res.json({ success: true });
-});
-
+// ==================== Admin Panel ====================
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
-
-app.get('/api/test', (req, res) => res.json({ ok: true }));
 
 // ==================== Start Server ====================
 app.listen(PORT, () => {
