@@ -498,3 +498,45 @@ app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
   console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'on your domain'}`);
 });
+
+// ===== Paystack Redirect Checkout =====
+app.post("/api/paystack/initialize", authMiddleware, async (req, res) => {
+  try {
+    const { plan } = req.body;
+
+    const amount = plan === "weekly" ? 10000 : 35000;
+
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: req.user.email,
+        amount,
+        currency: "KES",
+        callback_url: `${process.env.BASE_URL}/payment-success`,
+        metadata: {
+          userId: req.user.id,
+          plan
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    res.json(response.data.data);
+
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).json({
+      error: "Failed to initialize payment"
+    });
+  }
+});
+
+app.get("/payment-success", (req, res) => {
+  res.redirect("/?payment=success");
+});
+
