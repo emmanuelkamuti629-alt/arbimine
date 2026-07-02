@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>ArbiMine Pro • 3 Exchanges</title>
+  <title>ArbiMine Pro • 13 Exchanges</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ====== STYLES (same as before – only minor additions for calculator) ====== */
+    /* ====== STYLES (same as before – all styles unchanged) ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -227,7 +227,7 @@
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
-  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 3 Exchanges</div>
+  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 13 Exchanges</div>
 </div>
 
 <!-- ===== APP CONTENT ===== -->
@@ -267,7 +267,7 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
     <div class="stat-card"><div class="stat-label">Total Opportunities</div><div id="oppCount" class="stat-value text-green-400">0</div></div>
     <div class="stat-card"><div class="stat-label">Highest Spread</div><div id="bestSpread" class="stat-value text-green-400">0%</div></div>
-    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">3</div></div>
+    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">13</div></div>
     <div class="stat-card"><div class="stat-label">API Status</div><div id="apiStatus" class="stat-value text-green-400">✅ Online</div></div>
   </div>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
@@ -353,13 +353,13 @@
 
     <div class="grid grid-cols-2 gap-4 mt-6">
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold">KES 350</div>
-        <div class="mt-2 text-slate-400">Weekly (Test)</div>
+        <div class="text-3xl font-bold">KES 100</div>
+        <div class="mt-2 text-slate-400">Weekly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
       </div>
       <div class="glass p-5 text-center">
         <div class="text-3xl font-bold">KES 350</div>
-<div class="mt-2 text-slate-400">Monthly</div>
+        <div class="mt-2 text-slate-400">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
       </div>
     </div>
@@ -450,7 +450,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <div>ArbiMine Pro v3.0 • 3 Exchanges</div>
+  <div>ArbiMine Pro v3.0 • 13 Exchanges</div>
   <div class="flex gap-4">
     <span>🟢 Server Online</span>
     <span>🟢 DB Online</span>
@@ -485,13 +485,27 @@
 
 <script>
   // ==========================================
-  // CONSTANTS
+  // CONSTANTS (13 exchanges)
   // ==========================================
-  const EXCHANGE_IDS = ['kucoin', 'mexc', 'kraken'];
+  const EXCHANGE_IDS = [
+    'kucoin', 'mexc', 'kraken',
+    'huobi', 'gateio', 'coinex', 'crypto', 'xt',
+    'poloniex', 'bitfinex', 'upbit', 'whitebit', 'indodax'
+  ];
   const EXCHANGE_NAMES = {
     kucoin: 'KuCoin',
     mexc: 'MEXC',
-    kraken: 'Kraken'
+    kraken: 'Kraken',
+    huobi: 'HTX',
+    gateio: 'Gate.io',
+    coinex: 'CoinEx',
+    crypto: 'Crypto.com',
+    xt: 'XT.COM',
+    poloniex: 'Poloniex',
+    bitfinex: 'Bitfinex',
+    upbit: 'Upbit',
+    whitebit: 'WhiteBIT',
+    indodax: 'Indodax'
   };
 
   // ==========================================
@@ -934,7 +948,7 @@
   }
 
   // ==========================================
-  // BUILD OPPORTUNITY CARD (with profit calculator)
+  // BUILD OPPORTUNITY CARD
   // ==========================================
   function buildOpportunityCard(o) {
     const spread = parseFloat(o.spread) || 0;
@@ -1271,7 +1285,7 @@
   window.updateProfit = updateProfit;
   window.updateModalProfit = updateModalProfit;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Profit Calculator, Details Modal with Countdown');
+  console.log('🚀 ArbiMine Pro v3.0 – 13 Exchanges, Profit Calculator');
 </script>
 </body>
 </html>

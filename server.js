@@ -135,7 +135,6 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// ==================== Combined Auth Middleware ====================
 async function authMiddleware(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -411,7 +410,6 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
   }
 });
 
-// ==================== Admin Users & Transactions ====================
 app.get('/admin/users', adminAuth, async (req, res) => {
   try {
     const users = await User.find({}, '-passwordHash');
@@ -457,12 +455,35 @@ app.delete('/admin/user/:id', adminAuth, async (req, res) => {
   }
 });
 
-// ==================== CCXT Exchange Integration ====================
-const EXCHANGE_IDS = ['kucoin', 'mexc', 'kraken'];
+// ==================== CCXT Exchange Integration (13 exchanges) ====================
+const EXCHANGE_IDS = [
+  'kucoin', 'mexc', 'kraken',
+  'huobi',    // HTX
+  'gateio',   // Gate.io
+  'coinex',   // CoinEx
+  'crypto',   // Crypto.com
+  'xt',       // XT.COM
+  'poloniex', // Poloniex
+  'bitfinex', // Bitfinex
+  'upbit',    // Upbit
+  'whitebit', // WhiteBIT
+  'indodax'   // Indodax
+];
+
 const EXCHANGE_NAMES = {
   kucoin: 'KuCoin',
   mexc: 'MEXC',
-  kraken: 'Kraken'
+  kraken: 'Kraken',
+  huobi: 'HTX',
+  gateio: 'Gate.io',
+  coinex: 'CoinEx',
+  crypto: 'Crypto.com',
+  xt: 'XT.COM',
+  poloniex: 'Poloniex',
+  bitfinex: 'Bitfinex',
+  upbit: 'Upbit',
+  whitebit: 'WhiteBIT',
+  indodax: 'Indodax'
 };
 
 const exchangeInstances = {};
@@ -546,8 +567,11 @@ async function fastScan() {
   for (const [exId, tickers] of Object.entries(allTickers)) {
     if (!tickers) continue;
     for (const [pair, ticker] of Object.entries(tickers)) {
-      if (!pair.endsWith('/USDT')) continue;
-      const symbol = pair.replace('/USDT', '');
+      // Accept USDT pairs and also IDR for Indodax (optional)
+      const isUSDT = pair.endsWith('/USDT');
+      const isIDR = pair.endsWith('/IDR') && exId === 'indodax';
+      if (!isUSDT && !isIDR) continue;
+      let symbol = pair.replace('/USDT', '').replace('/IDR', '');
       if (SYMBOL_BLACKLIST.has(symbol)) continue;
       const price = ticker.last || ticker.ask || ticker.bid || 0;
       if (!price || price <= 0) continue;
@@ -559,7 +583,8 @@ async function fastScan() {
         pair: pair,
         bid: ticker.bid || 0,
         ask: ticker.ask || 0,
-        timestamp: ticker.timestamp || Date.now()
+        timestamp: ticker.timestamp || Date.now(),
+        currency: isUSDT ? 'USDT' : 'IDR'
       };
     }
   }
@@ -568,9 +593,14 @@ async function fastScan() {
   for (const [symbol, exchanges] of Object.entries(pairMap)) {
     const entries = Object.entries(exchanges);
     if (entries.length < 2) continue;
-    entries.sort((a, b) => a[1].price - b[1].price);
-    const [buyEx, buy] = entries[0];
-    const [sellEx, sell] = entries[entries.length - 1];
+    // For simplicity, we compare only the price (converted to USD? but we don't convert – we assume same quote)
+    // Since we have both USDT and IDR pairs, we should separate by currency.
+    // For now, we filter only USDT pairs for cross-exchange comparison.
+    const usdtEntries = entries.filter(([_, data]) => data.currency === 'USDT');
+    if (usdtEntries.length < 2) continue;
+    usdtEntries.sort((a, b) => a[1].price - b[1].price);
+    const [buyEx, buy] = usdtEntries[0];
+    const [sellEx, sell] = usdtEntries[usdtEntries.length - 1];
     const spread = ((sell.price - buy.price) / buy.price) * 100;
     if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
     let liquidity = buy.volume ? buy.volume * buy.price : 0;
@@ -610,6 +640,7 @@ async function fastScan() {
   }
 }
 
+// ==================== Detail Scan ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
