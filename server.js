@@ -197,6 +197,7 @@ app.post('/api/messages', authMiddleware, async (req, res) => {
     if (blocked) return res.status(403).json({ error: 'You have been blocked' });
     const msg = new Message({ user: req.user, isAdmin: false, content: content.trim(), status: 'sent' });
     await msg.save();
+    // Auto-deliver after 1 second (simulate delivery)
     setTimeout(async () => {
       msg.status = 'delivered';
       await msg.save();
@@ -865,7 +866,7 @@ app.post('/api/ai/refresh/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== Balance (for display) ====================
+// ==================== Balance (for display only) ====================
 app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   const { exchange } = req.params;
   const ex = exchangeInstances[exchange.toLowerCase()];
@@ -892,7 +893,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== IntaSend Payment (STK Push) ====================
+// ==================== IntaSend STK Push (M-Pesa) ====================
 const INTASEND_API_KEY = process.env.INTASEND_API_KEY;
 const INTASEND_SECRET_KEY = process.env.INTASEND_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
@@ -931,6 +932,7 @@ async function intasendRequest(method, endpoint, data = null) {
 
 // STK Push endpoint
 app.post('/api/intasend/pay', authMiddleware, async (req, res) => {
+  console.log('✅ /api/intasend/pay called');
   try {
     const { plan } = req.body;
     if (!plan || !PLANS[plan]) {
@@ -1045,4 +1047,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`))
+// ==================== Test endpoint ====================
+app.get('/api/test', (req, res) => res.json({ ok: true }));
+
+// ==================== Start Server ====================
+app.listen(PORT, () => {
+  console.log(`🚀 ArbiMine running on ${PORT}`);
+  console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'on your domain'}`);
+});
