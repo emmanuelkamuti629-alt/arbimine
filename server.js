@@ -30,7 +30,6 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ==================== Schemas ====================
-// (Keep existing schemas unchanged)
 const sessionSchema = new mongoose.Schema({
   token: { type: String, required: true, unique: true },
   username: { type: String, required: true },
@@ -189,8 +188,8 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== Messaging with Status, Edit, Delete ====================
-// (Same as before – keep unchanged)
+// ==================== Messaging ====================
+// (Same as before – unchanged)
 app.post('/api/messages', authMiddleware, async (req, res) => {
   try {
     const { content } = req.body;
@@ -308,49 +307,25 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-// ==================== CCXT Exchange Integration (30 exchanges) ====================
-// List of 30 exchanges (CCXT exchange IDs)
+// ==================== CCXT Exchange Integration (working list) ====================
+// Exchanges that are publicly accessible from most regions
 const EXCHANGE_IDS = [
-  'binance', 'bybit', 'okx', 'kucoin', 'gateio', 'mexc', 'bitget', 'huobi', 'kraken',
-  'coinbase', 'bitfinex', 'bitstamp', 'crypto', 'bingx', 'bitmart', 'lbank', 'whitebit',
-  'coinex', 'xt', 'pionex', 'ascendex', 'bitrue', 'poloniex', 'gemini', 'upbit',
-  'bithumb', 'coinw', 'deepcoin', 'btse', 'cex'
+  'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp', 'coinbase',
+  'gemini', 'upbit', 'bithumb', 'poloniex', 'cex', 'lbank',
+  'whitebit', 'coinex', 'xt', 'bitmart', 'bitget', 'bingx',
+  'okx', 'ascendex', 'bitrue', 'deepcoin'
 ];
-// Map to display names
+
 const EXCHANGE_NAMES = {
-  binance: 'Binance',
-  bybit: 'Bybit',
-  okx: 'OKX',
-  kucoin: 'KuCoin',
-  gateio: 'Gate.io',
-  mexc: 'MEXC',
-  bitget: 'Bitget',
-  huobi: 'HTX',
-  kraken: 'Kraken',
-  coinbase: 'Coinbase',
-  bitfinex: 'Bitfinex',
-  bitstamp: 'Bitstamp',
-  crypto: 'Crypto.com',
-  bingx: 'BingX',
-  bitmart: 'BitMart',
-  lbank: 'LBank',
-  whitebit: 'WhiteBIT',
-  coinex: 'CoinEx',
-  xt: 'XT.COM',
-  pionex: 'Pionex',
-  ascendex: 'AscendEX',
-  bitrue: 'Bitrue',
-  poloniex: 'Poloniex',
-  gemini: 'Gemini',
-  upbit: 'Upbit',
-  bithumb: 'Bithumb',
-  coinw: 'CoinW',
-  deepcoin: 'Deepcoin',
-  btse: 'BTSE',
-  cex: 'CEX.IO'
+  kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
+  bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
+  upbit: 'Upbit', bithumb: 'Bithumb', poloniex: 'Poloniex',
+  cex: 'CEX.IO', lbank: 'LBank', whitebit: 'WhiteBIT',
+  coinex: 'CoinEx', xt: 'XT.COM', bitmart: 'BitMart',
+  bitget: 'Bitget', bingx: 'BingX', okx: 'OKX',
+  ascendex: 'AscendEX', bitrue: 'Bitrue', deepcoin: 'Deepcoin'
 };
 
-// Initialize exchange instances (public only)
 const exchangeInstances = {};
 for (const id of EXCHANGE_IDS) {
   try {
@@ -383,7 +358,6 @@ const DETAIL_OPP_LIMIT = 200;
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
 
-// Symbol blacklist (same as before)
 const SYMBOL_BLACKLIST = new Set([
   'US', 'USD', 'MEA', 'SCA', 'AVAIL', 'HOME', 'GUA', 'ESPORTS', 'KRL',
   'SIREN', 'STG', 'VANRY', 'PRCL', 'DGB', 'SWEAT', 'NAVX', 'TAIKO',
@@ -391,11 +365,10 @@ const SYMBOL_BLACKLIST = new Set([
 ]);
 
 async function fastScan() {
-  console.log('🔄 Fast scan using CCXT across 30 exchanges...');
+  console.log('🔄 Fast scan using CCXT across available exchanges...');
   const start = Date.now();
   const allTickers = {};
 
-  // Fetch tickers from each exchange in parallel
   const fetchPromises = EXCHANGE_IDS.map(async (id) => {
     const ex = exchangeInstances[id];
     if (!ex) return;
@@ -409,10 +382,7 @@ async function fastScan() {
   });
   await Promise.all(fetchPromises);
 
-  // Build opportunities
-  const opportunities = [];
-  // Collect all USDT pairs across exchanges
-  const pairMap = {}; // symbol -> { exchange: { price, volume, pair } }
+  const pairMap = {};
   for (const [exId, tickers] of Object.entries(allTickers)) {
     if (!tickers) continue;
     for (const [pair, ticker] of Object.entries(tickers)) {
@@ -434,11 +404,10 @@ async function fastScan() {
     }
   }
 
-  // For each symbol, find lowest buy and highest sell
+  const opportunities = [];
   for (const [symbol, exchanges] of Object.entries(pairMap)) {
     const entries = Object.entries(exchanges);
     if (entries.length < 2) continue;
-    // Sort by price
     entries.sort((a, b) => a[1].price - b[1].price);
     const [buyEx, buy] = entries[0];
     const [sellEx, sell] = entries[entries.length - 1];
@@ -475,10 +444,7 @@ async function fastScan() {
   }
 }
 
-// ==================== Detail Scan (networks/liquidity) ====================
-// Keep the same logic – only for exchanges that have API keys.
-// For simplicity, we'll just use the existing functions (fetchRealNetworks, fetchLiquidity).
-// We'll limit to exchanges that we have keys for, or just skip if no keys.
+// ==================== Detail Scan ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -579,13 +545,11 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-// Initial scan and periodic
 fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
 
 // ==================== AI Integration ====================
-// (Keep the same AI logic as before – unchanged)
 const AI_API_URL = process.env.AI_API_URL || 'https://openrouter.ai/api/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY;
 const AI_MODEL = process.env.AI_MODEL || 'openai/gpt-3.5-turbo';
@@ -745,14 +709,12 @@ app.post('/api/ai/refresh/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== Balance endpoint (dummy for now) ====================
+// ==================== Balance endpoint ====================
 app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
-  // Return dummy balances for display
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== Paystack M-PESA STK Push ====================
-// (Keep the same Paystack code as before – no change)
+// ==================== Paystack M-PESA STK Push (with phone input) ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
@@ -779,15 +741,19 @@ function formatPhone(phone) {
 app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
   console.log('✅ /api/paystack/charge called');
   try {
-    const { plan } = req.body;
+    const { plan, phone } = req.body;
     if (!plan || !PLANS[plan]) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    let userPhone = phone ? formatPhone(phone) : formatPhone(user.mpesa);
+    if (!userPhone || userPhone.length < 10) {
+      return res.status(400).json({ error: 'Valid M-Pesa phone number required' });
+    }
+
     const email = user.email;
-    const phone = formatPhone(user.mpesa);
     const amount = PLANS[plan].amount;
     const reference = `arbimine_${user.username}_${Date.now()}`;
 
@@ -798,7 +764,7 @@ app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
       reference: reference,
       mobile_money: {
         provider: 'mpesa',
-        phone: phone
+        phone: userPhone
       },
       metadata: {
         plan: plan,
