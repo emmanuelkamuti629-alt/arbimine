@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ====== STYLES (same as before – only calculator additions) ====== */
+    /* (All styles are exactly the same as in the previous version – no changes needed) */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -1031,6 +1031,7 @@
         noticeArbitrage.classList.add('hidden');
       }
 
+      // Top Coins: show upgrade notice if not Pro
       const topCoinsUpgrade = document.getElementById('topCoinsUpgrade');
       const topCoinsContainer = document.getElementById('topCoinsOpportunities');
       if (!isPro) {
@@ -1072,8 +1073,39 @@
     document.getElementById('activeNetworks').innerText = opps.length > 0 ? Math.min(5, opps.length) : 0;
   }
 
+  // ===== PROFIT CALCULATOR (simple) =====
+  function calculateProfit(opp, amount) {
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    if (buy <= 0 || sell <= 0 || amount <= 0) return 0;
+    const gross = (sell - buy) * amount;
+    const fee = gross * 0.002;
+    return gross - fee;
+  }
+
+  function updateProfit(oppId) {
+    const opp = allOpportunities.find(o => o.id === oppId);
+    if (!opp) return;
+    const input = document.getElementById(`profit-amount-${oppId}`);
+    const display = document.getElementById(`profit-display-${oppId}`);
+    const amount = parseFloat(input.value) || 0;
+    const profit = calculateProfit(opp, amount);
+    display.textContent = `$${profit.toFixed(2)}`;
+    display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  }
+
+  function updateModalProfit() {
+    if (!currentDetailOpp) return;
+    const input = document.getElementById('modalProfitAmount');
+    const display = document.getElementById('modalProfitResult');
+    const amount = parseFloat(input.value) || 0;
+    const profit = calculateProfit(currentDetailOpp, amount);
+    display.textContent = `$${profit.toFixed(2)}`;
+    display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  }
+
   // ==========================================
-  // CALCULATOR FUNCTIONS
+  // CALCULATOR (full)
   // ==========================================
   function setAmount(val) {
     document.getElementById('calcAmount').value = val;
@@ -1086,14 +1118,11 @@
     document.getElementById('calcSellExchange').value = opp.sellExchange || '';
     document.getElementById('calcBuyPrice').value = parseFloat(opp.buyPrice) || 0;
     document.getElementById('calcSellPrice').value = parseFloat(opp.sellPrice) || 0;
-    // Estimate fees: if we have fee data, use it, else default 0.1%
     document.getElementById('calcBuyFee').value = 0.1;
     document.getElementById('calcSellFee').value = 0.1;
-    // Use liquidity to estimate slippage
     const liq = parseFloat(opp.liquidity) || 10000;
     const slippage = liq > 10000 ? 0.3 : (liq > 5000 ? 0.5 : 0.8);
     document.getElementById('calcSlippage').value = slippage;
-    // Reset other fields to defaults
     document.getElementById('calcAmount').value = 100;
     document.getElementById('calcWithdrawFee').value = 0.5;
     document.getElementById('calcDepositFee').value = 0.2;
@@ -1105,7 +1134,6 @@
   }
 
   function runCalculator() {
-    // Read all inputs
     const amount = parseFloat(document.getElementById('calcAmount').value) || 0;
     const buyPrice = parseFloat(document.getElementById('calcBuyPrice').value) || 0;
     const sellPrice = parseFloat(document.getElementById('calcSellPrice').value) || 0;
@@ -1119,7 +1147,6 @@
     const liqAdj = parseFloat(document.getElementById('calcLiquidityAdj').value) || 1;
 
     if (amount <= 0 || buyPrice <= 0 || sellPrice <= 0) {
-      // Clear results
       document.getElementById('resCoins').textContent = '0';
       document.getElementById('resBuyCost').textContent = '$0.00';
       document.getElementById('resSellValue').textContent = '$0.00';
@@ -1138,13 +1165,10 @@
       return;
     }
 
-    // Calculate
     const coins = amount / buyPrice;
     const buyCost = amount;
     const sellValue = coins * sellPrice;
     const grossProfit = sellValue - buyCost;
-
-    // Fees
     const buyFeeAmount = amount * (buyFee / 100);
     const sellFeeAmount = sellValue * (sellFee / 100);
     const conversionFeeAmount = sellValue * (conversionFee / 100);
@@ -1155,7 +1179,6 @@
     const spread = ((sellPrice - buyPrice) / buyPrice) * 100;
     const breakEven = ((buyFee + sellFee) / 100) + ((withdrawFee + depositFee + networkFee) / amount) * 100 + (slippage / 100);
 
-    // Display results
     document.getElementById('resCoins').textContent = coins.toFixed(6);
     document.getElementById('resBuyCost').textContent = '$' + buyCost.toFixed(2);
     document.getElementById('resSellValue').textContent = '$' + sellValue.toFixed(2);
@@ -1169,16 +1192,13 @@
     document.getElementById('resROI').className = 'value ' + (roi >= 0 ? 'positive' : 'negative');
     document.getElementById('resSpread').textContent = spread.toFixed(2) + '%';
     document.getElementById('resBreakEven').textContent = breakEven.toFixed(2) + '%';
-    const profitAfter = netProfit - totalFees; // redundant, but keep as requested
     document.getElementById('resProfitAfter').textContent = '$' + netProfit.toFixed(2);
     document.getElementById('resProfitAfter').className = 'value ' + (netProfit >= 0 ? 'positive' : 'negative');
 
-    // Risk analysis
     let riskLevel = 'low';
     let riskColor = '🟢';
     if (spread < 1 || netProfit < 0.5) { riskLevel = 'high'; riskColor = '🔴'; }
     else if (spread < 2 || netProfit < 1) { riskLevel = 'medium'; riskColor = '🟡'; }
-    // Adjust risk based on liquidity adjustment and fees
     if (totalFees > grossProfit * 0.5) riskLevel = 'high';
     if (slippage > 1) riskLevel = 'high';
 
@@ -1186,7 +1206,6 @@
     riskBadge.textContent = riskColor + ' ' + riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
     riskBadge.className = 'risk-badge ' + riskLevel;
 
-    // Recommendation
     const rec = document.getElementById('resRecommendation');
     if (netProfit <= 0) {
       rec.textContent = '❌ Loss Expected – Do Not Trade';
@@ -1199,7 +1218,6 @@
       rec.className = 'recommendation execute';
     }
 
-    // Time estimate (dummy, based on network fees)
     const timeEst = (withdrawFee + depositFee + networkFee) > 2 ? '5-10 minutes' : '2-5 minutes';
     document.getElementById('resTimeEstimate').textContent = '~ ' + timeEst;
   }
@@ -1244,7 +1262,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     navigator.clipboard.writeText(summary).then(() => {
       showToast('✅ Summary copied to clipboard!', 'success');
     }).catch(() => {
-      // Fallback
       const ta = document.createElement('textarea');
       ta.value = summary;
       document.body.appendChild(ta);
@@ -1256,25 +1273,76 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   }
 
   // ==========================================
-  // DETAILS MODAL FUNCTIONS
+  // DETAILS MODAL
   // ==========================================
-  function updateModalProfit() {
-    if (!currentDetailOpp) return;
-    const input = document.getElementById('modalProfitAmount');
-    const display = document.getElementById('modalProfitResult');
-    const amount = parseFloat(input.value) || 0;
-    const profit = calculateProfit(currentDetailOpp, amount);
-    display.textContent = `$${profit.toFixed(2)}`;
-    display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  function openDetailsModal(oppId) {
+    const opp = allOpportunities.find(o => o.id === oppId);
+    if (!opp) { showToast('Opportunity not found', 'error'); return; }
+    currentDetailOpp = opp;
+
+    document.getElementById('detailSymbol').textContent = opp.symbol;
+    document.getElementById('detailSubtitle').textContent = `${opp.buyExchange} → ${opp.sellExchange}`;
+    document.getElementById('detailSpread').textContent = `${opp.spread}%`;
+    document.getElementById('detailLiquidity').textContent = `$${Number(opp.liquidity || 0).toLocaleString()}`;
+    document.getElementById('detailVolume').textContent = `$${Number(opp.volume || 0).toLocaleString()}`;
+    const profit100 = calculateProfit(opp, 100);
+    document.getElementById('detailProfit100').textContent = `$${profit100.toFixed(2)}`;
+    document.getElementById('detailProfit100').className = `value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}`;
+
+    const netContainer = document.getElementById('detailNetworks');
+    netContainer.innerHTML = '';
+    const buyNets = opp.buyNetworks || {};
+    const sellNets = opp.sellNetworks || {};
+    const allNets = new Set([...Object.keys(buyNets), ...Object.keys(sellNets)]);
+    if (allNets.size === 0) {
+      netContainer.innerHTML = '<span class="text-slate-400 text-sm">No network data available</span>';
+    } else {
+      allNets.forEach(net => {
+        const buyInfo = buyNets[net];
+        const sellInfo = sellNets[net];
+        const buyStatus = buyInfo?.withdraw ? '✅' : '❌';
+        const sellStatus = sellInfo?.deposit ? '✅' : '❌';
+        const div = document.createElement('span');
+        div.className = 'net';
+        div.innerHTML = `<strong>${net}</strong> Buy: ${buyStatus} | Sell: ${sellStatus}`;
+        netContainer.appendChild(div);
+      });
+    }
+
+    const expiryMs = opp.timestamp ? opp.timestamp + 3600000 : Date.now() + 3600000;
+    const expiryDate = new Date(expiryMs);
+    document.getElementById('detailExpiryDate').textContent = expiryDate.toLocaleString();
+
+    if (countdownInterval) clearInterval(countdownInterval);
+    updateCountdown(expiryMs);
+    countdownInterval = setInterval(() => updateCountdown(expiryMs), 1000);
+
+    document.getElementById('modalProfitAmount').value = 100;
+    updateModalProfit();
+
+    document.getElementById('detailsModal').classList.add('show');
   }
 
-  function calculateProfit(opp, amount) {
-    const buy = parseFloat(opp.buyPrice) || 0;
-    const sell = parseFloat(opp.sellPrice) || 0;
-    if (buy <= 0 || sell <= 0 || amount <= 0) return 0;
-    const gross = (sell - buy) * amount;
-    const fee = gross * 0.002;
-    return gross - fee;
+  function updateCountdown(targetMs) {
+    const now = Date.now();
+    let diff = targetMs - now;
+    if (diff < 0) diff = 0;
+    const hours = Math.floor(diff / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('detailCountdown').textContent =
+      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    if (diff === 0) {
+      clearInterval(countdownInterval);
+    }
+  }
+
+  function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.remove('show');
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
   }
 
   function openFullCalculatorFromModal() {
@@ -1287,7 +1355,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   }
 
   // ==========================================
-  // OPPORTUNITY CARD BUILDING (with Calculate button)
+  // BUILD OPPORTUNITY CARD
   // ==========================================
   function buildOpportunityCard(o) {
     const spread = parseFloat(o.spread) || 0;
@@ -1325,7 +1393,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit100.toFixed(2)}</div></div>
         </div>
 
-        <!-- Profit Calculator (simple) -->
         <div class="profit-calc">
           <label>Amount (USDT):</label>
           <input type="number" id="profit-amount-${o.id}" value="100" min="1" step="10" oninput="updateProfit('${o.id}')">
@@ -1346,16 +1413,230 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     applyFilters();
   }
 
-  // Existing functions (applyFilters, refreshTopCoins, toggleWatchlist, etc.) remain unchanged.
-  // They are already defined above. I'm omitting them here to save length, but they remain in the final file.
-  // The rest of the script is exactly as in the previous working version.
+  function applyFilters() {
+    const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
+    let filtered = allOpportunities.filter(o => {
+      if (search && !o.symbol.toUpperCase().startsWith(search)) return false;
+      if (!selectedExchanges.has('all')) {
+        const buy = o.buyExchange?.toLowerCase() || '';
+        const sell = o.sellExchange?.toLowerCase() || '';
+        let match = false;
+        for (const ex of selectedExchanges) {
+          if (ex === 'all') continue;
+          const exLower = ex.toLowerCase();
+          if (buy === exLower || sell === exLower) { match = true; break; }
+        }
+        if (!match) return false;
+      }
+      return true;
+    });
+    document.getElementById('arbitrageOpportunities').innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities match filters</div>';
+  }
+
+  // ==========================================
+  // TOP COINS (FIXED!)
+  // ==========================================
+  function refreshTopCoins() {
+    if (!isPro) {
+      const container = document.getElementById('topCoinsOpportunities');
+      container.innerHTML = '';
+      return;
+    }
+    const topSymbols = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE', 'TRX', 'LTC', 'ADA', 'AVAX', 'LINK', 'TON', 'SUI'];
+    const filtered = allOpportunities.filter(o => topSymbols.includes(o.symbol));
+    const container = document.getElementById('topCoinsOpportunities');
+    container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
+  }
+
+  // ==========================================
+  // WATCHLIST
+  // ==========================================
+  function toggleWatchlist(oppId) {
+    const index = watchlist.indexOf(oppId);
+    if (index > -1) watchlist.splice(index, 1);
+    else watchlist.push(oppId);
+    localStorage.setItem('arbimine_watchlist', JSON.stringify(watchlist));
+    renderWatchlist();
+    renderAllOpportunityLists(allOpportunities);
+  }
+
+  function renderWatchlist() {
+    const watched = allOpportunities.filter(o => watchlist.includes(o.id));
+    const container = document.getElementById('watchlistOpportunities');
+    container.innerHTML = watched.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities in watchlist.</div>';
+  }
+
+  // ==========================================
+  // REFRESH
+  // ==========================================
+  async function refreshOpportunities() {
+    await loadOpportunities();
+    showToast('Refreshed', 'info');
+  }
+
+  // ==========================================
+  // HELP / CHAT
+  // ==========================================
+  async function loadMessages() {
+    try {
+      const res = await fetch('/api/messages', { headers: { 'Authorization': token } });
+      const msgs = await res.json();
+      messageList = msgs;
+      renderMessages();
+    } catch (e) { console.log('Load messages error', e); }
+  }
+
+  function renderMessages() {
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '';
+    if (!messageList.length) {
+      container.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;">No messages yet.</div>';
+      return;
+    }
+    messageList.forEach(msg => {
+      if (msg.deleted) return;
+      const div = document.createElement('div');
+      div.className = 'message-bubble';
+      if (msg.isAdmin) div.classList.add('admin');
+      else if (msg.user === currentUser.username) div.classList.add('own');
+      let statusHtml = '';
+      if (msg.user === currentUser.username && !msg.isAdmin) {
+        const statusClass = msg.status === 'sent' ? 'status-sent' : msg.status === 'delivered' ? 'status-delivered' : 'status-read';
+        const ticks = msg.status === 'sent' ? '✓' : msg.status === 'delivered' ? '✓✓' : '✓✓';
+        statusHtml = `<span class="status-tick ${statusClass}">${ticks}</span>`;
+      } else if (msg.isAdmin && msg.user === currentUser.username) {
+        if (msg.status === 'read') statusHtml = `<span class="status-tick status-read">✓✓</span>`;
+        else statusHtml = `<span class="status-tick status-delivered">✓✓</span>`;
+      }
+      let actionsHtml = '';
+      if (!msg.isAdmin && msg.user === currentUser.username) {
+        actionsHtml = `
+          <div class="msg-actions">
+            <button onclick="editMessage('${msg._id}')">✎</button>
+            <button onclick="deleteMessage('${msg._id}')">✕</button>
+          </div>
+        `;
+      }
+      div.innerHTML = `
+        <div>${msg.content}${msg.edited ? ' <em style="font-size:12px;color:#9ca3af;">(edited)</em>' : ''}</div>
+        <div class="msg-meta">
+          <span>${new Date(msg.createdAt).toLocaleTimeString()}</span>
+          ${statusHtml}
+        </div>
+        ${actionsHtml}
+      `;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+    messageList.forEach(msg => {
+      if (msg.isAdmin && msg.user === currentUser.username && msg.status !== 'read') {
+        fetch(`/api/messages/${msg._id}/read`, { method: 'POST', headers: { 'Authorization': token } });
+      }
+    });
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ content })
+      });
+      if (!res.ok) throw new Error('Failed to send');
+      input.value = '';
+      showToast('✅ Message sent successfully!', 'success');
+      await loadMessages();
+    } catch (err) {
+      showToast('❌ ' + err.message, 'error');
+    }
+  }
+
+  async function editMessage(id) {
+    const newContent = prompt('Edit your message:');
+    if (newContent === null) return;
+    try {
+      const res = await fetch(`/api/messages/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ content: newContent })
+      });
+      if (res.ok) {
+        showToast('✅ Message updated', 'success');
+        await loadMessages();
+      } else {
+        showToast('Failed to update message', 'error');
+      }
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  async function deleteMessage(id) {
+    if (!confirm('Delete this message?')) return;
+    try {
+      const res = await fetch(`/api/messages/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+      if (res.ok) {
+        showToast('✅ Message deleted', 'success');
+        await loadMessages();
+      } else {
+        showToast('Failed to delete message', 'error');
+      }
+    } catch (err) { showToast(err.message, 'error'); }
+  }
 
   // ==========================================
   // INIT
   // ==========================================
-  // (All init code remains the same – keep from previous version)
+  if (token) {
+    fetch('/api/opportunities', { headers: { Authorization: token } })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById('loginModal').classList.remove('show');
+          document.getElementById('appContent').style.display = 'block';
+          loadOpportunities();
+          loadUserProfile();
+          loadMessages();
+          loadSubscription();
+          checkPaymentStatus();
+          initExchangeFilters();
+        } else {
+          logout();
+        }
+      }).catch(() => logout());
+  } else {
+    document.getElementById('loginModal').classList.add('show');
+  }
 
-  // Make sure to expose the new functions
+  // Expose global functions
+  window.loginUser = loginUser;
+  window.registerUser = registerUser;
+  window.showLogin = showLogin;
+  window.showRegister = showRegister;
+  window.logout = logout;
+  window.showPage = showPage;
+  window.toggleSidebar = toggleSidebar;
+  window.closeSidebar = closeSidebar;
+  window.toggleWatchlist = toggleWatchlist;
+  window.copyReferral = copyReferral;
+  window.refreshOpportunities = refreshOpportunities;
+  window.refreshTopCoins = refreshTopCoins;
+  window.toggleExchangeFilter = toggleExchangeFilter;
+  window.applyFilters = applyFilters;
+  window.subscribeWithPaystack = subscribeWithPaystack;
+  window.sendMessage = sendMessage;
+  window.editMessage = editMessage;
+  window.deleteMessage = deleteMessage;
+  window.togglePwd = togglePwd;
+  window.toggleTheme = toggleTheme;
+  window.openDetailsModal = openDetailsModal;
+  window.closeDetailsModal = closeDetailsModal;
+  window.updateProfit = updateProfit;
+  window.updateModalProfit = updateModalProfit;
   window.fillCalculatorFromOpp = fillCalculatorFromOpp;
   window.setAmount = setAmount;
   window.runCalculator = runCalculator;
