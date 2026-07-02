@@ -257,9 +257,7 @@
 <div id="page-arbitrage" class="page">
   <div class="flex flex-wrap gap-2 items-center mb-4">
     <input id="searchInput" class="flex-1 min-w-[160px] bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" placeholder="🔍 Search coin..." oninput="applyFilters()">
-    <div class="flex gap-1 flex-wrap" id="exchangeFilterContainer">
-      <!-- Dynamically generated -->
-    </div>
+    <div class="flex gap-1 flex-wrap" id="exchangeFilterContainer"></div>
     <select id="riskFilter" class="bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" onchange="applyFilters()">
       <option value="all">All Risk</option>
       <option value="low">Low</option>
@@ -296,7 +294,11 @@
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
 
-    <!-- M-Pesa phone input -->
+    <!-- Test mode notice (hidden by default) -->
+    <div id="testModeNotice" class="mt-2 text-center text-yellow-400 text-sm hidden">
+      ⚠️ Test mode – using Paystack test number <strong>254712345678</strong>
+    </div>
+
     <div class="mt-4">
       <label class="text-slate-400 text-sm">M-Pesa Phone Number</label>
       <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
@@ -307,12 +309,12 @@
       <div class="glass p-5 text-center">
         <div class="text-3xl font-bold">KES 100</div>
         <div class="mt-2 text-slate-400">Weekly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly')">Subscribe Weekly</button>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
       </div>
       <div class="glass p-5 text-center">
         <div class="text-3xl font-bold">KES 350</div>
         <div class="mt-2 text-slate-400">Monthly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly')">Subscribe Monthly</button>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
       </div>
     </div>
 
@@ -395,7 +397,7 @@
 
 <script>
   // ==========================================
-  // CONSTANTS – 15 exchanges (same as server)
+  // CONSTANTS – 15 exchanges
   // ==========================================
   const EXCHANGE_IDS = [
     'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
@@ -420,6 +422,7 @@
   let watchlist = JSON.parse(localStorage.getItem('arbimine_watchlist') || '[]');
   let currentUser = null;
   let messageList = [];
+  let refreshTimer = null;
 
   // ==========================================
   // UI HELPERS
@@ -438,7 +441,11 @@
     if (inp.type === 'password') { inp.type = 'text'; el.innerText = '🙈'; } else { inp.type = 'password'; el.innerText = '👁️'; }
   }
 
-  function toggleTheme() { document.body.classList.toggle('light'); }
+  function toggleTheme() {
+    document.body.classList.toggle('light');
+    // If you want a proper light theme, add .light styles in CSS.
+    // Otherwise, you can remove this button from the header.
+  }
 
   function updateClock() {
     document.getElementById('currentTime').innerText = new Date().toLocaleTimeString();
@@ -539,11 +546,12 @@
         loadSubscription();
         initExchangeFilters();
         showToast('✅ Login successful', 'success');
-        setInterval(() => {
-          if (document.getElementById('page-dashboard').classList.contains('active') ||
-              document.getElementById('page-arbitrage').classList.contains('active') ||
-              document.getElementById('page-topcoins').classList.contains('active') ||
-              document.getElementById('page-watchlist').classList.contains('active')) {
+
+        // Clear any existing refresh timer
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(() => {
+          const activePages = ['dashboard', 'arbitrage', 'topcoins', 'watchlist'];
+          if (activePages.some(id => document.getElementById('page-'+id).classList.contains('active'))) {
             loadOpportunities();
           }
         }, 30000);
@@ -567,6 +575,7 @@
     document.getElementById('loginModal').classList.add('show');
     document.getElementById('loginError').classList.add('hidden');
     showToast('Logged out', 'info');
+    if (refreshTimer) clearInterval(refreshTimer);
   }
 
   // ==========================================
@@ -618,10 +627,9 @@
   }
 
   // ==========================================
-  // PAYSTACK SUBSCRIPTION (with phone input)
+  // PAYSTACK SUBSCRIPTION (with phone input & test mode notice)
   // ==========================================
-  async function subscribeWithPaystack(plan) {
-    const btn = event.target;
+  async function subscribeWithPaystack(plan, btn) {
     const phoneInput = document.getElementById('paymentPhone').value.trim();
     btn.disabled = true;
     btn.textContent = 'Processing...';
@@ -637,9 +645,15 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Payment initiation failed');
 
-      document.getElementById('subStatus').innerText = data.message || 'STK push sent! Waiting for confirmation...';
+      document.getElementById('subStatus').innerText = data.message || 'STK push sent! Waiting...';
       document.getElementById('subStatus').className = 'text-green-400 text-center';
       showToast(data.message || 'STK push sent!', 'success');
+
+      // Show test mode notice if message contains test indicator
+      if (data.message && data.message.includes('test')) {
+        const notice = document.getElementById('testModeNotice');
+        if (notice) notice.classList.remove('hidden');
+      }
 
       const reference = data.reference;
       let attempts = 0;
@@ -651,7 +665,7 @@
           const statusData = await statusRes.json();
           if (statusData.status === 'success') {
             clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '✅ Payment successful! Your Pro plan is now active.';
+            document.getElementById('subStatus').innerText = '✅ Payment successful! Pro activated.';
             document.getElementById('subStatus').className = 'text-green-400 text-center';
             showToast('Subscription activated!', 'success');
             loadSubscription();
@@ -659,13 +673,13 @@
             btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
           } else if (statusData.status === 'failed') {
             clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '❌ Payment failed. Please try again.';
+            document.getElementById('subStatus').innerText = '❌ Payment failed. Try again.';
             document.getElementById('subStatus').className = 'text-red-400 text-center';
             btn.disabled = false;
             btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
           } else if (attempts >= maxAttempts) {
             clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '⏳ Still waiting... Check your M-Pesa and try again later.';
+            document.getElementById('subStatus').innerText = '⏳ Still waiting... check M-Pesa.';
             document.getElementById('subStatus').className = 'text-yellow-400 text-center';
             btn.disabled = false;
             btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
@@ -683,19 +697,26 @@
   }
 
   // ==========================================
-  // REFERRAL
+  // REFERRAL COPY (using clipboard API)
   // ==========================================
   function copyReferral() {
     const link = document.getElementById('referralLink');
-    link.select();
-    document.execCommand('copy');
-    const status = document.getElementById('copyStatus');
-    status.style.display = 'flex';
-    setTimeout(() => status.style.display = 'none', 3000);
+    navigator.clipboard.writeText(link.value).then(() => {
+      const status = document.getElementById('copyStatus');
+      status.style.display = 'flex';
+      setTimeout(() => status.style.display = 'none', 3000);
+    }).catch(() => {
+      // Fallback
+      link.select();
+      document.execCommand('copy');
+      const status = document.getElementById('copyStatus');
+      status.style.display = 'flex';
+      setTimeout(() => status.style.display = 'none', 3000);
+    });
   }
 
   // ==========================================
-  // PAGE NAVIGATION
+  // PAGE NAVIGATION (fixed active class)
   // ==========================================
   function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -703,11 +724,12 @@
     if (target) target.classList.add('active');
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelector(`.nav-tabs button[data-tab="${page}"]`)?.classList.add('active');
+
     const map = { dashboard:0, arbitrage:1, topcoins:2, watchlist:3, pro:4, profile:5, help:6 };
-    if (map[page] !== undefined) {
-      const btns = document.querySelectorAll('#bottomNav button');
-      if (btns[map[page]]) btns[map[page]].classList.add('active');
-    }
+    const btns = document.querySelectorAll('#bottomNav button');
+    btns.forEach(b => b.classList.remove('active'));
+    if (btns[map[page]]) btns[map[page]].classList.add('active');
+
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
       if (page === 'topcoins') refreshTopCoins();
@@ -806,6 +828,10 @@
     const tradableClass = o.tradable ? 'badge-tradable' : 'badge-nontradable';
     const tradableText = o.tradable ? 'Tradable' : 'Non-Tradable';
     const starClass = watchlist.includes(o.id) ? 'active' : 'inactive';
+    // Use mapped exchange names
+    const buyExDisplay = EXCHANGE_NAMES[o.buyExchange?.toLowerCase()] || o.buyExchange;
+    const sellExDisplay = EXCHANGE_NAMES[o.sellExchange?.toLowerCase()] || o.sellExchange;
+
     return `
       <div class="opportunity-card">
         <div class="top-row">
@@ -818,12 +844,12 @@
         <div class="exchange-row">
           <div class="exchange-box">
             <div class="label">Buy</div>
-            <div class="exchange text-green-400">${o.buyExchange}</div>
+            <div class="exchange text-green-400">${buyExDisplay}</div>
             <div class="price">$${buyPrice.toFixed(8)}</div>
           </div>
           <div class="exchange-box">
             <div class="label">Sell</div>
-            <div class="exchange text-red-400">${o.sellExchange}</div>
+            <div class="exchange text-red-400">${sellExDisplay}</div>
             <div class="price">$${sellPrice.toFixed(8)}</div>
           </div>
         </div>
@@ -847,10 +873,10 @@
     const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
     const risk = document.getElementById('riskFilter')?.value || 'all';
     let filtered = allOpportunities.filter(o => {
-      if (search && !o.symbol.toUpperCase().includes(search)) return false;
+      if (search && !o.symbol.toUpperCase().startsWith(search)) return false;
       if (!selectedExchanges.has('all')) {
-        const buy = o.buyExchange.toLowerCase();
-        const sell = o.sellExchange.toLowerCase();
+        const buy = o.buyExchange?.toLowerCase() || '';
+        const sell = o.sellExchange?.toLowerCase() || '';
         let match = false;
         for (const ex of selectedExchanges) {
           if (ex === 'all') continue;
