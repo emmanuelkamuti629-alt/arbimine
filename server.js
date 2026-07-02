@@ -172,7 +172,6 @@ app.post('/api/register', async (req, res) => {
     const { username, email, mpesa, password } = req.body;
     if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
 
-    // Check existing (unique index will also catch, but we give clear message)
     const existing = await User.findOne({ $or: [{ username }, { email }, { mpesa }] });
     if (existing) {
       let error = 'Username, email, or M-Pesa already exists.';
@@ -211,7 +210,6 @@ app.post('/api/login', async (req, res) => {
     });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Check if user is blocked
     if (user.isBlocked) {
       return res.status(403).json({ error: 'Your account has been blocked. Contact support.' });
     }
@@ -344,7 +342,7 @@ app.post('/api/messages/:id/read', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== Admin Messaging ====================
+// ==================== Admin Routes ====================
 app.get('/admin/messages', adminAuth, async (req, res) => {
   const messages = await Message.find().sort({ createdAt: -1 });
   res.json(messages);
@@ -374,7 +372,6 @@ app.put('/admin/message/:id', adminAuth, async (req, res) => {
   res.json({ success: true, message: msg });
 });
 
-// ==================== Admin Block/Unblock ====================
 app.post('/admin/block/:username', adminAuth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
@@ -454,8 +451,6 @@ const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
-
-// FREE TIER SPREAD LIMIT
 const FREE_TIER_MAX_SPREAD = 2.0;
 
 const SYMBOL_BLACKLIST = new Set([
@@ -556,7 +551,6 @@ async function fastScan() {
   }
 }
 
-// ==================== Detail Scan ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -724,7 +718,7 @@ async function getAIAnalysisCached(opp) {
   return result;
 }
 
-// ==================== Opportunities API (with tiered access) ====================
+// ==================== Opportunities API ====================
 app.get('/api/opportunities', authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.user });
@@ -850,7 +844,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== PAYSTACK HOSTED CHECKOUT ====================
+// ==================== PAYSTACK HOSTED CHECKOUT (with sanitised reference) ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
@@ -865,6 +859,11 @@ function getExpiryDate(plan) {
   const now = new Date(); now.setDate(now.getDate() + days); return now;
 }
 
+// Sanitise reference to only safe characters
+function sanitizeReference(str) {
+  return str.replace(/[^a-zA-Z0-9_\-\.]/g, '_').replace(/\s/g, '_');
+}
+
 app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
@@ -876,7 +875,7 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const amount = PLANS[plan].amount * 100;
-    const reference = `arbimine_${user.username}_${Date.now()}`;
+    const reference = `arbimine_${sanitizeReference(user.username)}_${Date.now()}`;
 
     const payload = {
       email: user.email,
