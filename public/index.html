@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ====== STYLES (same as before – unchanged) ====== */
+    /* (ALL CSS SAME AS BEFORE – unchanged) */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -294,15 +294,11 @@
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
 
-    <!-- Test mode notice (hidden by default) -->
-    <div id="testModeNotice" class="mt-2 text-center text-yellow-400 text-sm hidden">
-      ⚠️ Test mode – using Paystack test number <strong>254712345678</strong>
-    </div>
-
+    <!-- Phone input is kept but not used for hosted checkout – Paystack will ask for it -->
     <div class="mt-4">
-      <label class="text-slate-400 text-sm">M-Pesa Phone Number</label>
+      <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
       <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
-      <p class="text-xs text-slate-500 mt-1">Enter your number in any format – 07..., 254..., or +254...</p>
+      <p class="text-xs text-slate-500 mt-1">You'll be redirected to Paystack to complete payment.</p>
     </div>
 
     <div class="grid grid-cols-2 gap-4 mt-6">
@@ -397,7 +393,7 @@
 
 <script>
   // ==========================================
-  // CONSTANTS – 15 exchanges
+  // CONSTANTS
   // ==========================================
   const EXCHANGE_IDS = [
     'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
@@ -443,8 +439,6 @@
 
   function toggleTheme() {
     document.body.classList.toggle('light');
-    // If you want a proper light theme, add .light styles in CSS.
-    // Otherwise, you can remove this button from the header.
   }
 
   function updateClock() {
@@ -547,7 +541,6 @@
         initExchangeFilters();
         showToast('✅ Login successful', 'success');
 
-        // Clear any existing refresh timer
         if (refreshTimer) clearInterval(refreshTimer);
         refreshTimer = setInterval(() => {
           const activePages = ['dashboard', 'arbitrage', 'topcoins', 'watchlist'];
@@ -627,72 +620,39 @@
   }
 
   // ==========================================
-  // PAYSTACK SUBSCRIPTION (with phone input & test mode notice)
+  // PAYSTACK SUBSCRIPTION (Hosted Checkout – Redirect)
   // ==========================================
   async function subscribeWithPaystack(plan, btn) {
-    const phoneInput = document.getElementById('paymentPhone').value.trim();
     btn.disabled = true;
-    btn.textContent = 'Processing...';
-    document.getElementById('subStatus').innerText = 'Initiating payment...';
+    btn.textContent = 'Redirecting...';
+    document.getElementById('subStatus').innerText = 'Preparing payment...';
     document.getElementById('subStatus').className = 'text-yellow-400 text-center';
 
     try {
-      const res = await fetch('/api/paystack/charge', {
+      const res = await fetch('/api/paystack/initialize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: token },
-        body: JSON.stringify({ plan, phone: phoneInput || undefined })
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({ plan })
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Payment initiation failed');
 
-      document.getElementById('subStatus').innerText = data.message || 'STK push sent! Waiting...';
-      document.getElementById('subStatus').className = 'text-green-400 text-center';
-      showToast(data.message || 'STK push sent!', 'success');
-
-      // Show test mode notice if message contains test indicator
-      if (data.message && data.message.includes('test')) {
-        const notice = document.getElementById('testModeNotice');
-        if (notice) notice.classList.remove('hidden');
+      if (!res.ok) {
+        throw new Error(data.error || 'Payment initialization failed');
       }
 
-      const reference = data.reference;
-      let attempts = 0;
-      const maxAttempts = 60;
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        try {
-          const statusRes = await fetch(`/api/payment/status/${reference}`, { headers: { Authorization: token } });
-          const statusData = await statusRes.json();
-          if (statusData.status === 'success') {
-            clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '✅ Payment successful! Pro activated.';
-            document.getElementById('subStatus').className = 'text-green-400 text-center';
-            showToast('Subscription activated!', 'success');
-            loadSubscription();
-            btn.disabled = false;
-            btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
-          } else if (statusData.status === 'failed') {
-            clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '❌ Payment failed. Try again.';
-            document.getElementById('subStatus').className = 'text-red-400 text-center';
-            btn.disabled = false;
-            btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
-          } else if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            document.getElementById('subStatus').innerText = '⏳ Still waiting... check M-Pesa.';
-            document.getElementById('subStatus').className = 'text-yellow-400 text-center';
-            btn.disabled = false;
-            btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
-          }
-        } catch (pollErr) {
-          console.error('Polling error:', pollErr);
-        }
-      }, 2000);
+      // Redirect to Paystack checkout
+      window.location.href = data.authorization_url;
+
     } catch (err) {
-      document.getElementById('subStatus').innerText = '❌ ' + err.message;
-      document.getElementById('subStatus').className = 'text-red-400 text-center';
+      showToast(err.message, 'error');
       btn.disabled = false;
       btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
+      document.getElementById('subStatus').innerText = '❌ ' + err.message;
+      document.getElementById('subStatus').className = 'text-red-400 text-center';
     }
   }
 
@@ -706,7 +666,6 @@
       status.style.display = 'flex';
       setTimeout(() => status.style.display = 'none', 3000);
     }).catch(() => {
-      // Fallback
       link.select();
       document.execCommand('copy');
       const status = document.getElementById('copyStatus');
@@ -828,7 +787,6 @@
     const tradableClass = o.tradable ? 'badge-tradable' : 'badge-nontradable';
     const tradableText = o.tradable ? 'Tradable' : 'Non-Tradable';
     const starClass = watchlist.includes(o.id) ? 'active' : 'inactive';
-    // Use mapped exchange names
     const buyExDisplay = EXCHANGE_NAMES[o.buyExchange?.toLowerCase()] || o.buyExchange;
     const sellExDisplay = EXCHANGE_NAMES[o.sellExchange?.toLowerCase()] || o.sellExchange;
 
@@ -1070,7 +1028,7 @@
   window.togglePwd = togglePwd;
   window.toggleTheme = toggleTheme;
 
-  console.log('🚀 ArbiMine Pro v3.0 – 15 Exchanges, Paystack STK Push');
+  console.log('🚀 ArbiMine Pro v3.0 – 15 Exchanges, Paystack Hosted Checkout');
 </script>
 </body>
 </html>
