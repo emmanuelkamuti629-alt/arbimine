@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* All styles remain exactly as before – no changes needed */
+    /* (All styles are exactly as in the previous version – unchanged) */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -180,6 +180,11 @@
     .calc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     .calc-actions button { flex: 1; min-width: 100px; }
 
+    /* Currency toggle */
+    .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
+    .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
+    .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
+
     @media (max-width: 768px) {
       .calc-grid { grid-template-columns: 1fr; }
       .calc-result-grid { grid-template-columns: 1fr 1fr; }
@@ -283,6 +288,7 @@
 
 <!-- ===== DASHBOARD ===== -->
 <div id="page-dashboard" class="page active">
+  <!-- Dashboard content exactly as before – unchanged -->
   <div class="flex justify-between items-center mb-3">
     <h3 class="text-xl font-bold">Live Arbitrage</h3>
     <button class="refresh-btn" onclick="refreshOpportunities()">🔄</button>
@@ -326,6 +332,7 @@
 
 <!-- ===== ARBITRAGE ===== -->
 <div id="page-arbitrage" class="page">
+  <!-- Arbitrage content unchanged -->
   <div class="flex flex-wrap gap-2 items-center mb-4">
     <input id="searchInput" class="flex-1 min-w-[160px] bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" placeholder="🔍 Search coin..." oninput="applyFilters()">
     <div class="flex gap-1 flex-wrap" id="exchangeFilterContainer"></div>
@@ -366,6 +373,7 @@
 
 <!-- ===== CALCULATOR ===== -->
 <div id="page-calculator" class="page">
+  <!-- Calculator content unchanged – same as before -->
   <div class="glass p-5">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-bold">🧮 Arbitrage Calculator</h2>
@@ -374,7 +382,7 @@
     <p class="text-slate-400 text-sm mb-4">Enter trade details or click <strong>📊 Calculate</strong> on any opportunity to auto-fill.</p>
 
     <div class="calc-grid">
-      <!-- Left column: Inputs -->
+      <!-- Left column -->
       <div>
         <!-- Trade Amount -->
         <div class="calc-group">
@@ -412,7 +420,7 @@
         </div>
       </div>
 
-      <!-- Right column: Inputs continued & Results -->
+      <!-- Right column -->
       <div>
         <!-- Transfer Costs -->
         <div class="calc-group">
@@ -486,6 +494,15 @@
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
 
+    <!-- Currency Toggle -->
+    <div class="flex justify-center items-center gap-4 my-4">
+      <span class="text-sm text-slate-400">Display prices in:</span>
+      <div class="currency-toggle">
+        <button id="btnKES" class="active" onclick="setCurrency('KES')">KES</button>
+        <button id="btnUSD" onclick="setCurrency('USD')">USD</button>
+      </div>
+    </div>
+
     <div class="mt-4">
       <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
       <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
@@ -494,12 +511,12 @@
 
     <div class="grid grid-cols-2 gap-4 mt-6">
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold">KES 100</div>
+        <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES 130</div>
         <div class="mt-2 text-slate-400">Weekly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
       </div>
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold">KES 350</div>
+        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES 350</div>
         <div class="mt-2 text-slate-400">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
       </div>
@@ -514,6 +531,7 @@
 
 <!-- ===== PROFILE ===== -->
 <div id="page-profile" class="page">
+  <!-- Profile content unchanged -->
   <div class="glass p-5">
     <h2 class="text-2xl font-bold">👤 Profile</h2>
     <div class="mt-4 space-y-2">
@@ -549,6 +567,7 @@
 
 <!-- ===== DETAILS MODAL ===== -->
 <div id="detailsModal" class="modal">
+  <!-- Details modal unchanged -->
   <div class="modal-content">
     <button class="close-btn" onclick="closeDetailsModal()">×</button>
     <h2 id="detailSymbol" class="text-2xl font-bold">—</h2>
@@ -627,7 +646,7 @@
 
 <script>
   // ==========================================
-  // CONSTANTS
+  // CONSTANTS & STATE
   // ==========================================
   const EXCHANGE_IDS = [
     'kucoin', 'mexc', 'kraken',
@@ -650,9 +669,6 @@
     indodax: 'Indodax'
   };
 
-  // ==========================================
-  // STATE
-  // ==========================================
   let token = localStorage.getItem('token');
   let allOpportunities = [];
   let selectedExchanges = new Set(['all']);
@@ -665,6 +681,16 @@
   let shownCount = 0;
   let countdownInterval = null;
   let currentDetailOpp = null;
+
+  // Currency toggle state
+  let currentCurrency = 'KES'; // 'KES' or 'USD'
+  const EXCHANGE_RATE = 130; // 1 USD = 130 KES (approx)
+
+  // Plan prices in KES
+  const PLAN_PRICES = {
+    weekly: 130,
+    monthly: 350
+  };
 
   // ==========================================
   // UI HELPERS
@@ -690,6 +716,28 @@
   }
   setInterval(updateClock, 1000);
   updateClock();
+
+  // ==========================================
+  // CURRENCY TOGGLE
+  // ==========================================
+  function setCurrency(currency) {
+    currentCurrency = currency;
+    document.getElementById('btnKES').classList.toggle('active', currency === 'KES');
+    document.getElementById('btnUSD').classList.toggle('active', currency === 'USD');
+    updateProPrices();
+  }
+
+  function updateProPrices() {
+    const weeklyEl = document.getElementById('weeklyPriceDisplay');
+    const monthlyEl = document.getElementById('monthlyPriceDisplay');
+    if (currentCurrency === 'USD') {
+      weeklyEl.textContent = `$${(PLAN_PRICES.weekly / EXCHANGE_RATE).toFixed(2)}`;
+      monthlyEl.textContent = `$${(PLAN_PRICES.monthly / EXCHANGE_RATE).toFixed(2)}`;
+    } else {
+      weeklyEl.textContent = `KES ${PLAN_PRICES.weekly}`;
+      monthlyEl.textContent = `KES ${PLAN_PRICES.monthly}`;
+    }
+  }
 
   // ==========================================
   // SIDEBAR
@@ -783,6 +831,8 @@
         loadMessages();
         loadSubscription();
         initExchangeFilters();
+        // Set default currency
+        setCurrency('KES');
         showToast('✅ Login successful', 'success');
 
         if (refreshTimer) clearInterval(refreshTimer);
@@ -1034,7 +1084,6 @@
         noticeArbitrage.classList.add('hidden');
       }
 
-      // Top Coins: show upgrade notice if not Pro
       const topCoinsUpgrade = document.getElementById('topCoinsUpgrade');
       const topCoinsContainer = document.getElementById('topCoinsOpportunities');
       if (!isPro) {
@@ -1132,7 +1181,6 @@
     document.getElementById('calcNetworkFee').value = 0.3;
     document.getElementById('calcConversionFee').value = 0;
     document.getElementById('calcLiquidityAdj').value = 1;
-    // Switch to calculator tab and run
     showPage('calculator');
     setTimeout(runCalculator, 100);
   }
@@ -1411,19 +1459,12 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     `;
   }
 
-  // ==========================================
-  // RENDER OPPORTUNITY LISTS
-  // ==========================================
   function renderAllOpportunityLists(opps) {
     const dashContainer = document.getElementById('dashboardOpportunities');
     dashContainer.innerHTML = opps.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities</div>';
-    // Also apply filters for the arbitrage tab
     applyFilters();
   }
 
-  // ==========================================
-  // FILTERS – APPLY SEARCH, EXCHANGE, RISK
-  // ==========================================
   function applyFilters() {
     const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
     const risk = document.getElementById('riskFilter')?.value || 'all';
@@ -1440,8 +1481,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         }
         if (!match) return false;
       }
-      // If you have a risk filter dropdown, add it here
-      // if (risk !== 'all' && o.risk !== risk) return false;
+      if (risk !== 'all' && o.risk !== risk) return false;
       return true;
     });
     const container = document.getElementById('arbitrageOpportunities');
@@ -1450,9 +1490,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     }
   }
 
-  // ==========================================
-  // TOP COINS
-  // ==========================================
   function refreshTopCoins() {
     if (!isPro) {
       const container = document.getElementById('topCoinsOpportunities');
@@ -1465,9 +1502,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
   }
 
-  // ==========================================
-  // WATCHLIST
-  // ==========================================
   function toggleWatchlist(oppId) {
     const index = watchlist.indexOf(oppId);
     if (index > -1) watchlist.splice(index, 1);
@@ -1483,9 +1517,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     container.innerHTML = watched.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities in watchlist.</div>';
   }
 
-  // ==========================================
-  // REFRESH
-  // ==========================================
   async function refreshOpportunities() {
     await loadOpportunities();
     showToast('Refreshed', 'info');
@@ -1621,6 +1652,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           loadSubscription();
           checkPaymentStatus();
           initExchangeFilters();
+          setCurrency('KES');
         } else {
           logout();
         }
@@ -1629,9 +1661,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     document.getElementById('loginModal').classList.add('show');
   }
 
-  // ==========================================
-  // EXPOSE GLOBAL FUNCTIONS
-  // ==========================================
+  // Expose global functions
   window.loginUser = loginUser;
   window.registerUser = registerUser;
   window.showLogin = showLogin;
@@ -1662,8 +1692,9 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.resetCalculator = resetCalculator;
   window.copySummary = copySummary;
   window.openFullCalculatorFromModal = openFullCalculatorFromModal;
+  window.setCurrency = setCurrency;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Full Calculator with Auto-fill');
+  console.log('🚀 ArbiMine Pro v3.0 – Currency Toggle + Full Calculator');
 </script>
 </body>
 </html>
