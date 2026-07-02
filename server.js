@@ -306,22 +306,20 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-// ==================== CCXT Exchange Integration (Memory-Optimized) ====================
-// Only use reliable exchanges that work from most regions
+// ==================== CCXT Exchange Integration (15 exchanges, memory-optimized) ====================
 const EXCHANGE_IDS = [
   'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
-  'coinbase', 'gemini', 'upbit', 'poloniex', 'cex',
-  'lbank', 'whitebit', 'coinex', 'bitmart', 'bitget',
+  'coinbase', 'gemini', 'upbit', 'poloniex',
+  'whitebit', 'coinex', 'bitmart', 'bitget',
   'okx', 'bingx'
 ];
 
 const EXCHANGE_NAMES = {
   kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
   bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
-  upbit: 'Upbit', poloniex: 'Poloniex', cex: 'CEX.IO',
-  lbank: 'LBank', whitebit: 'WhiteBIT', coinex: 'CoinEx',
-  bitmart: 'BitMart', bitget: 'Bitget', okx: 'OKX',
-  bingx: 'BingX'
+  upbit: 'Upbit', poloniex: 'Poloniex',
+  whitebit: 'WhiteBIT', coinex: 'CoinEx', bitmart: 'BitMart',
+  bitget: 'Bitget', okx: 'OKX', bingx: 'BingX'
 };
 
 const exchangeInstances = {};
@@ -446,7 +444,6 @@ async function fastScan() {
 }
 
 // ==================== Detail Scan (Networks/Liquidity) ====================
-// (Kept as before – only runs on a few top opportunities)
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -506,7 +503,6 @@ async function detailScan() {
     .slice(0, DETAIL_OPP_LIMIT);
 
   let updated = 0;
-  // Process detail scans sequentially to save memory
   for (const opp of validOpps) {
     const coin = opp.symbol;
     const buyEx = opp.buyExchange.toLowerCase();
@@ -538,7 +534,6 @@ async function detailScan() {
         sellDeposit: sellNet?.canDeposit || false
       });
       updated++;
-      // Short delay to avoid overwhelming the system
       await new Promise(r => setTimeout(r, 100));
     } catch (err) {
       console.log(`Detail scan failed for ${opp.id}:`, err.message);
