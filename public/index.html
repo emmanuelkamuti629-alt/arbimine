@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>ArbiMine Pro • 22+ Exchanges</title>
+  <title>ArbiMine Pro • 15 Exchanges</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* (All CSS remains unchanged – same as before) */
+    /* ====== STYLES (same as before – unchanged) ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -201,7 +201,7 @@
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
-  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 22 Exchanges</div>
+  <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 15 Exchanges</div>
 </div>
 
 <!-- ===== APP CONTENT ===== -->
@@ -242,7 +242,7 @@
     <div class="stat-card"><div class="stat-label">Total Opportunities</div><div id="oppCount" class="stat-value text-green-400">0</div></div>
     <div class="stat-card"><div class="stat-label">Highest Spread</div><div id="bestSpread" class="stat-value text-green-400">0%</div></div>
     <div class="stat-card"><div class="stat-label">Tradable</div><div id="tradableCount" class="stat-value text-green-400">0</div></div>
-    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">22</div></div>
+    <div class="stat-card"><div class="stat-label">Exchanges</div><div class="stat-value">15</div></div>
   </div>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
     <div class="stat-card"><div class="stat-label">Daily Profit Est.</div><div id="dailyProfit" class="stat-value text-blue-400">$0</div></div>
@@ -299,8 +299,8 @@
     <!-- M-Pesa phone input -->
     <div class="mt-4">
       <label class="text-slate-400 text-sm">M-Pesa Phone Number</label>
-      <input type="tel" id="paymentPhone" placeholder="e.g., 2547XXXXXXXX" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
-      <p class="text-xs text-slate-500 mt-1">Leave blank to use your registered number.</p>
+      <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
+      <p class="text-xs text-slate-500 mt-1">Enter your number in any format – 07..., 254..., or +254...</p>
     </div>
 
     <div class="grid grid-cols-2 gap-4 mt-6">
@@ -360,7 +360,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <div>ArbiMine Pro v3.0 • 22 Exchanges</div>
+  <div>ArbiMine Pro v3.0 • 15 Exchanges</div>
   <div class="flex gap-4">
     <span>🟢 Server Online</span>
     <span>🟢 DB Online</span>
@@ -395,22 +395,20 @@
 
 <script>
   // ==========================================
-  // CONSTANTS – working exchanges (same as server)
+  // CONSTANTS – 15 exchanges (same as server)
   // ==========================================
   const EXCHANGE_IDS = [
-    'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp', 'coinbase',
-    'gemini', 'upbit', 'bithumb', 'poloniex', 'cex', 'lbank',
-    'whitebit', 'coinex', 'xt', 'bitmart', 'bitget', 'bingx',
-    'okx', 'ascendex', 'bitrue', 'deepcoin'
+    'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
+    'coinbase', 'gemini', 'upbit', 'poloniex',
+    'whitebit', 'coinex', 'bitmart', 'bitget',
+    'okx', 'bingx'
   ];
   const EXCHANGE_NAMES = {
     kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', bitfinex: 'Bitfinex',
     bitstamp: 'Bitstamp', coinbase: 'Coinbase', gemini: 'Gemini',
-    upbit: 'Upbit', bithumb: 'Bithumb', poloniex: 'Poloniex',
-    cex: 'CEX.IO', lbank: 'LBank', whitebit: 'WhiteBIT',
-    coinex: 'CoinEx', xt: 'XT.COM', bitmart: 'BitMart',
-    bitget: 'Bitget', bingx: 'BingX', okx: 'OKX',
-    ascendex: 'AscendEX', bitrue: 'Bitrue', deepcoin: 'Deepcoin'
+    upbit: 'Upbit', poloniex: 'Poloniex',
+    whitebit: 'WhiteBIT', coinex: 'CoinEx', bitmart: 'BitMart',
+    bitget: 'Bitget', okx: 'OKX', bingx: 'BingX'
   };
 
   // ==========================================
@@ -1046,7 +1044,7 @@
   window.togglePwd = togglePwd;
   window.toggleTheme = toggleTheme;
 
-  console.log('🚀 ArbiMine Pro v3.0 – 22 Exchanges, Paystack STK Push');
+  console.log('🚀 ArbiMine Pro v3.0 – 15 Exchanges, Paystack STK Push');
 </script>
 </body>
 </html>

@@ -306,7 +306,7 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-// ==================== CCXT Exchange Integration (15 exchanges, memory-optimized) ====================
+// ==================== CCXT Exchange Integration (15 exchanges, sequential) ====================
 const EXCHANGE_IDS = [
   'kucoin', 'mexc', 'kraken', 'bitfinex', 'bitstamp',
   'coinbase', 'gemini', 'upbit', 'poloniex',
@@ -365,7 +365,6 @@ async function fastScan() {
   const start = Date.now();
   const allTickers = {};
 
-  // Fetch exchanges ONE BY ONE to avoid memory spikes
   for (const id of EXCHANGE_IDS) {
     const ex = exchangeInstances[id];
     if (!ex) continue;
@@ -373,14 +372,12 @@ async function fastScan() {
       await ex.loadMarkets();
       const tickers = await ex.fetchTickers();
       allTickers[id] = tickers;
-      // Small delay to avoid rate limits and keep memory low
       await new Promise(r => setTimeout(r, 300));
     } catch (err) {
       console.log(`❌ ${id} ticker fetch failed:`, err.message);
     }
   }
 
-  // Build opportunities from collected tickers
   const pairMap = {};
   for (const [exId, tickers] of Object.entries(allTickers)) {
     if (!tickers) continue;
@@ -443,7 +440,7 @@ async function fastScan() {
   }
 }
 
-// ==================== Detail Scan (Networks/Liquidity) ====================
+// ==================== Detail Scan ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -544,7 +541,6 @@ async function detailScan() {
   console.log(`✅ Detail scan: updated ${updated} opportunities in ${Date.now() - start}ms`);
 }
 
-// Initial scan and periodic
 fastScan();
 setInterval(fastScan, FAST_SCAN_INTERVAL);
 setInterval(() => { if (cachedOpportunities.length > 0) detailScan(); }, DETAIL_SCAN_INTERVAL);
@@ -714,7 +710,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== Paystack M-PESA STK Push ====================
+// ==================== Paystack M-PESA STK Push (Accept all formats) ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
@@ -731,10 +727,20 @@ function getExpiryDate(plan) {
 
 function formatPhone(phone) {
   let cleaned = phone.replace(/\D/g, '');
-  if (cleaned.startsWith('0')) cleaned = '254' + cleaned.slice(1);
-  else if (cleaned.startsWith('254')) {}
-  else if (cleaned.startsWith('+254')) cleaned = cleaned.slice(1);
-  else cleaned = '254' + cleaned;
+  
+  if (cleaned.startsWith('0')) {
+    cleaned = '254' + cleaned.slice(1);
+  } else if (cleaned.startsWith('254')) {
+    // already good
+  } else if (!cleaned.startsWith('254')) {
+    cleaned = '254' + cleaned;
+  }
+  
+  if (cleaned.length > 12) {
+    cleaned = cleaned.slice(0, 12);
+  }
+  
+  console.log('📱 Formatted phone for Paystack:', cleaned);
   return cleaned;
 }
 
@@ -748,9 +754,14 @@ app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    let userPhone = phone ? formatPhone(phone) : formatPhone(user.mpesa);
-    if (!userPhone || userPhone.length < 10) {
-      return res.status(400).json({ error: 'Valid M-Pesa phone number required' });
+    let rawPhone = phone || user.mpesa;
+    let userPhone = formatPhone(rawPhone);
+    
+    if (!userPhone || userPhone.length !== 12) {
+      console.log('❌ Invalid phone length:', userPhone, 'length:', userPhone?.length);
+      return res.status(400).json({ 
+        error: 'Phone number must be 12 digits (e.g., 254712345678)' 
+      });
     }
 
     const email = user.email;
@@ -773,6 +784,8 @@ app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
       }
     };
 
+    console.log('📤 Sending to Paystack:', JSON.stringify(payload, null, 2));
+
     const response = await axios.post(
       'https://api.paystack.co/charge',
       payload,
@@ -783,6 +796,8 @@ app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
         }
       }
     );
+
+    console.log('📥 Paystack response:', JSON.stringify(response.data, null, 2));
 
     if (response.data.status) {
       await Transaction.create({
@@ -802,8 +817,9 @@ app.post('/api/paystack/charge', authMiddleware, async (req, res) => {
       throw new Error(response.data.message || 'Paystack charge initiation failed');
     }
   } catch (err) {
-    console.error('Paystack charge error:', err.response?.data || err.message);
-    res.status(500).json({ error: err.response?.data?.message || err.message });
+    console.error('❌ Paystack charge error:', err.response?.data || err.message);
+    const errorMsg = err.response?.data?.message || err.message || 'Payment initiation failed';
+    res.status(500).json({ error: errorMsg });
   }
 });
 
