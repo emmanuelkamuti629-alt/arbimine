@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* (All styles are exactly as in the previous version – unchanged) */
+    /* ====== RESET & BASE ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -180,7 +180,6 @@
     .calc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     .calc-actions button { flex: 1; min-width: 100px; }
 
-    /* Currency toggle */
     .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
     .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
     .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
@@ -252,6 +251,7 @@
     <li onclick="showPage('calculator'); closeSidebar();"><span class="icon">🧮</span> Calculator</li>
     <li onclick="showPage('pro'); closeSidebar();"><span class="icon">💎</span> Pro</li>
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
+    <li onclick="showPage('settings'); closeSidebar();"><span class="icon">⚙️</span> Settings</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
   <div class="mt-auto text-slate-400 text-xs text-center p-4 border-t border-slate-700">ArbiMine v3.0 • 13 Exchanges</div>
@@ -283,12 +283,12 @@
   <button data-tab="calculator">🧮 Calculator</button>
   <button data-tab="pro">💎 Pro</button>
   <button data-tab="profile">👤 Profile</button>
+  <button data-tab="settings">⚙️ Settings</button>
   <button data-tab="help">💬 Help</button>
 </nav>
 
 <!-- ===== DASHBOARD ===== -->
 <div id="page-dashboard" class="page active">
-  <!-- Dashboard content exactly as before – unchanged -->
   <div class="flex justify-between items-center mb-3">
     <h3 class="text-xl font-bold">Live Arbitrage</h3>
     <button class="refresh-btn" onclick="refreshOpportunities()">🔄</button>
@@ -332,10 +332,17 @@
 
 <!-- ===== ARBITRAGE ===== -->
 <div id="page-arbitrage" class="page">
-  <!-- Arbitrage content unchanged -->
   <div class="flex flex-wrap gap-2 items-center mb-4">
     <input id="searchInput" class="flex-1 min-w-[160px] bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" placeholder="🔍 Search coin..." oninput="applyFilters()">
     <div class="flex gap-1 flex-wrap" id="exchangeFilterContainer"></div>
+    <select id="sortBySelect" class="bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" onchange="applyFilters()">
+      <option value="netProfit">Highest Net Profit</option>
+      <option value="roi">Highest ROI</option>
+      <option value="opportunityScore">Highest Opportunity Score</option>
+      <option value="transferTime">Fastest Transfer Time</option>
+      <option value="liquidity">Highest Liquidity</option>
+      <option value="risk">Lowest Risk Score</option>
+    </select>
     <button class="btn btn-sm" onclick="refreshOpportunities()">🔄 Refresh</button>
   </div>
   <div id="upgradeNoticeArbitrage" class="upgrade-notice hidden">
@@ -373,7 +380,6 @@
 
 <!-- ===== CALCULATOR ===== -->
 <div id="page-calculator" class="page">
-  <!-- Calculator content unchanged – same as before -->
   <div class="glass p-5">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-bold">🧮 Arbitrage Calculator</h2>
@@ -486,7 +492,7 @@
   </div>
 </div>
 
-<!-- ===== PRO ===== -->
+<!-- ===== PRO / SUBSCRIPTION ===== -->
 <div id="page-pro" class="page">
   <div class="glass p-6">
     <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
@@ -511,12 +517,12 @@
 
     <div class="grid grid-cols-2 gap-4 mt-6">
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES 130</div>
+        <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Weekly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
       </div>
       <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES 350</div>
+        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
       </div>
@@ -531,7 +537,6 @@
 
 <!-- ===== PROFILE ===== -->
 <div id="page-profile" class="page">
-  <!-- Profile content unchanged -->
   <div class="glass p-5">
     <h2 class="text-2xl font-bold">👤 Profile</h2>
     <div class="mt-4 space-y-2">
@@ -552,6 +557,36 @@
   </div>
 </div>
 
+<!-- ===== SETTINGS ===== -->
+<div id="page-settings" class="page">
+  <div class="glass p-5">
+    <h2 class="text-2xl font-bold">⚙️ Account Settings</h2>
+    <p class="text-slate-400 text-sm mb-6">Update your security and contact details.</p>
+
+    <!-- Change Password -->
+    <div class="calc-group">
+      <h4>Change Password</h4>
+      <label>Current Password</label>
+      <input type="password" id="currentPwd" placeholder="Enter current password" class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white outline-none">
+      <label class="mt-2">New Password</label>
+      <input type="password" id="newPwd" placeholder="Enter new password" class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white outline-none">
+      <button class="btn btn-sm mt-3" onclick="changePassword()">Update Password</button>
+      <div id="pwdStatus" class="text-sm mt-2"></div>
+    </div>
+
+    <!-- Change M-Pesa -->
+    <div class="calc-group mt-6">
+      <h4>Change M-Pesa Number</h4>
+      <label>New M-Pesa Number</label>
+      <input type="tel" id="newMpesa" placeholder="e.g., 2547XXXXXXXX" class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white outline-none">
+      <label class="mt-2">Confirm with Password</label>
+      <input type="password" id="confirmPwd" placeholder="Enter your password to confirm" class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white outline-none">
+      <button class="btn btn-sm mt-3" onclick="changeMpesa()">Update M-Pesa</button>
+      <div id="mpesaStatus" class="text-sm mt-2"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== HELP / CHAT ===== -->
 <div id="page-help" class="page">
   <h2 style="margin-bottom:8px;">💬 Help & Support</h2>
@@ -567,24 +602,20 @@
 
 <!-- ===== DETAILS MODAL ===== -->
 <div id="detailsModal" class="modal">
-  <!-- Details modal unchanged -->
   <div class="modal-content">
     <button class="close-btn" onclick="closeDetailsModal()">×</button>
     <h2 id="detailSymbol" class="text-2xl font-bold">—</h2>
     <div class="subtitle" id="detailSubtitle">—</div>
-    
     <div class="grid grid-cols-2 gap-3 mt-4">
       <div class="detail-item"><div class="label">Spread</div><div class="value text-green-400" id="detailSpread">—</div></div>
       <div class="detail-item"><div class="label">Liquidity</div><div class="value" id="detailLiquidity">—</div></div>
       <div class="detail-item"><div class="label">24h Volume</div><div class="value" id="detailVolume">—</div></div>
       <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value text-green-400" id="detailProfit100">—</div></div>
     </div>
-
     <div class="mt-4">
       <div class="label text-slate-400 text-sm">Networks</div>
       <div id="detailNetworks" class="network-status mt-1"></div>
     </div>
-
     <div class="mt-4 p-3 bg-slate-900/50 rounded-xl border border-slate-700">
       <div class="label text-slate-400 text-sm">Expires In</div>
       <div class="flex flex-wrap items-center gap-3 mt-1">
@@ -592,7 +623,6 @@
         <span class="countdown" id="detailCountdown">--:--:--</span>
       </div>
     </div>
-
     <div class="mt-4 p-3 bg-slate-900/30 rounded-xl border border-slate-700">
       <div class="label text-slate-400 text-sm">Profit Calculator</div>
       <div class="profit-calc" style="border-top: none; padding-top: 0; margin-top: 4px;">
@@ -603,7 +633,6 @@
       <div class="text-xs text-slate-500 mt-1">* Estimated net profit after 0.2% trading fee</div>
       <button class="btn btn-sm mt-3" onclick="openFullCalculatorFromModal()">📊 Open Full Calculator</button>
     </div>
-
     <button class="btn btn-sm mt-4" onclick="closeDetailsModal()">Close</button>
   </div>
 </div>
@@ -636,6 +665,7 @@
   <button onclick="showPage('calculator')"><span class="icon">🧮</span><span>Calc</span></button>
   <button onclick="showPage('pro')"><span class="icon">💎</span><span>Pro</span></button>
   <button onclick="showPage('profile')"><span class="icon">👤</span><span>Profile</span></button>
+  <button onclick="showPage('settings')"><span class="icon">⚙️</span><span>Settings</span></button>
   <button onclick="showPage('help')"><span class="icon">💬</span><span>Help</span></button>
 </div>
 
@@ -646,29 +676,22 @@
 
 <script>
   // ==========================================
-  // CONSTANTS & STATE
+  // CONSTANTS
   // ==========================================
   const EXCHANGE_IDS = [
-    'kucoin', 'mexc', 'kraken',
-    'huobi', 'gateio', 'coinex', 'crypto', 'xt',
+    'kucoin', 'mexc', 'kraken', 'huobi', 'gateio', 'coinex', 'crypto', 'xt',
     'poloniex', 'bitfinex', 'upbit', 'whitebit', 'indodax'
   ];
   const EXCHANGE_NAMES = {
-    kucoin: 'KuCoin',
-    mexc: 'MEXC',
-    kraken: 'Kraken',
-    huobi: 'HTX',
-    gateio: 'Gate.io',
-    coinex: 'CoinEx',
-    crypto: 'Crypto.com',
-    xt: 'XT.COM',
-    poloniex: 'Poloniex',
-    bitfinex: 'Bitfinex',
-    upbit: 'Upbit',
-    whitebit: 'WhiteBIT',
-    indodax: 'Indodax'
+    kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', huobi: 'HTX',
+    gateio: 'Gate.io', coinex: 'CoinEx', crypto: 'Crypto.com', xt: 'XT.COM',
+    poloniex: 'Poloniex', bitfinex: 'Bitfinex', upbit: 'Upbit',
+    whitebit: 'WhiteBIT', indodax: 'Indodax'
   };
 
+  // ==========================================
+  // STATE
+  // ==========================================
   let token = localStorage.getItem('token');
   let allOpportunities = [];
   let selectedExchanges = new Set(['all']);
@@ -681,16 +704,9 @@
   let shownCount = 0;
   let countdownInterval = null;
   let currentDetailOpp = null;
-
-  // Currency toggle state
-  let currentCurrency = 'KES'; // 'KES' or 'USD'
-  const EXCHANGE_RATE = 130; // 1 USD = 130 KES (approx)
-
-  // Plan prices in KES
-  const PLAN_PRICES = {
-    weekly: 130,
-    monthly: 350
-  };
+  let currentCurrency = 'KES';
+  const EXCHANGE_RATE = 130;
+  let planSettings = { weekly: { amount: 260, duration: 7 }, monthly: { amount: 900, duration: 30 } };
 
   // ==========================================
   // UI HELPERS
@@ -716,28 +732,6 @@
   }
   setInterval(updateClock, 1000);
   updateClock();
-
-  // ==========================================
-  // CURRENCY TOGGLE
-  // ==========================================
-  function setCurrency(currency) {
-    currentCurrency = currency;
-    document.getElementById('btnKES').classList.toggle('active', currency === 'KES');
-    document.getElementById('btnUSD').classList.toggle('active', currency === 'USD');
-    updateProPrices();
-  }
-
-  function updateProPrices() {
-    const weeklyEl = document.getElementById('weeklyPriceDisplay');
-    const monthlyEl = document.getElementById('monthlyPriceDisplay');
-    if (currentCurrency === 'USD') {
-      weeklyEl.textContent = `$${(PLAN_PRICES.weekly / EXCHANGE_RATE).toFixed(2)}`;
-      monthlyEl.textContent = `$${(PLAN_PRICES.monthly / EXCHANGE_RATE).toFixed(2)}`;
-    } else {
-      weeklyEl.textContent = `KES ${PLAN_PRICES.weekly}`;
-      monthlyEl.textContent = `KES ${PLAN_PRICES.monthly}`;
-    }
-  }
 
   // ==========================================
   // SIDEBAR
@@ -827,11 +821,11 @@
         document.getElementById('appContent').style.display = 'block';
         currentUser = { username: data.username };
         await loadUserProfile();
-        loadOpportunities();
-        loadMessages();
-        loadSubscription();
+        await loadPlans();
+        await loadOpportunities();
+        await loadMessages();
+        await loadSubscription();
         initExchangeFilters();
-        // Set default currency
         setCurrency('KES');
         showToast('✅ Login successful', 'success');
 
@@ -878,6 +872,42 @@
       document.getElementById('profileEmail').textContent = data.email || '—';
       document.getElementById('profileMpesa').textContent = data.mpesa || '—';
     } catch (e) { console.error('Profile load error', e); }
+  }
+
+  // ==========================================
+  // PLAN SETTINGS (dynamic from server)
+  // ==========================================
+  async function loadPlans() {
+    try {
+      const res = await fetch('/api/plans');
+      const data = await res.json();
+      if (data.weekly && data.monthly) {
+        planSettings = data;
+        updateProPrices();
+      }
+    } catch (e) {
+      console.warn('Failed to load plans', e);
+    }
+  }
+
+  function updateProPrices() {
+    const weeklyEl = document.getElementById('weeklyPriceDisplay');
+    const monthlyEl = document.getElementById('monthlyPriceDisplay');
+    if (!planSettings.weekly) return;
+    if (currentCurrency === 'USD') {
+      weeklyEl.textContent = `$${(planSettings.weekly.amount / EXCHANGE_RATE).toFixed(2)}`;
+      monthlyEl.textContent = `$${(planSettings.monthly.amount / EXCHANGE_RATE).toFixed(2)}`;
+    } else {
+      weeklyEl.textContent = `KES ${planSettings.weekly.amount}`;
+      monthlyEl.textContent = `KES ${planSettings.monthly.amount}`;
+    }
+  }
+
+  function setCurrency(currency) {
+    currentCurrency = currency;
+    document.getElementById('btnKES').classList.toggle('active', currency === 'KES');
+    document.getElementById('btnUSD').classList.toggle('active', currency === 'USD');
+    updateProPrices();
   }
 
   // ==========================================
@@ -977,7 +1007,7 @@
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelector(`.nav-tabs button[data-tab="${page}"]`)?.classList.add('active');
 
-    const map = { dashboard:0, arbitrage:1, topcoins:2, watchlist:3, calculator:4, pro:5, profile:6, help:7 };
+    const map = { dashboard:0, arbitrage:1, topcoins:2, watchlist:3, calculator:4, pro:5, profile:6, settings:7, help:8 };
     const btns = document.querySelectorAll('#bottomNav button');
     btns.forEach(b => b.classList.remove('active'));
     if (btns[map[page]]) btns[map[page]].classList.add('active');
@@ -990,6 +1020,7 @@
     if (page === 'help') loadMessages();
     if (page === 'profile') loadUserProfile();
     if (page === 'pro') checkPaymentStatus();
+    if (page === 'settings') loadUserProfile();
     closeSidebar();
   }
 
@@ -1154,6 +1185,50 @@
     const profit = calculateProfit(currentDetailOpp, amount);
     display.textContent = `$${profit.toFixed(2)}`;
     display.className = `result ${profit >= 0 ? '' : 'negative'}`;
+  }
+
+  // ==========================================
+  // SORTING LOGIC
+  // ==========================================
+  function getSortKey(opp, criteria) {
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    const amount = 100;
+    const gross = (sell - buy) * amount;
+    const fee = gross * 0.002;
+    const netProfit = gross - fee;
+    const roi = (netProfit / amount) * 100;
+    const liquidity = parseFloat(opp.liquidity) || 0;
+    const riskScore = opp.risk === 'low' ? 1 : (opp.risk === 'medium' ? 0.5 : 0);
+    const reliability = 0.7;
+    const transferSpeed = 0.5;
+    const liquidityNorm = Math.min(1, liquidity / 1000000);
+    const roiNorm = Math.min(1, roi / 10);
+    const oppScore = (0.4 * roiNorm + 0.25 * liquidityNorm + 0.15 * 0.5 + 0.10 * reliability + 0.10 * transferSpeed) * 10;
+    const transferTimeEstimate = 2;
+
+    switch(criteria) {
+      case 'netProfit': return netProfit;
+      case 'roi': return roi;
+      case 'opportunityScore': return oppScore;
+      case 'transferTime': return -transferTimeEstimate;
+      case 'liquidity': return liquidity;
+      case 'risk': return riskScore;
+      default: return netProfit;
+    }
+  }
+
+  function sortOpportunities(opportunities, criteria) {
+    const sorted = [...opportunities];
+    sorted.sort((a, b) => {
+      const keyA = getSortKey(a, criteria);
+      const keyB = getSortKey(b, criteria);
+      if (criteria === 'risk' || criteria === 'transferTime') {
+        return keyA - keyB;
+      }
+      return keyB - keyA;
+    });
+    return sorted;
   }
 
   // ==========================================
@@ -1467,7 +1542,8 @@ Risk: ${risk}. Recommendation: ${rec}.`;
 
   function applyFilters() {
     const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
-    const risk = document.getElementById('riskFilter')?.value || 'all';
+    const sortBy = document.getElementById('sortBySelect')?.value || 'netProfit';
+
     let filtered = allOpportunities.filter(o => {
       if (search && !o.symbol.toUpperCase().startsWith(search)) return false;
       if (!selectedExchanges.has('all')) {
@@ -1481,9 +1557,11 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         }
         if (!match) return false;
       }
-      if (risk !== 'all' && o.risk !== risk) return false;
       return true;
     });
+
+    filtered = sortOpportunities(filtered, sortBy);
+
     const container = document.getElementById('arbitrageOpportunities');
     if (container) {
       container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities match filters</div>';
@@ -1502,6 +1580,9 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
   }
 
+  // ==========================================
+  // WATCHLIST
+  // ==========================================
   function toggleWatchlist(oppId) {
     const index = watchlist.indexOf(oppId);
     if (index > -1) watchlist.splice(index, 1);
@@ -1520,6 +1601,82 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   async function refreshOpportunities() {
     await loadOpportunities();
     showToast('Refreshed', 'info');
+  }
+
+  // ==========================================
+  // USER SETTINGS
+  // ==========================================
+  async function changePassword() {
+    const currentPassword = document.getElementById('currentPwd').value;
+    const newPassword = document.getElementById('newPwd').value;
+    const status = document.getElementById('pwdStatus');
+    if (!currentPassword || !newPassword) {
+      status.textContent = '❌ Both fields are required';
+      status.className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    if (newPassword.length < 6) {
+      status.textContent = '❌ New password must be at least 6 characters';
+      status.className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    try {
+      const res = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        status.textContent = '✅ ' + data.message;
+        status.className = 'text-green-400 text-sm mt-2';
+        document.getElementById('currentPwd').value = '';
+        document.getElementById('newPwd').value = '';
+      } else {
+        status.textContent = '❌ ' + data.error;
+        status.className = 'text-red-400 text-sm mt-2';
+      }
+    } catch (err) {
+      status.textContent = '❌ Server error';
+      status.className = 'text-red-400 text-sm mt-2';
+    }
+  }
+
+  async function changeMpesa() {
+    const newMpesa = document.getElementById('newMpesa').value.trim();
+    const password = document.getElementById('confirmPwd').value;
+    const status = document.getElementById('mpesaStatus');
+    if (!newMpesa || !password) {
+      status.textContent = '❌ All fields are required';
+      status.className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    if (!/^[0-9]+$/.test(newMpesa) || newMpesa.length < 10) {
+      status.textContent = '❌ Invalid M-Pesa number (digits only, 10+)';
+      status.className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    try {
+      const res = await fetch('/api/user/change-mpesa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ newMpesa, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        status.textContent = '✅ ' + data.message;
+        status.className = 'text-green-400 text-sm mt-2';
+        document.getElementById('newMpesa').value = '';
+        document.getElementById('confirmPwd').value = '';
+        document.getElementById('profileMpesa').textContent = newMpesa;
+      } else {
+        status.textContent = '❌ ' + data.error;
+        status.className = 'text-red-400 text-sm mt-2';
+      }
+    } catch (err) {
+      status.textContent = '❌ Server error';
+      status.className = 'text-red-400 text-sm mt-2';
+    }
   }
 
   // ==========================================
@@ -1591,9 +1748,10 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        headers: { 'Content-Type': 'application/json', Authorization: token },
         body: JSON.stringify({ content })
       });
+
       if (!res.ok) throw new Error('Failed to send');
       input.value = '';
       showToast('✅ Message sent successfully!', 'success');
@@ -1609,7 +1767,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     try {
       const res = await fetch(`/api/messages/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        headers: { 'Content-Type': 'application/json', Authorization: token },
         body: JSON.stringify({ content: newContent })
       });
       if (res.ok) {
@@ -1646,6 +1804,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         if (res.ok) {
           document.getElementById('loginModal').classList.remove('show');
           document.getElementById('appContent').style.display = 'block';
+          loadPlans();
           loadOpportunities();
           loadUserProfile();
           loadMessages();
@@ -1693,8 +1852,10 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.copySummary = copySummary;
   window.openFullCalculatorFromModal = openFullCalculatorFromModal;
   window.setCurrency = setCurrency;
+  window.changePassword = changePassword;
+  window.changeMpesa = changeMpesa;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Currency Toggle + Full Calculator');
+  console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
 </script>
 </body>
 </html>
