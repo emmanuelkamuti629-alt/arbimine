@@ -8,6 +8,8 @@ const mongoose = require('mongoose');
 const ccxt = require('ccxt');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { authenticator } = require('otplib');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -92,15 +94,32 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const adminSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true },
+  totpSecret: { type: String, default: null },
+  isTotpEnabled: { type: Boolean, default: false }
+});
+
+// Plan Settings Schema
+const planSettingsSchema = new mongoose.Schema({
+  weeklyAmount: { type: Number, default: 260 },
+  weeklyDuration: { type: Number, default: 7 },
+  monthlyAmount: { type: Number, default: 900 },
+  monthlyDuration: { type: Number, default: 30 }
+});
+
 const Session = mongoose.model('Session', sessionSchema);
 const Message = mongoose.model('Message', messageSchema);
 const BlockedUser = mongoose.model('BlockedUser', blockedUserSchema);
 const Transaction = mongoose.model('Transaction', transactionSchema);
 const User = mongoose.model('User', userSchema);
+const Admin = mongoose.model('Admin', adminSchema);
+const PlanSettings = mongoose.model('PlanSettings', planSettingsSchema);
 
 const generateToken = () => crypto.randomBytes(32).toString('hex');
 
-// ==================== Admin Auth (JWT) ====================
+// ==================== Admin Auth & 2FA ====================
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
@@ -117,13 +136,162 @@ function verifyAdminToken(token) {
   }
 }
 
-app.post('/admin/login', (req, res) => {
+const tempAdminSessions = new Map();
+const pendingTotpSecrets = new Map();
+
+async function ensureAdmin() {
+  const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+  if (!admin) {
+    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
+    const newAdmin = new Admin({ username: ADMIN_USERNAME, passwordHash: hashed, isTotpEnabled: false });
+    await newAdmin.save();
+    console.log('🔐 Default admin created (2FA disabled)');
+  }
+}
+ensureAdmin();
+
+// Ensure default plan settings
+async function ensurePlanSettings() {
+  const settings = await PlanSettings.findOne();
+  if (!settings) {
+    const defaultSettings = new PlanSettings({
+      weeklyAmount: 260,
+      weeklyDuration: 7,
+      monthlyAmount: 900,
+      monthlyDuration: 30
+    });
+    await defaultSettings.save();
+    console.log('📊 Default plan settings created');
+  }
+}
+ensurePlanSettings();
+
+// Step 1: Admin login
+app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    const token = generateAdminToken(username);
-    res.json({ success: true, token });
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+  const admin = await Admin.findOne({ username });
+  if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
+
+  const match = await bcrypt.compare(password, admin.passwordHash);
+  if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+
+  if (admin.isTotpEnabled) {
+    const tempToken = crypto.randomBytes(32).toString('hex');
+    tempAdminSessions.set(tempToken, {
+      username,
+      expires: Date.now() + 5 * 60 * 1000
+    });
+    return res.json({ success: true, tempToken, requiresOtp: true });
   } else {
-    res.status(401).json({ error: 'Invalid admin credentials' });
+    const token = generateAdminToken(username);
+    return res.json({ success: true, token });
+  }
+});
+
+// Step 2: Verify OTP for admin login
+app.post('/admin/verify-otp', async (req, res) => {
+  const { tempToken, otp } = req.body;
+  if (!tempToken || !otp) return res.status(400).json({ error: 'Missing temporary token or OTP' });
+
+  const session = tempAdminSessions.get(tempToken);
+  if (!session || session.expires < Date.now()) {
+    return res.status(401).json({ error: 'Temporary session expired or invalid' });
+  }
+
+  const admin = await Admin.findOne({ username: session.username });
+  if (!admin || !admin.totpSecret) {
+    return res.status(401).json({ error: '2FA not configured' });
+  }
+
+  const isValid = authenticator.verify({ token: otp, secret: admin.totpSecret });
+  if (!isValid) {
+    return res.status(401).json({ error: 'Invalid OTP' });
+  }
+
+  tempAdminSessions.delete(tempToken);
+  const token = generateAdminToken(session.username);
+  res.json({ success: true, token });
+});
+
+// Admin 2FA settings
+app.get('/admin/settings/totp/status', adminAuth, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+    res.json({ enabled: admin?.isTotpEnabled || false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/settings/totp/generate', adminAuth, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+
+    const secret = authenticator.generateSecret();
+    pendingTotpSecrets.set(admin._id.toString(), { secret, expires: Date.now() + 10 * 60 * 1000 });
+
+    const otpauth = authenticator.keyuri(admin.username, 'ArbiMine', secret);
+    const qrImage = await QRCode.toDataURL(otpauth);
+
+    res.json({ secret, qrImage, otpauth });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/settings/totp/verify', adminAuth, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) return res.status(400).json({ error: 'OTP required' });
+
+    const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+
+    const pending = pendingTotpSecrets.get(admin._id.toString());
+    if (!pending || pending.expires < Date.now()) {
+      return res.status(400).json({ error: 'No pending 2FA setup or session expired' });
+    }
+
+    const isValid = authenticator.verify({ token: otp, secret: pending.secret });
+    if (!isValid) return res.status(400).json({ error: 'Invalid OTP' });
+
+    admin.totpSecret = pending.secret;
+    admin.isTotpEnabled = true;
+    await admin.save();
+
+    pendingTotpSecrets.delete(admin._id.toString());
+    res.json({ success: true, message: '2FA enabled successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/settings/totp/disable', adminAuth, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) return res.status(400).json({ error: 'OTP required' });
+
+    const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+    if (!admin || !admin.isTotpEnabled) {
+      return res.status(400).json({ error: '2FA is not enabled' });
+    }
+
+    const isValid = authenticator.verify({ token: otp, secret: admin.totpSecret });
+    if (!isValid) return res.status(400).json({ error: 'Invalid OTP' });
+
+    admin.totpSecret = null;
+    admin.isTotpEnabled = false;
+    await admin.save();
+
+    res.json({ success: true, message: '2FA disabled successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -135,6 +303,169 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// ==================== Plan Settings Admin Endpoints ====================
+app.get('/admin/settings/plans', adminAuth, async (req, res) => {
+  try {
+    const settings = await PlanSettings.findOne();
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/admin/settings/plans', adminAuth, async (req, res) => {
+  try {
+    const { weeklyAmount, weeklyDuration, monthlyAmount, monthlyDuration } = req.body;
+    if (weeklyAmount === undefined || weeklyDuration === undefined || monthlyAmount === undefined || monthlyDuration === undefined) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+    if (weeklyAmount <= 0 || monthlyAmount <= 0 || weeklyDuration <= 0 || monthlyDuration <= 0) {
+      return res.status(400).json({ error: 'All values must be positive' });
+    }
+    let settings = await PlanSettings.findOne();
+    if (!settings) {
+      settings = new PlanSettings();
+    }
+    settings.weeklyAmount = weeklyAmount;
+    settings.weeklyDuration = weeklyDuration;
+    settings.monthlyAmount = monthlyAmount;
+    settings.monthlyDuration = monthlyDuration;
+    await settings.save();
+    res.json({ success: true, settings });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Public Plan Settings ====================
+app.get('/api/plans', async (req, res) => {
+  try {
+    const settings = await PlanSettings.findOne();
+    res.json({
+      weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
+      monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Admin Routes (Users, Messages, etc.) ====================
+app.get('/admin/users', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find({}, '-passwordHash');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  try {
+    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    res.json(transactions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const messages = await Message.find().sort({ createdAt: -1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/messages', adminAuth, async (req, res) => {
+  const { userId, content } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
+  const msg = new Message({ user: userId, isAdmin: true, content: content.trim(), status: 'sent' });
+  await msg.save();
+  setTimeout(async () => {
+    msg.status = 'delivered';
+    await msg.save();
+  }, 500);
+  res.json({ success: true, message: msg });
+});
+
+app.delete('/admin/message/:id', adminAuth, async (req, res) => {
+  try {
+    await Message.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/admin/message/:id', adminAuth, async (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Content required' });
+  try {
+    const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
+    res.json({ success: true, message: msg });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isBlocked = true;
+    await user.save();
+    res.json({ success: true, message: `User ${req.params.username} blocked` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isBlocked = false;
+    await user.save();
+    res.json({ success: true, message: `User ${req.params.username} unblocked` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  try {
+    const { active, plan, expiresAt } = req.body;
+    const updates = { 'subscription.active': active };
+    if (plan) updates['subscription.plan'] = plan;
+    if (active && !expiresAt) {
+      const settings = await PlanSettings.findOne();
+      const days = plan === 'weekly' ? settings.weeklyDuration : settings.monthlyDuration;
+      updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    } else if (expiresAt) {
+      updates['subscription.expiresAt'] = new Date(expiresAt);
+    }
+    await User.findByIdAndUpdate(req.params.id, updates);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== User Auth ====================
 async function authMiddleware(req, res, next) {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -147,7 +478,6 @@ async function authMiddleware(req, res, next) {
     if (!session) return res.status(401).json({ error: 'Invalid session' });
     req.user = session.username;
 
-    // Check and auto-expire subscription
     const user = await User.findOne({ username: req.user });
     if (user && user.subscription && user.subscription.expiresAt) {
       const now = new Date();
@@ -155,10 +485,8 @@ async function authMiddleware(req, res, next) {
         user.subscription.active = false;
         user.subscription.plan = null;
         await user.save();
-        console.log(`⏰ Subscription expired for ${req.user}`);
       }
     }
-
     next();
   } catch (err) {
     console.error('Auth error:', err);
@@ -166,7 +494,6 @@ async function authMiddleware(req, res, next) {
   }
 }
 
-// ==================== Auth Routes ====================
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, mpesa, password } = req.body;
@@ -252,10 +579,71 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
     if (!user) return res.status(401).json({ error: 'User not found' });
     const now = new Date();
     const isActive = user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > now;
-    res.json({ active: isActive, plan: user.subscription.plan, expiresAt: user.subscription.expiresAt });
+    const settings = await PlanSettings.findOne();
+    res.json({
+      active: isActive,
+      plan: user.subscription.plan,
+      expiresAt: user.subscription.expiresAt,
+      plans: {
+        weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
+        monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== User Settings ====================
+app.post('/api/user/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password required' });
+    }
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!match) return res.status(401).json({ error: 'Current password incorrect' });
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/user/change-mpesa', authMiddleware, async (req, res) => {
+  try {
+    const { newMpesa, password } = req.body;
+    if (!newMpesa || !password) {
+      return res.status(400).json({ error: 'New M-Pesa number and password required' });
+    }
+    if (!/^[0-9]+$/.test(newMpesa) || newMpesa.length < 10) {
+      return res.status(400).json({ error: 'Invalid M-Pesa number (digits only, 10+)' });
+    }
+
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match) return res.status(401).json({ error: 'Incorrect password' });
+
+    const existing = await User.findOne({ mpesa: newMpesa });
+    if (existing && existing.username !== req.user) {
+      return res.status(409).json({ error: 'M-Pesa number already in use by another account' });
+    }
+
+    user.mpesa = newMpesa;
+    await user.save();
+    res.json({ success: true, message: 'M-Pesa number updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -342,148 +730,16 @@ app.post('/api/messages/:id/read', authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== Admin Routes ====================
-app.get('/admin/messages', adminAuth, async (req, res) => {
-  try {
-    const messages = await Message.find().sort({ createdAt: -1 });
-    res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/admin/messages', adminAuth, async (req, res) => {
-  const { userId, content } = req.body;
-  if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
-  const msg = new Message({ user: userId, isAdmin: true, content: content.trim(), status: 'sent' });
-  await msg.save();
-  setTimeout(async () => {
-    msg.status = 'delivered';
-    await msg.save();
-  }, 500);
-  res.json({ success: true, message: msg });
-});
-
-app.delete('/admin/message/:id', adminAuth, async (req, res) => {
-  try {
-    await Message.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/admin/message/:id', adminAuth, async (req, res) => {
-  const { content } = req.body;
-  if (!content) return res.status(400).json({ error: 'Content required' });
-  try {
-    const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
-    res.json({ success: true, message: msg });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/admin/block/:username', adminAuth, async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.params.username });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.isBlocked = true;
-    await user.save();
-    res.json({ success: true, message: `User ${req.params.username} blocked` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.params.username });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.isBlocked = false;
-    await user.save();
-    res.json({ success: true, message: `User ${req.params.username} unblocked` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/admin/users', adminAuth, async (req, res) => {
-  try {
-    const users = await User.find({}, '-passwordHash');
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/admin/transactions', adminAuth, async (req, res) => {
-  try {
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
-    res.json(transactions);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
-  try {
-    const { active, plan, expiresAt } = req.body;
-    const updates = { 'subscription.active': active };
-    if (plan) updates['subscription.plan'] = plan;
-    if (active && !expiresAt) {
-      const days = plan === 'weekly' ? 7 : 30;
-      updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-    } else if (expiresAt) {
-      updates['subscription.expiresAt'] = new Date(expiresAt);
-    }
-    await User.findByIdAndUpdate(req.params.id, updates);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/admin/user/:id', adminAuth, async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ==================== CCXT Exchange Integration (13 exchanges) ====================
+// ==================== Exchange Integration ====================
 const EXCHANGE_IDS = [
-  'kucoin', 'mexc', 'kraken',
-  'huobi',    // HTX
-  'gateio',   // Gate.io
-  'coinex',   // CoinEx
-  'crypto',   // Crypto.com
-  'xt',       // XT.COM
-  'poloniex', // Poloniex
-  'bitfinex', // Bitfinex
-  'upbit',    // Upbit
-  'whitebit', // WhiteBIT
-  'indodax'   // Indodax
+  'kucoin', 'mexc', 'kraken', 'huobi', 'gateio', 'coinex', 'crypto', 'xt',
+  'poloniex', 'bitfinex', 'upbit', 'whitebit', 'indodax'
 ];
-
 const EXCHANGE_NAMES = {
-  kucoin: 'KuCoin',
-  mexc: 'MEXC',
-  kraken: 'Kraken',
-  huobi: 'HTX',
-  gateio: 'Gate.io',
-  coinex: 'CoinEx',
-  crypto: 'Crypto.com',
-  xt: 'XT.COM',
-  poloniex: 'Poloniex',
-  bitfinex: 'Bitfinex',
-  upbit: 'Upbit',
-  whitebit: 'WhiteBIT',
-  indodax: 'Indodax'
+  kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', huobi: 'HTX',
+  gateio: 'Gate.io', coinex: 'CoinEx', crypto: 'Crypto.com', xt: 'XT.COM',
+  poloniex: 'Poloniex', bitfinex: 'Bitfinex', upbit: 'Upbit',
+  whitebit: 'WhiteBIT', indodax: 'Indodax'
 };
 
 const exchangeInstances = {};
@@ -520,7 +776,7 @@ async function loadAllMarkets() {
 }
 loadAllMarkets();
 
-// ==================== Arbitrage Scanning ====================
+// ==================== Scanning ====================
 let cachedOpportunities = [];
 let detailedCache = new Map();
 let aiCache = new Map();
@@ -567,7 +823,6 @@ async function fastScan() {
   for (const [exId, tickers] of Object.entries(allTickers)) {
     if (!tickers) continue;
     for (const [pair, ticker] of Object.entries(tickers)) {
-      // Accept USDT pairs and also IDR for Indodax (optional)
       const isUSDT = pair.endsWith('/USDT');
       const isIDR = pair.endsWith('/IDR') && exId === 'indodax';
       if (!isUSDT && !isIDR) continue;
@@ -593,9 +848,6 @@ async function fastScan() {
   for (const [symbol, exchanges] of Object.entries(pairMap)) {
     const entries = Object.entries(exchanges);
     if (entries.length < 2) continue;
-    // For simplicity, we compare only the price (converted to USD? but we don't convert – we assume same quote)
-    // Since we have both USDT and IDR pairs, we should separate by currency.
-    // For now, we filter only USDT pairs for cross-exchange comparison.
     const usdtEntries = entries.filter(([_, data]) => data.currency === 'USDT');
     if (usdtEntries.length < 2) continue;
     usdtEntries.sort((a, b) => a[1].price - b[1].price);
@@ -640,7 +892,6 @@ async function fastScan() {
   }
 }
 
-// ==================== Detail Scan ====================
 async function fetchRealNetworks(exchangeId, coin) {
   const ex = exchangeInstances[exchangeId.toLowerCase()];
   if (!ex) return null;
@@ -808,7 +1059,7 @@ async function getAIAnalysisCached(opp) {
   return result;
 }
 
-// ==================== Opportunities API (with tiered access) ====================
+// ==================== Opportunities API ====================
 app.get('/api/opportunities', authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.user });
@@ -934,17 +1185,12 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
 });
 
-// ==================== PAYSTACK HOSTED CHECKOUT ====================
+// ==================== Paystack ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
-const PLANS = {
-  weekly: { amount: 130, duration: 7 },   // ← Updated to 130 KES
-  monthly: { amount: 350, duration: 30 }
-};
-
-function getExpiryDate(plan) {
-  const days = PLANS[plan]?.duration || 0;
+function getExpiryDate(plan, settings) {
+  const days = plan === 'weekly' ? settings.weeklyDuration : settings.monthlyDuration;
   if (!days) return null;
   const now = new Date(); now.setDate(now.getDate() + days); return now;
 }
@@ -956,19 +1202,21 @@ function sanitizeReference(str) {
 app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
-    if (!plan || !PLANS[plan]) {
+    if (!plan || !['weekly', 'monthly'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const amount = PLANS[plan].amount * 100;
+    const settings = await PlanSettings.findOne();
+    const amount = plan === 'weekly' ? settings.weeklyAmount : settings.monthlyAmount;
+    const amountInKobo = amount * 100;
     const reference = `arbimine_${sanitizeReference(user.username)}_${Date.now()}`;
 
     const payload = {
       email: user.email,
-      amount: amount,
+      amount: amountInKobo,
       currency: 'KES',
       reference: reference,
       callback_url: `${APP_URL}/api/paystack/callback`,
@@ -997,7 +1245,7 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
         reference,
         user: user.username,
         plan,
-        amount: PLANS[plan].amount,
+        amount: amount,
         status: 'pending',
         paymentData: response.data
       });
@@ -1044,7 +1292,8 @@ app.get('/api/paystack/callback', async (req, res) => {
       );
 
       if (username && plan) {
-        const expiresAt = getExpiryDate(plan);
+        const settings = await PlanSettings.findOne();
+        const expiresAt = getExpiryDate(plan, settings);
         await User.findOneAndUpdate(
           { username },
           { 'subscription.active': true, 'subscription.plan': plan, 'subscription.expiresAt': expiresAt }
@@ -1075,5 +1324,4 @@ app.get('/admin', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
   console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'on your domain'}`);
-  console.log(`📊 Free tier max spread: ${FREE_TIER_MAX_SPREAD}%`);
 });

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>ArbiMine Admin</title>
-
   <style>
+    /* (All styles same as before – unchanged) */
     * {
       margin: 0;
       padding: 0;
@@ -225,7 +225,6 @@
     }
     .action-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -260,6 +259,26 @@
     }
     .modal-box .btn-row button { flex: 1; }
 
+    .plan-settings-form .input-group {
+      margin-bottom: 12px;
+    }
+    .plan-settings-form label {
+      color: #94a3b8;
+      font-size: 14px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .plan-settings-form input {
+      margin-top: 0;
+    }
+    .plan-settings-form .row {
+      display: flex;
+      gap: 12px;
+    }
+    .plan-settings-form .row .input-group {
+      flex: 1;
+    }
+
     @media (max-width: 768px) {
       body { padding: 10px; }
       h1 { font-size: 22px; }
@@ -279,20 +298,29 @@
     }
   </style>
 </head>
-
 <body>
 
 <div id="loginDiv" class="login-container">
   <h2>ArbiMine Admin</h2>
   <input type="text" id="adminUser" placeholder="Username" value="admin">
   <input type="password" id="adminPass" placeholder="Password">
-  <button class="login-btn" onclick="adminLogin()">Login</button>
+  <button class="login-btn" onclick="step1Login()">Login</button>
+  <div id="loginError" class="text-red-400 text-center mt-2 hidden"></div>
+</div>
+
+<!-- OTP step (hidden initially) -->
+<div id="otpDiv" class="login-container hidden">
+  <h2>OTP Verification</h2>
+  <p class="text-slate-400 text-sm">Enter the 6‑digit code from your authenticator app.</p>
+  <input type="text" id="otpInput" placeholder="6-digit code" maxlength="6">
+  <button class="login-btn" onclick="step2VerifyOTP()">Verify</button>
+  <div id="otpError" class="text-red-400 text-center mt-2 hidden"></div>
 </div>
 
 <div id="dashboardDiv" class="container hidden">
 
   <div class="topbar">
-    <div><h1>ArbiMine Admin Dashboard</h1></div>
+    <div><h1>ArbiMine Admin</h1></div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="refresh" onclick="refreshAll()">Refresh</button>
       <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
@@ -309,6 +337,8 @@
       <button class="active" data-tab="users" onclick="switchTab('users')">Users</button>
       <button data-tab="transactions" onclick="switchTab('transactions')">Transactions</button>
       <button data-tab="messages" onclick="switchTab('messages')">Messages</button>
+      <button data-tab="plans" onclick="switchTab('plans')">Plan Settings</button>
+      <button data-tab="2fa" onclick="switchTab('2fa')">Security</button>
     </div>
 
     <!-- Users Tab -->
@@ -346,10 +376,55 @@
         </table>
       </div>
     </div>
+
+    <!-- Plan Settings Tab -->
+    <div id="tab-plans" class="tab-content">
+      <h2>Subscription Plans</h2>
+      <p class="text-slate-400 text-sm mb-4">Update the prices and durations for subscription plans. Changes apply immediately.</p>
+      <form id="planForm" class="plan-settings-form">
+        <div class="row">
+          <div class="input-group">
+            <label>Weekly Price (KES)</label>
+            <input type="number" id="weeklyAmount" step="1" min="1" required>
+          </div>
+          <div class="input-group">
+            <label>Weekly Duration (days)</label>
+            <input type="number" id="weeklyDuration" step="1" min="1" required>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-group">
+            <label>Monthly Price (KES)</label>
+            <input type="number" id="monthlyAmount" step="1" min="1" required>
+          </div>
+          <div class="input-group">
+            <label>Monthly Duration (days)</label>
+            <input type="number" id="monthlyDuration" step="1" min="1" required>
+          </div>
+        </div>
+        <button type="button" class="btn success" onclick="savePlans()">Save Plans</button>
+        <div id="planStatus" class="text-sm mt-2"></div>
+      </form>
+    </div>
+
+    <!-- Security (2FA) Tab -->
+    <div id="tab-2fa" class="tab-content">
+      <h2>Two-Factor Authentication</h2>
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p>Status: <span id="twofaStatus" class="font-bold">Loading...</span></p>
+            <p class="text-sm text-slate-400">Protect your admin account with an authenticator app.</p>
+          </div>
+          <button id="twofaToggleBtn" class="btn btn-sm" onclick="toggle2FA()">Enable</button>
+        </div>
+        <div id="twofaSetupContainer" class="mt-4 hidden"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Quick Message Modal (from Users tab) -->
+<!-- Quick Message Modal -->
 <div id="quickMsgModal" class="modal-overlay">
   <div class="modal-box">
     <h3>💬 Quick Message</h3>
@@ -362,7 +437,7 @@
   </div>
 </div>
 
-<!-- Reply Modal (from Messages tab) -->
+<!-- Reply Modal -->
 <div id="replyModal" class="modal-overlay">
   <div class="modal-box">
     <h3>📩 Reply to User</h3>
@@ -377,46 +452,84 @@
 
 <script>
   let adminToken = localStorage.getItem("adminToken");
+  let tempToken = null;
   let currentQuickUser = null;
   let currentReplyUser = null;
+  let totpSecret = '';
 
-  if (adminToken) showDashboard();
-
-  async function adminLogin() {
-    const username = document.getElementById("adminUser").value;
-    const password = document.getElementById("adminPass").value;
+  // ==================== Login ====================
+  async function step1Login() {
+    const username = document.getElementById('adminUser').value;
+    const password = document.getElementById('adminPass').value;
     try {
-      const res = await fetch("/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
       if (data.token) {
-        localStorage.setItem("adminToken", data.token);
-        showToast("Login successful", "success");
+        adminToken = data.token;
+        localStorage.setItem('adminToken', data.token);
         showDashboard();
+        showToast('Login successful', 'success');
+      } else if (data.requiresOtp && data.tempToken) {
+        tempToken = data.tempToken;
+        document.getElementById('loginDiv').style.display = 'none';
+        document.getElementById('otpDiv').style.display = 'block';
+        showToast('Enter your OTP from authenticator app', 'info');
       } else {
-        showToast("Invalid login", "error");
+        showToast(data.error || 'Login failed', 'error');
       }
     } catch (err) {
-      showToast("Server error", "error");
+      showToast('Server error', 'error');
     }
   }
 
-  async function showDashboard() {
-    document.getElementById("loginDiv").style.display = "none";
-    document.getElementById("dashboardDiv").classList.remove("hidden");
-    await refreshAll();
-  }
-
-  async function refreshAll() {
-    await Promise.all([loadUsers(), loadTransactions(), loadMessages(), loadStats()]);
+  async function step2VerifyOTP() {
+    const otp = document.getElementById('otpInput').value.trim();
+    if (!otp || otp.length !== 6) {
+      showToast('Please enter a valid 6-digit OTP', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/admin/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken, otp })
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        adminToken = data.token;
+        localStorage.setItem('adminToken', data.token);
+        document.getElementById('otpDiv').style.display = 'none';
+        showDashboard();
+        showToast('Authentication successful', 'success');
+      } else {
+        showToast(data.error || 'Invalid OTP', 'error');
+      }
+    } catch (err) {
+      showToast('Server error', 'error');
+    }
   }
 
   function logoutAdmin() {
-    localStorage.removeItem("adminToken");
+    localStorage.removeItem('adminToken');
     location.reload();
+  }
+
+  // ==================== Dashboard ====================
+  async function showDashboard() {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('otpDiv').style.display = 'none';
+    document.getElementById('dashboardDiv').classList.remove('hidden');
+    await refreshAll();
+    load2FAStatus();
+    loadPlans();
+  }
+
+  async function refreshAll() {
+    await Promise.all([loadUsers(), loadTransactions(), loadMessages(), loadStats(), loadPlans()]);
   }
 
   function switchTab(tab) {
@@ -426,11 +539,10 @@
     document.getElementById(`tab-${tab}`).classList.add('active');
   }
 
-  // ===== Users =====
+  // ==================== Users ====================
   async function loadUsers() {
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch("/admin/users", { headers: { "Authorization": token } });
+      const res = await fetch('/admin/users', { headers: { Authorization: adminToken } });
       const users = await res.json();
       const tbody = document.querySelector("#usersTable tbody");
       tbody.innerHTML = "";
@@ -452,21 +564,18 @@
         const actions = row.insertCell(3);
         actions.className = "action-buttons";
 
-        // Quick Message button
         const msgBtn = document.createElement("button");
         msgBtn.className = "quick-msg";
         msgBtn.innerText = "💬 Quick Msg";
         msgBtn.onclick = () => openQuickModal(user.username);
         actions.appendChild(msgBtn);
 
-        // Activate/Deactivate
         const activateBtn = document.createElement("button");
         activateBtn.className = "success";
         activateBtn.innerText = user.subscription?.active ? "Deactivate" : "Activate Weekly";
         activateBtn.onclick = () => updateSubscription(user._id, !user.subscription?.active, "weekly", null);
         actions.appendChild(activateBtn);
 
-        // Delete User
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "danger";
         deleteBtn.innerText = "Delete";
@@ -490,10 +599,9 @@
 
   async function updateSubscription(userId, active, plan, expiresAt) {
     try {
-      const token = localStorage.getItem("adminToken");
       const res = await fetch(`/admin/user/${userId}/update-subscription`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
+        headers: { "Content-Type": "application/json", Authorization: adminToken },
         body: JSON.stringify({ active, plan, expiresAt })
       });
       if (res.ok) {
@@ -511,8 +619,7 @@
   async function deleteUser(userId) {
     if (!confirm("Delete this user permanently?")) return;
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`/admin/user/${userId}`, { method: "DELETE", headers: { "Authorization": token } });
+      const res = await fetch(`/admin/user/${userId}`, { method: "DELETE", headers: { Authorization: adminToken } });
       if (res.ok) {
         showToast("User deleted", "success");
         loadUsers();
@@ -525,7 +632,7 @@
     }
   }
 
-  // ===== Quick Message (from Users tab) =====
+  // ===================== Quick Message =====================
   function openQuickModal(username) {
     currentQuickUser = username;
     document.getElementById("quickUserDisplay").textContent = username;
@@ -545,16 +652,15 @@
       return;
     }
     try {
-      const token = localStorage.getItem("adminToken");
       const res = await fetch("/admin/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
+        headers: { "Content-Type": "application/json", Authorization: adminToken },
         body: JSON.stringify({ userId: currentQuickUser, content })
       });
       if (res.ok) {
         showToast(`✅ Message sent to ${currentQuickUser}`, "success");
         closeQuickModal();
-        loadMessages(); // refresh messages tab
+        loadMessages();
       } else {
         showToast("Failed to send message", "error");
       }
@@ -563,11 +669,10 @@
     }
   }
 
-  // ===== Transactions =====
+  // ===================== Transactions =====================
   async function loadTransactions() {
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch("/admin/transactions", { headers: { "Authorization": token } });
+      const res = await fetch('/admin/transactions', { headers: { Authorization: adminToken } });
       const transactions = await res.json();
       const tbody = document.querySelector("#transactionsTable tbody");
       tbody.innerHTML = "";
@@ -588,11 +693,10 @@
     }
   }
 
-  // ===== Messages =====
+  // ===================== Messages =====================
   async function loadMessages() {
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch("/admin/messages", { headers: { "Authorization": token } });
+      const res = await fetch('/admin/messages', { headers: { Authorization: adminToken } });
       const messages = await res.json();
       const tbody = document.querySelector("#messagesTable tbody");
       tbody.innerHTML = "";
@@ -602,15 +706,11 @@
         row.insertCell(1).innerText = msg.content || "";
         row.insertCell(2).innerText = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : "N/A";
         const actions = row.insertCell(3);
-
-        // Reply button
         const replyBtn = document.createElement("button");
         replyBtn.className = "success";
         replyBtn.innerText = "Reply";
         replyBtn.onclick = () => openReplyModal(msg.user);
         actions.appendChild(replyBtn);
-
-        // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "danger";
         deleteBtn.innerText = "Delete";
@@ -625,8 +725,7 @@
   async function deleteMessage(msgId) {
     if (!confirm("Delete this message?")) return;
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await fetch(`/admin/message/${msgId}`, { method: "DELETE", headers: { "Authorization": token } });
+      const res = await fetch(`/admin/message/${msgId}`, { method: "DELETE", headers: { Authorization: adminToken } });
       if (res.ok) {
         showToast("Message deleted", "success");
         loadMessages();
@@ -638,7 +737,6 @@
     }
   }
 
-  // ===== Reply Modal (from Messages tab) =====
   function openReplyModal(username) {
     currentReplyUser = username;
     document.getElementById("replyUserDisplay").textContent = username;
@@ -658,10 +756,9 @@
       return;
     }
     try {
-      const token = localStorage.getItem("adminToken");
       const res = await fetch("/admin/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
+        headers: { "Content-Type": "application/json", Authorization: adminToken },
         body: JSON.stringify({ userId: currentReplyUser, content })
       });
       if (res.ok) {
@@ -676,13 +773,12 @@
     }
   }
 
-  // ===== Stats =====
+  // ===================== Stats =====================
   async function loadStats() {
     try {
-      const token = localStorage.getItem("adminToken");
       const [usersRes, txRes] = await Promise.all([
-        fetch("/admin/users", { headers: { "Authorization": token } }),
-        fetch("/admin/transactions", { headers: { "Authorization": token } })
+        fetch('/admin/users', { headers: { Authorization: adminToken } }),
+        fetch('/admin/transactions', { headers: { Authorization: adminToken } })
       ]);
       const users = await usersRes.json();
       const transactions = await txRes.json();
@@ -702,6 +798,157 @@
     }
   }
 
+  // ===================== Plan Settings =====================
+  async function loadPlans() {
+    try {
+      const res = await fetch('/admin/settings/plans', { headers: { Authorization: adminToken } });
+      const settings = await res.json();
+      document.getElementById('weeklyAmount').value = settings.weeklyAmount;
+      document.getElementById('weeklyDuration').value = settings.weeklyDuration;
+      document.getElementById('monthlyAmount').value = settings.monthlyAmount;
+      document.getElementById('monthlyDuration').value = settings.monthlyDuration;
+    } catch (err) {
+      showToast('Failed to load plan settings', 'error');
+    }
+  }
+
+  async function savePlans() {
+    const weeklyAmount = parseInt(document.getElementById('weeklyAmount').value);
+    const weeklyDuration = parseInt(document.getElementById('weeklyDuration').value);
+    const monthlyAmount = parseInt(document.getElementById('monthlyAmount').value);
+    const monthlyDuration = parseInt(document.getElementById('monthlyDuration').value);
+    if (isNaN(weeklyAmount) || isNaN(weeklyDuration) || isNaN(monthlyAmount) || isNaN(monthlyDuration)) {
+      document.getElementById('planStatus').textContent = '❌ All fields must be valid numbers';
+      document.getElementById('planStatus').className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    if (weeklyAmount <= 0 || weeklyDuration <= 0 || monthlyAmount <= 0 || monthlyDuration <= 0) {
+      document.getElementById('planStatus').textContent = '❌ All values must be positive';
+      document.getElementById('planStatus').className = 'text-red-400 text-sm mt-2';
+      return;
+    }
+    try {
+      const res = await fetch('/admin/settings/plans', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ weeklyAmount, weeklyDuration, monthlyAmount, monthlyDuration })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('planStatus').textContent = '✅ Plans updated successfully!';
+        document.getElementById('planStatus').className = 'text-green-400 text-sm mt-2';
+        showToast('Plans updated', 'success');
+      } else {
+        document.getElementById('planStatus').textContent = '❌ ' + (data.error || 'Update failed');
+        document.getElementById('planStatus').className = 'text-red-400 text-sm mt-2';
+      }
+    } catch (err) {
+      document.getElementById('planStatus').textContent = '❌ Server error';
+      document.getElementById('planStatus').className = 'text-red-400 text-sm mt-2';
+    }
+  }
+
+  // ===================== 2FA =====================
+  async function load2FAStatus() {
+    try {
+      const res = await fetch('/admin/settings/totp/status', {
+        headers: { Authorization: adminToken }
+      });
+      const data = await res.json();
+      const statusEl = document.getElementById('twofaStatus');
+      const toggleBtn = document.getElementById('twofaToggleBtn');
+      if (data.enabled) {
+        statusEl.textContent = '✅ Enabled';
+        statusEl.className = 'text-green-400';
+        toggleBtn.textContent = 'Disable';
+      } else {
+        statusEl.textContent = '❌ Disabled';
+        statusEl.className = 'text-red-400';
+        toggleBtn.textContent = 'Enable';
+      }
+      document.getElementById('twofaSetupContainer').classList.add('hidden');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function toggle2FA() {
+    const status = document.getElementById('twofaStatus').textContent;
+    if (status.includes('Enabled')) {
+      const otp = prompt('Enter your current 6‑digit OTP to disable 2FA:');
+      if (!otp || otp.length !== 6) {
+        showToast('Invalid OTP', 'error');
+        return;
+      }
+      try {
+        const res = await fetch('/admin/settings/totp/disable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+          body: JSON.stringify({ otp })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('2FA disabled', 'info');
+          load2FAStatus();
+        } else {
+          showToast(data.error || 'Failed to disable', 'error');
+        }
+      } catch (e) {
+        showToast('Server error', 'error');
+      }
+    } else {
+      try {
+        const res = await fetch('/admin/settings/totp/generate', {
+          headers: { Authorization: adminToken }
+        });
+        const data = await res.json();
+        totpSecret = data.secret;
+        const container = document.getElementById('twofaSetupContainer');
+        container.innerHTML = `
+          <div class="p-4 bg-slate-900 rounded-xl border border-slate-700 mt-4">
+            <p class="text-sm text-slate-400 mb-2">Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+            <img src="${data.qrImage}" class="w-48 h-48 mx-auto" />
+            <p class="text-xs text-slate-500 mt-2">Or enter this secret manually: <strong class="text-white">${data.secret}</strong></p>
+            <div class="mt-4">
+              <label class="text-sm text-slate-400">Enter the 6‑digit code from your authenticator:</label>
+              <input type="text" id="totpVerifyInput" maxlength="6" class="w-full bg-slate-800 rounded-xl p-3 border border-slate-700 text-white mt-1" placeholder="123456" />
+              <button class="btn btn-sm mt-2" onclick="verifyAndEnable2FA()">Verify & Enable</button>
+            </div>
+          </div>
+        `;
+        container.classList.remove('hidden');
+      } catch (e) {
+        showToast('Error generating 2FA setup', 'error');
+      }
+    }
+  }
+
+  async function verifyAndEnable2FA() {
+    const otp = document.getElementById('totpVerifyInput').value.trim();
+    if (!otp || otp.length !== 6) {
+      showToast('Please enter a valid 6‑digit code', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/admin/settings/totp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ otp })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✅ 2FA enabled successfully!', 'success');
+        document.getElementById('twofaSetupContainer').classList.add('hidden');
+        load2FAStatus();
+      } else {
+        showToast(data.error || 'Verification failed', 'error');
+      }
+    } catch (e) {
+      showToast('Server error', 'error');
+    }
+  }
+
+  // ===================== Toast =====================
   function showToast(msg, type) {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
@@ -709,7 +956,11 @@
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
   }
-</script>
 
+  // ===== Auto-login check =====
+  if (adminToken) {
+    showDashboard();
+  }
+</script>
 </body>
 </html>
