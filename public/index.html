@@ -89,14 +89,12 @@
     .toast.success { border-left-color: #22c55e; color: #22c55e; }
     .toast.error { border-left-color: #ef4444; color: #ef4444; }
     .toast.info { border-left-color: #3b82f6; color: #3b82f6; }
-
     .referral-box { display: flex; align-items: center; background: #1e2538; padding: 10px 14px; border-radius: 30px; margin-top: 12px; }
     .referral-box input { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; padding: 6px 0; outline: none; }
     .referral-box button { background: #00ff99; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; color: #0a0c15; cursor: pointer; }
     .tier-green { color: #00ff99; font-weight: 600; }
     .tier-yellow { color: #fbbf24; font-weight: 600; }
     #copyStatus { display: none; align-items: center; gap: 6px; color: #00ff99; font-size: 14px; margin-top: 8px; }
-
     .chat-container { display: flex; flex-direction: column; height: calc(100vh - 200px); min-height: 350px; border: 1px solid #1e2538; border-radius: 16px; background: #141824; overflow: hidden; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
     .message-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; background: #1e2538; align-self: flex-start; position: relative; word-break: break-word; }
@@ -113,46 +111,37 @@
     .chat-input-area { display: flex; gap: 10px; padding: 12px; background: #1e2538; border-top: 1px solid #2a3349; }
     .chat-input-area input { flex: 1; padding: 12px 16px; background: #0a0c15; border: 1px solid #2a3349; border-radius: 30px; color: #fff; font-size: 16px; }
     .chat-input-area button { padding: 12px 24px; background: #00ff99; border: none; border-radius: 30px; font-weight: 600; color: #0a0c15; cursor: pointer; }
-
     .plan-card { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #1e2538; border-radius: 12px; margin-bottom: 12px; border: 1px solid transparent; transition: 0.2s; cursor: pointer; }
     .plan-card:hover { border-color: #00ff9944; }
     .plan-card.active-plan { border-color: #00ff99; background: #00ff9911; }
     .plan-card .plan-name { font-weight: 600; font-size: 18px; }
     .plan-card .plan-price { color: #9ca3af; font-size: 14px; }
     .plan-card button { padding: 8px 20px; background: #00ff99; border: none; border-radius: 30px; font-weight: 600; color: #0a0c15; cursor: pointer; }
-
     .footer { margin-top: 30px; padding: 14px 0; border-top: 1px solid rgba(255,255,255,.04); display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 8px; font-size: 12px; color: #94a3b8; }
     .footer .badge-container { display: flex; justify-content: center; align-items: center; width: 100%; }
     .footer .badge-container img { max-width: 100%; height: auto; }
-
     .exchange-filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 5px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
     .exchange-filter-btn.active { background: #22c55e; color: #070b1a; border-color: #22c55e; font-weight: 600; }
     .exchange-filter-btn .check { display: none; }
     .exchange-filter-btn.active .check { display: inline; }
-
     .tier-box { background: #0f172a; border-radius: 16px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.06); }
     .tier-box .tier-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
     .tier-box .tier-name { font-size: 22px; font-weight: 700; }
     .tier-box .tier-desc { font-size: 13px; color: #94a3b8; margin-top: 4px; }
     .tier-box .upgrade-btn { margin-top: 10px; }
-
     .upgrade-notice { background: #5a4a1a33; border: 1px solid #fbbf2444; border-radius: 12px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
     .upgrade-notice .icon { font-size: 20px; }
     .upgrade-notice .text { color: #fbbf24; font-size: 14px; }
     .upgrade-notice .btn-sm { width: auto; }
-
     .countdown { font-family: monospace; font-size: 18px; color: #4ade80; background: rgba(34,197,94,.1); padding: 4px 12px; border-radius: 8px; display: inline-block; }
     .network-status { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .network-status .net { background: #1e2538; border-radius: 6px; padding: 4px 10px; font-size: 12px; border: 1px solid rgba(255,255,255,.06); }
-
     .profit-calc { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.05); }
     .profit-calc label { font-size: 13px; color: #94a3b8; }
     .profit-calc input { background: #1e2538; border: 1px solid #2a3349; border-radius: 8px; padding: 4px 10px; color: white; width: 100px; font-size: 14px; }
     .profit-calc input:focus { border-color: #22c55e; outline: none; }
     .profit-calc .result { font-weight: 600; font-size: 16px; color: #4ade80; }
     .profit-calc .result.negative { color: #f87171; }
-
-    /* Calculator styles */
     .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .calc-group { background: #0f172a; border-radius: 16px; padding: 14px; border: 1px solid #1f2937; }
     .calc-group h4 { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -179,19 +168,11 @@
     .recommendation.avoid { background: #5a1a1a; color: #f87171; }
     .calc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     .calc-actions button { flex: 1; min-width: 100px; }
-
     .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
     .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
     .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
-
-    @media (max-width: 768px) {
-      .calc-grid { grid-template-columns: 1fr; }
-      .calc-result-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 480px) {
-      .calc-result-grid { grid-template-columns: 1fr; }
-      .calc-actions button { min-width: 100%; }
-    }
+    @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
   </style>
 </head>
 <body>
@@ -305,7 +286,6 @@
     <div class="stat-card"><div class="stat-label">Total Volume</div><div id="totalVolume" class="stat-value text-purple-400">$0</div></div>
     <div class="stat-card"><div class="stat-label">Active Networks</div><div id="activeNetworks" class="stat-value text-cyan-400">0</div></div>
   </div>
-
   <div class="tier-box mt-4">
     <div class="flex justify-between items-center flex-wrap gap-3">
       <div>
@@ -318,7 +298,6 @@
       </div>
     </div>
   </div>
-
   <div id="upgradeNotice" class="upgrade-notice hidden">
     <div>
       <span class="icon">🔒</span>
@@ -326,7 +305,6 @@
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
   </div>
-
   <div id="dashboardOpportunities" class="mt-3"></div>
 </div>
 
@@ -386,11 +364,8 @@
       <button class="btn-secondary btn-sm" onclick="resetCalculator()">Reset</button>
     </div>
     <p class="text-slate-400 text-sm mb-4">Enter trade details or click <strong>📊 Calculate</strong> on any opportunity to auto-fill.</p>
-
     <div class="calc-grid">
-      <!-- Left column -->
       <div>
-        <!-- Trade Amount -->
         <div class="calc-group">
           <h4>Trade Amount</h4>
           <label>Amount (USDT)</label>
@@ -402,8 +377,6 @@
             <button onclick="setAmount(5000)">$5,000</button>
           </div>
         </div>
-
-        <!-- Buy Details -->
         <div class="calc-group">
           <h4>Buy Details</h4>
           <label>Buy Exchange</label>
@@ -413,8 +386,6 @@
           <label>Buy Fee (%)</label>
           <input type="number" id="calcBuyFee" value="0.1" step="0.01" min="0" oninput="runCalculator()">
         </div>
-
-        <!-- Sell Details -->
         <div class="calc-group">
           <h4>Sell Details</h4>
           <label>Sell Exchange</label>
@@ -425,10 +396,7 @@
           <input type="number" id="calcSellFee" value="0.1" step="0.01" min="0" oninput="runCalculator()">
         </div>
       </div>
-
-      <!-- Right column -->
       <div>
-        <!-- Transfer Costs -->
         <div class="calc-group">
           <h4>Transfer Costs</h4>
           <label>Withdrawal Fee (USDT)</label>
@@ -440,8 +408,6 @@
           <label>Conversion Fee (%)</label>
           <input type="number" id="calcConversionFee" value="0" step="0.01" min="0" oninput="runCalculator()">
         </div>
-
-        <!-- Slippage -->
         <div class="calc-group">
           <h4>Slippage</h4>
           <label>Expected Slippage (%)</label>
@@ -449,8 +415,6 @@
           <label>Liquidity Adjustment</label>
           <input type="number" id="calcLiquidityAdj" value="1" step="0.1" min="0.1" oninput="runCalculator()">
         </div>
-
-        <!-- Results -->
         <div class="calc-group" style="margin-top:10px;">
           <h4>Results</h4>
           <div class="calc-result-grid">
@@ -465,8 +429,6 @@
             <div class="calc-result-item"><div class="label">Break‑even Spread</div><div class="value" id="resBreakEven">0.00%</div></div>
             <div class="calc-result-item"><div class="label">Profit After Deductions</div><div class="value" id="resProfitAfter">$0.00</div></div>
           </div>
-
-          <!-- Risk & Recommendation -->
           <div style="margin-top:12px;">
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               <span class="text-slate-400 text-sm">Risk:</span>
@@ -475,14 +437,10 @@
             <div id="resRecommendation" class="recommendation execute">✅ Execute Trade</div>
           </div>
         </div>
-
-        <!-- Execution Time Estimate -->
         <div class="calc-group" style="margin-top:10px;">
           <h4>Time Estimate</h4>
           <div id="resTimeEstimate" class="text-slate-300 text-sm">~ 2-5 minutes</div>
         </div>
-
-        <!-- Actions -->
         <div class="calc-actions">
           <button class="btn btn-sm" onclick="copySummary()">📋 Copy Summary</button>
           <button class="btn-secondary btn-sm" onclick="resetCalculator()">🔄 Reset</button>
@@ -492,11 +450,13 @@
   </div>
 </div>
 
-<!-- ===== PRO / SUBSCRIPTION ===== -->
+<!-- ===== PRO ===== -->
 <div id="page-pro" class="page">
   <div class="glass p-6">
-    <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
-    <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
+    <div class="flex justify-between items-center">
+      <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
+      <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
+    </div>
     <p class="text-slate-400 mt-2">Upgrade to access premium features.</p>
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
@@ -504,6 +464,19 @@
     <!-- Currency Toggle -->
     <div class="flex justify-center items-center gap-4 my-4">
       <span class="text-sm text-slate-400">Display prices in:</span>
+      <div class="currency-toggle">
+        <button id="btnKES" class="active" onclick="setCurrency('KES')">KES</button>
+        <button id="btnUSD" onclick="setCurrency('USD')">USD</button>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
+      <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
+      <p class="text-xs text-slate-500 mt-1">You'll be redirected to Paystack to complete payment.</p>
+    </div>
+
+    <!-- Plans: 3‑Day → Weekly → Monthly -->
     <div class="grid grid-cols-3 gap-4 mt-6">
       <!-- 3‑Day Plan -->
       <div class="glass p-5 text-center">
@@ -522,48 +495,6 @@
         <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
-      </div>
-    </div>
-      <div class="currency-toggle">
-        <button id="btnKES" class="active" onclick="setCurrency('KES')">KES</button>
-        <button id="btnUSD" onclick="setCurrency('USD')">USD</button>
-      </div>
-    </div>
-
-    <div class="mt-4">
-      <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
-      <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
-      <p class="text-xs text-slate-500 mt-1">You'll be redirected to Paystack to complete payment.</p>
-    </div>
-
-          <div class="mt-2 text-slate-400">3 Days</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
-        </div>
-        <!-- Weekly Plan -->
-        <div class="glass p-5 text-center">
-          <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
-          <div class="mt-2 text-slate-400">Weekly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
-        </div>
-        <!-- Monthly Plan -->
-        <div class="glass p-5 text-center">
-          <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
-          <div class="mt-2 text-slate-400">Monthly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
-        </div>
-      </div>
-        <div class="mt-2 text-slate-400">Weekly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
-      </div>
-      <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400">Monthly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
-      </div>
-      <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400">3 Days</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
       </div>
     </div>
 
@@ -585,7 +516,6 @@
       <p><strong>Plan:</strong> <span id="profilePlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="profileExpiry">—</span></p>
     </div>
-
     <h3 class="text-xl font-semibold mt-6">Referral Link</h3>
     <div class="referral-box">
       <input type="text" id="referralLink" value="https://arbimine.onrender.com" readonly>
@@ -601,8 +531,6 @@
   <div class="glass p-5">
     <h2 class="text-2xl font-bold">⚙️ Account Settings</h2>
     <p class="text-slate-400 text-sm mb-6">Update your security and contact details.</p>
-
-    <!-- Change Password -->
     <div class="calc-group">
       <h4>Change Password</h4>
       <label>Current Password</label>
@@ -612,8 +540,6 @@
       <button class="btn btn-sm mt-3" onclick="changePassword()">Update Password</button>
       <div id="pwdStatus" class="text-sm mt-2"></div>
     </div>
-
-    <!-- Change M-Pesa -->
     <div class="calc-group mt-6">
       <h4>Change M-Pesa Number</h4>
       <label>New M-Pesa Number</label>
@@ -745,7 +671,7 @@
   let currentDetailOpp = null;
   let currentCurrency = 'KES';
   const EXCHANGE_RATE = 130;
-  let planSettings = { weekly: { amount: 260, duration: 7 }, monthly: { amount: 900, duration: 30 } };
+  let planSettings = { weekly: { amount: 261, duration: 7 }, monthly: { amount: 900, duration: 30 }, threeDay: { amount: 150, duration: 3 } };
 
   // ==========================================
   // UI HELPERS
@@ -861,10 +787,10 @@
         currentUser = { username: data.username };
         await loadUserProfile();
         await loadPlans();
-    await loadReferralLink();
         await loadOpportunities();
         await loadMessages();
         await loadSubscription();
+        await loadReferralLink();
         initExchangeFilters();
         setCurrency('KES');
         showToast('✅ Login successful', 'success');
@@ -922,8 +848,8 @@
       const res = await fetch('/api/plans');
       const data = await res.json();
       if (data.weekly && data.monthly) {
-    if (data.threeDay) planSettings.threeDay = data.threeDay;
         planSettings = data;
+        if (data.threeDay) planSettings.threeDay = data.threeDay;
         updateProPrices();
       }
     } catch (e) {
@@ -931,32 +857,15 @@
     }
   }
 
-async function loadReferralLink() {
-  try {
-    const res = await fetch("/api/referral");
-    const data = await res.json();
-    document.getElementById("referralLink").value = data.url || "https://arbimine.onrender.com";
-  } catch (e) { console.warn("Could not load referral link", e); }
-}
-
-async function refreshSubscription() {
-  await loadSubscription();
-  await loadPlans();
-    await loadReferralLink();
-  showToast("Subscription status refreshed", "info");
-}
-
   function updateProPrices() {
     const weeklyEl = document.getElementById('weeklyPriceDisplay');
     const monthlyEl = document.getElementById('monthlyPriceDisplay');
+    const threeDayEl = document.getElementById('threeDayPriceDisplay');
     if (!planSettings.weekly) return;
-    if (currentCurrency === 'USD') {
-      weeklyEl.textContent = `$${(planSettings.weekly.amount / EXCHANGE_RATE).toFixed(2)}`;
-      monthlyEl.textContent = `$${(planSettings.monthly.amount / EXCHANGE_RATE).toFixed(2)}`;
-    } else {
-      weeklyEl.textContent = `KES ${planSettings.weekly.amount}`;
-      monthlyEl.textContent = `KES ${planSettings.monthly.amount}`;
-    }
+    const price = (amt) => currentCurrency === 'USD' ? `$${(amt / EXCHANGE_RATE).toFixed(2)}` : `KES ${amt}`;
+    weeklyEl.textContent = price(planSettings.weekly.amount);
+    monthlyEl.textContent = price(planSettings.monthly.amount);
+    threeDayEl.textContent = price(planSettings.threeDay?.amount || 150);
   }
 
   function setCurrency(currency) {
@@ -987,6 +896,12 @@ async function refreshSubscription() {
     } catch (e) {}
   }
 
+  async function refreshSubscription() {
+    await loadSubscription();
+    await loadPlans();
+    showToast("Subscription status refreshed", "info");
+  }
+
   function checkPaymentStatus() {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
@@ -1003,6 +918,32 @@ async function refreshSubscription() {
       msgEl.className = 'text-red-400 text-center';
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
     }
+  }
+
+  // ==========================================
+  // REFERRAL
+  // ==========================================
+  async function loadReferralLink() {
+    try {
+      const res = await fetch("/api/referral");
+      const data = await res.json();
+      document.getElementById("referralLink").value = data.url || "https://arbimine.onrender.com";
+    } catch (e) { console.warn("Could not load referral link", e); }
+  }
+
+  function copyReferral() {
+    const link = document.getElementById('referralLink');
+    navigator.clipboard.writeText(link.value).then(() => {
+      const status = document.getElementById('copyStatus');
+      status.style.display = 'flex';
+      setTimeout(() => status.style.display = 'none', 3000);
+    }).catch(() => {
+      link.select();
+      document.execCommand('copy');
+      const status = document.getElementById('copyStatus');
+      status.style.display = 'flex';
+      setTimeout(() => status.style.display = 'none', 3000);
+    });
   }
 
   // ==========================================
@@ -1029,28 +970,10 @@ async function refreshSubscription() {
     } catch (err) {
       showToast(err.message, 'error');
       btn.disabled = false;
-      btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : 'Subscribe Monthly';
+      btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : (plan === 'monthly' ? 'Subscribe Monthly' : 'Subscribe 3 Days');
       document.getElementById('subStatus').innerText = '❌ ' + err.message;
       document.getElementById('subStatus').className = 'text-red-400 text-center';
     }
-  }
-
-  // ==========================================
-  // REFERRAL COPY
-  // ==========================================
-  function copyReferral() {
-    const link = document.getElementById('referralLink');
-    navigator.clipboard.writeText(link.value).then(() => {
-      const status = document.getElementById('copyStatus');
-      status.style.display = 'flex';
-      setTimeout(() => status.style.display = 'none', 3000);
-    }).catch(() => {
-      link.select();
-      document.execCommand('copy');
-      const status = document.getElementById('copyStatus');
-      status.style.display = 'flex';
-      setTimeout(() => status.style.display = 'none', 3000);
-    });
   }
 
   // ==========================================
@@ -1212,7 +1135,6 @@ async function refreshSubscription() {
     document.getElementById('activeNetworks').innerText = opps.length > 0 ? Math.min(5, opps.length) : 0;
   }
 
-  // ===== PROFIT CALCULATOR (simple) =====
   function calculateProfit(opp, amount) {
     const buy = parseFloat(opp.buyPrice) || 0;
     const sell = parseFloat(opp.sellPrice) || 0;
@@ -1243,9 +1165,6 @@ async function refreshSubscription() {
     display.className = `result ${profit >= 0 ? '' : 'negative'}`;
   }
 
-  // ==========================================
-  // SORTING LOGIC
-  // ==========================================
   function getSortKey(opp, criteria) {
     const buy = parseFloat(opp.buyPrice) || 0;
     const sell = parseFloat(opp.sellPrice) || 0;
@@ -1262,7 +1181,6 @@ async function refreshSubscription() {
     const roiNorm = Math.min(1, roi / 10);
     const oppScore = (0.4 * roiNorm + 0.25 * liquidityNorm + 0.15 * 0.5 + 0.10 * reliability + 0.10 * transferSpeed) * 10;
     const transferTimeEstimate = 2;
-
     switch(criteria) {
       case 'netProfit': return netProfit;
       case 'roi': return roi;
@@ -1287,14 +1205,6 @@ async function refreshSubscription() {
     return sorted;
   }
 
-  // ==========================================
-  // CALCULATOR (full)
-  // ==========================================
-  function setAmount(val) {
-    document.getElementById('calcAmount').value = val;
-    runCalculator();
-  }
-
   function fillCalculatorFromOpp(opp) {
     if (!opp) return;
     document.getElementById('calcBuyExchange').value = opp.buyExchange || '';
@@ -1315,6 +1225,8 @@ async function refreshSubscription() {
     showPage('calculator');
     setTimeout(runCalculator, 100);
   }
+
+  function setAmount(val) { document.getElementById('calcAmount').value = val; runCalculator(); }
 
   function runCalculator() {
     const amount = parseFloat(document.getElementById('calcAmount').value) || 0;
@@ -1575,13 +1487,11 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           <div class="detail-item"><div class="label">24h Volume</div><div class="value">$${Number(o.volume || 0).toLocaleString()}</div></div>
           <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit100.toFixed(2)}</div></div>
         </div>
-
         <div class="profit-calc">
           <label>Amount (USDT):</label>
           <input type="number" id="profit-amount-${o.id}" value="100" min="1" step="10" oninput="updateProfit('${o.id}')">
           <span class="result" id="profit-display-${o.id}">$${calculateProfit(o, 100).toFixed(2)}</span>
         </div>
-
         <div class="mt-3 flex justify-end gap-2">
           <button class="btn btn-sm" onclick="event.stopPropagation(); fillCalculatorFromOpp(${JSON.stringify(o).replace(/'/g,"&#39;")})">📊 Calculate</button>
           <button class="btn btn-sm" onclick="event.stopPropagation(); openDetailsModal('${o.id}')">📋 Details</button>
@@ -1636,9 +1546,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
     container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
   }
 
-  // ==========================================
-  // WATCHLIST
-  // ==========================================
   function toggleWatchlist(oppId) {
     const index = watchlist.indexOf(oppId);
     if (index > -1) watchlist.splice(index, 1);
@@ -1865,6 +1772,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           loadUserProfile();
           loadMessages();
           loadSubscription();
+          loadReferralLink();
           checkPaymentStatus();
           initExchangeFilters();
           setCurrency('KES');
@@ -1910,6 +1818,8 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.setCurrency = setCurrency;
   window.changePassword = changePassword;
   window.changeMpesa = changeMpesa;
+  window.loadReferralLink = loadReferralLink;
+  window.refreshSubscription = refreshSubscription;
 
   console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
 </script>

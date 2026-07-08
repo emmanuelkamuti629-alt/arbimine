@@ -8,10 +8,10 @@ const mongoose = require('mongoose');
 const ccxt = require('ccxt');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require("nodemailer");
-const twilio = require("twilio");
 const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
+const nodemailer = require("nodemailer");
+const twilio = require("twilio");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -76,7 +76,7 @@ const blockedUserSchema = new mongoose.Schema({
 const transactionSchema = new mongoose.Schema({
   reference: { type: String, required: true, unique: true },
   user: { type: String, required: true },
-  plan: { type: String, enum: ['weekly', 'monthly'] },
+  plan: { type: String, enum: ['weekly', 'monthly', 'threeDay'] },
   amount: Number,
   status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
   paymentData: mongoose.Schema.Types.Mixed,
@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema({
   isBlocked: { type: Boolean, default: false },
   subscription: {
     active: { type: Boolean, default: false },
-    plan: { type: String, enum: ['weekly', 'monthly', null], default: null },
+    plan: { type: String, enum: ['weekly', 'monthly', 'threeDay', null], default: null },
     expiresAt: { type: Date, default: null }
   },
   createdAt: { type: Date, default: Date.now }
@@ -105,12 +105,20 @@ const adminSchema = new mongoose.Schema({
 
 // Plan Settings Schema
 const planSettingsSchema = new mongoose.Schema({
-  weeklyAmount: { type: Number, default: 260 },
+  weeklyAmount: { type: Number, default: 261 },
   weeklyDuration: { type: Number, default: 7 },
-  threeDayDuration: { type: Number, default: 3 },
   monthlyAmount: { type: Number, default: 900 },
-  monthlyDuration: { type: Number, default: 30 }
+  monthlyDuration: { type: Number, default: 30 },
+  threeDayAmount: { type: Number, default: 150 },
+  threeDayDuration: { type: Number, default: 3 }
 });
+
+// New Settings Schema for referral
+const settingsSchema = new mongoose.Schema({
+  referralBaseUrl: { type: String, default: "https://arbimine.onrender.com" },
+  updatedAt: { type: Date, default: Date.now }
+});
+const Settings = mongoose.model("Settings", settingsSchema);
 
 const Session = mongoose.model('Session', sessionSchema);
 const Message = mongoose.model('Message', messageSchema);
@@ -119,13 +127,6 @@ const Transaction = mongoose.model('Transaction', transactionSchema);
 const User = mongoose.model('User', userSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 const PlanSettings = mongoose.model('PlanSettings', planSettingsSchema);
-
-// --- New Settings Schema ---
-const settingsSchema = new mongoose.Schema({
-  referralBaseUrl: { type: String, default: "https://arbimine.onrender.com" },
-  updatedAt: { type: Date, default: Date.now }
-});
-const Settings = mongoose.model("Settings", settingsSchema);
 
 const generateToken = () => crypto.randomBytes(32).toString('hex');
 
@@ -160,27 +161,29 @@ async function ensureAdmin() {
 }
 ensureAdmin();
 
-// Ensure default plan settings
 async function ensurePlanSettings() {
   const settings = await PlanSettings.findOne();
   if (!settings) {
     const defaultSettings = new PlanSettings({
-      weeklyAmount: 260,
+      weeklyAmount: 261,
       weeklyDuration: 7,
       monthlyAmount: 900,
-      monthlyDuration: 30
+      monthlyDuration: 30,
+      threeDayAmount: 150,
+      threeDayDuration: 3
     });
     await defaultSettings.save();
     console.log('📊 Default plan settings created');
   }
 }
 ensurePlanSettings();
+
 async function ensureSettings() {
   let settings = await Settings.findOne();
   if (!settings) {
     settings = new Settings({ referralBaseUrl: "https://arbimine.onrender.com" });
     await settings.save();
-    console.log("⚙️ Default settings created");
+    console.log("⚙️ Default referral settings created");
   }
 }
 ensureSettings();
@@ -334,11 +337,13 @@ app.get('/admin/settings/plans', adminAuth, async (req, res) => {
 
 app.put('/admin/settings/plans', adminAuth, async (req, res) => {
   try {
-    const { weeklyAmount, weeklyDuration, monthlyAmount, monthlyDuration } = req.body;
-    if (weeklyAmount === undefined || weeklyDuration === undefined || monthlyAmount === undefined || monthlyDuration === undefined) {
+    const { weeklyAmount, weeklyDuration, monthlyAmount, monthlyDuration, threeDayAmount, threeDayDuration } = req.body;
+    if (weeklyAmount === undefined || weeklyDuration === undefined || monthlyAmount === undefined || monthlyDuration === undefined ||
+        threeDayAmount === undefined || threeDayDuration === undefined) {
       return res.status(400).json({ error: 'All fields required' });
     }
-    if (weeklyAmount <= 0 || monthlyAmount <= 0 || weeklyDuration <= 0 || monthlyDuration <= 0) {
+    if (weeklyAmount <= 0 || monthlyAmount <= 0 || weeklyDuration <= 0 || monthlyDuration <= 0 ||
+        threeDayAmount <= 0 || threeDayDuration <= 0) {
       return res.status(400).json({ error: 'All values must be positive' });
     }
     let settings = await PlanSettings.findOne();
@@ -349,10 +354,111 @@ app.put('/admin/settings/plans', adminAuth, async (req, res) => {
     settings.weeklyDuration = weeklyDuration;
     settings.monthlyAmount = monthlyAmount;
     settings.monthlyDuration = monthlyDuration;
+    settings.threeDayAmount = threeDayAmount;
+    settings.threeDayDuration = threeDayDuration;
     await settings.save();
     res.json({ success: true, settings });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Referral Settings ====================
+app.get('/admin/settings', adminAuth, async (req, res) => {
+  try {
+    const settings = await Settings.findOne();
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/admin/settings', adminAuth, async (req, res) => {
+  try {
+    const { referralBaseUrl } = req.body;
+    if (!referralBaseUrl) return res.status(400).json({ error: "Referral URL required" });
+    let settings = await Settings.findOne();
+    if (!settings) settings = new Settings();
+    settings.referralBaseUrl = referralBaseUrl;
+    settings.updatedAt = new Date();
+    await settings.save();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Broadcast Endpoint ====================
+app.post('/admin/broadcast', adminAuth, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const users = await User.find({}, "email mpesa");
+    if (!users.length) {
+      return res.status(404).json({ error: "No users found" });
+    }
+
+    // Email setup
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    // SMS setup (Twilio)
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    const fromPhone = process.env.TWILIO_PHONE_NUMBER;
+
+    const results = { emails: 0, sms: 0, errors: [] };
+
+    for (const user of users) {
+      // Send email
+      if (user.email) {
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: "ArbiMine Pro – Admin Announcement",
+            text: message,
+            html: `<p>${message.replace(/\n/g, "<br>")}</p>`
+          });
+          results.emails++;
+        } catch (err) {
+          results.errors.push({ email: user.email, error: err.message });
+        }
+      }
+
+      // Send SMS
+      if (user.mpesa) {
+        try {
+          await client.messages.create({
+            body: message,
+            from: fromPhone,
+            to: user.mpesa
+          });
+          results.sms++;
+        } catch (err) {
+          results.errors.push({ phone: user.mpesa, error: err.message });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      sent: { emails: results.emails, sms: results.sms },
+      errors: results.errors
+    });
+  } catch (err) {
+    console.error("Broadcast error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -366,6 +472,16 @@ app.get('/api/plans', async (req, res) => {
       weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
       monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Referral Public Endpoint ====================
+app.get('/api/referral', async (req, res) => {
+  try {
+    const settings = await Settings.findOne();
+    res.json({ url: settings?.referralBaseUrl || "https://arbimine.onrender.com" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -464,7 +580,11 @@ app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
     if (plan) updates['subscription.plan'] = plan;
     if (active && !expiresAt) {
       const settings = await PlanSettings.findOne();
-      const days = plan === 'weekly' ? settings.weeklyDuration : settings.monthlyDuration;
+      let days;
+      if (plan === 'weekly') days = settings.weeklyDuration;
+      else if (plan === 'monthly') days = settings.monthlyDuration;
+      else if (plan === 'threeDay') days = settings.threeDayDuration;
+      else days = 7;
       updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
     } else if (expiresAt) {
       updates['subscription.expiresAt'] = new Date(expiresAt);
@@ -605,7 +725,7 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
       plan: user.subscription.plan,
       expiresAt: user.subscription.expiresAt,
       plans: {
-      threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
+        threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
         weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
         monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
       }
@@ -1211,7 +1331,10 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
 
 function getExpiryDate(plan, settings) {
-  const days = plan === 'weekly' ? settings.weeklyDuration : settings.monthlyDuration;
+  let days;
+  if (plan === 'weekly') days = settings.weeklyDuration;
+  else if (plan === 'monthly') days = settings.monthlyDuration;
+  else if (plan === 'threeDay') days = settings.threeDayDuration;
   if (!days) return null;
   const now = new Date(); now.setDate(now.getDate() + days); return now;
 }
@@ -1231,7 +1354,11 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const settings = await PlanSettings.findOne();
-    const amount = plan === 'weekly' ? settings.weeklyAmount : settings.monthlyAmount;
+    let amount;
+    if (plan === 'weekly') amount = settings.weeklyAmount;
+    else if (plan === 'monthly') amount = settings.monthlyAmount;
+    else if (plan === 'threeDay') amount = settings.threeDayAmount;
+    else amount = 0;
     const amountInKobo = amount * 100;
     const reference = `arbimine_${sanitizeReference(user.username)}_${Date.now()}`;
 
