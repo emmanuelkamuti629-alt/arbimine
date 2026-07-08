@@ -87,7 +87,7 @@
     </div>
   </div>
 
-  <!-- Error Message (from screenshot) -->
+  <!-- Error Message (exactly as in screenshot) -->
   <div class="error-msg" id="errorMsg">✖ Format is Authorization Bearer [secret key]</div>
 
   <!-- Resume Banner -->
@@ -117,7 +117,7 @@
 
 <script>
   (function() {
-    // ----- DOM refs -----
+    // DOM refs
     const weeklyBtn = document.getElementById('weeklyBtn');
     const monthlyBtn = document.getElementById('monthlyBtn');
     const resumeBanner = document.getElementById('resumeBanner');
@@ -130,7 +130,7 @@
 
     let activePlan = null; // 'weekly' or 'monthly' or null
 
-    // ----- UI updates -----
+    // UI updates
     function updateButtons() {
       weeklyBtn.textContent = (activePlan === 'weekly') ? 'Redirecting...' : 'Subscribe Weekly';
       monthlyBtn.textContent = (activePlan === 'monthly') ? 'Redirecting...' : 'Subscribe Monthly';
@@ -154,72 +154,53 @@
       localStorage.removeItem('pendingPlan');
       updateButtons();
       updateBanner();
-      errorMsg.style.display = 'none'; // hide error
+      errorMsg.style.display = 'none';
     }
 
-    // ----- Initiate payment (calls backend) -----
+    // Initiate payment – sends token in Authorization header
     async function initiatePayment(plan) {
-      if (activePlan) return; // already processing
+      if (activePlan) return;
 
       const mpesa = mpesaInput.value.trim();
-      // optional: validate phone number format
-
-      // Clear previous errors
       errorMsg.style.display = 'none';
 
-      // Set loading state
       activePlan = plan;
       localStorage.setItem('pendingPlan', plan);
       updateButtons();
       updateBanner();
 
       try {
-        // Get JWT token from localStorage (assuming it's stored after login)
         const token = localStorage.getItem('token') || '';
-        const response = await fetch('/api/payment', {
+        const res = await fetch('/api/paystack/initialize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`  // critical: this is where the error may occur if token missing
+            'Authorization': `Bearer ${token}`  // critical: must match backend expectation
           },
-          body: JSON.stringify({
-            plan: plan,
-            mpesa: mpesa
-          })
+          body: JSON.stringify({ plan, mpesa })
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        if (!response.ok) {
-          // Backend returned an error (e.g., "Format is Authorization Bearer [secret key]")
-          if (data.message && data.message.includes('Authorization')) {
+        if (!res.ok) {
+          if (data.error && data.error.includes('Authorization')) {
             errorMsg.textContent = '✖ Format is Authorization Bearer [secret key]';
           } else {
-            errorMsg.textContent = data.message || 'Payment initiation failed.';
+            errorMsg.textContent = data.error || 'Payment initiation failed.';
           }
           errorMsg.style.display = 'block';
-          resetPaymentState(); // revert UI
+          resetPaymentState();
           return;
         }
 
-        // Success: redirect to Paystack or open popup
-        if (data.redirect_url) {
-          window.location.href = data.redirect_url;
-        } else if (data.payment_url) {
-          // alternative
-          window.location.href = data.payment_url;
+        // Redirect to Paystack
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
         } else {
-          // Assume success, we'll simulate with alert
-          alert('✅ Payment initiated! Redirecting to Paystack...');
-          // For demo, we simulate a redirect after a short delay
-          setTimeout(() => {
-            resetPaymentState();
-          }, 3000);
+          // fallback
+          alert('✅ Payment initiated! Redirecting...');
+          setTimeout(resetPaymentState, 3000);
         }
-
-        // IMPORTANT: The actual redirect will happen, so we don't reset immediately.
-        // But if the user closes the Paystack popup or comes back, we need to handle it.
-        // We'll rely on the resume banner if they return without completing.
 
       } catch (err) {
         console.error('Payment error:', err);
@@ -229,7 +210,7 @@
       }
     }
 
-    // ----- Restore state on page load -----
+    // Restore state on page load
     function restoreState() {
       const saved = localStorage.getItem('pendingPlan');
       if (saved === 'weekly' || saved === 'monthly') {
@@ -241,15 +222,15 @@
       }
     }
 
-    // ----- Event listeners -----
+    // Event listeners
     weeklyBtn.addEventListener('click', () => initiatePayment('weekly'));
     monthlyBtn.addEventListener('click', () => initiatePayment('monthly'));
 
     resumeBtn.addEventListener('click', () => {
       if (activePlan) {
         const plan = activePlan;
-        resetPaymentState(); // clear old state
-        initiatePayment(plan); // re-trigger
+        resetPaymentState();
+        initiatePayment(plan);
       }
     });
 
@@ -257,7 +238,6 @@
 
     refreshProBtn.addEventListener('click', function() {
       resetPaymentState();
-      errorMsg.style.display = 'none';
       alert('🔄 Pro page refreshed. Stuck "Redirecting" cleared.');
     });
 
@@ -266,18 +246,21 @@
         localStorage.removeItem('token');
         resetPaymentState();
         alert('Logged out.');
-        // optionally redirect to login
       }
     });
 
-    // Initialize
-    restoreState();
-
-    // For demo: show error message if URL has error param (e.g., ?error=auth)
+    // Check URL for payment status
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('error') === 'auth') {
+    if (urlParams.get('payment') === 'success') {
+      alert('✅ Payment successful! Your Pro plan is active.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('payment') === 'failed') {
+      errorMsg.textContent = '❌ Payment failed. Please try again.';
       errorMsg.style.display = 'block';
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    restoreState();
   })();
 </script>
 </body>
