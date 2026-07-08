@@ -13,6 +13,7 @@
     .btn { background: linear-gradient(135deg, #22c55e, #16a34a); padding: 10px 20px; border-radius: 12px; font-weight: 600; border: none; color: white; cursor: pointer; transition: .3s; }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(34,197,94,.4); }
     .btn-secondary { background: #334155; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; width: auto; }
     .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
     .tabs button { background: #1e293b; border: none; padding: 8px 18px; border-radius: 30px; color: #94a3b8; font-weight: 500; cursor: pointer; transition: .2s; }
     .tabs button.active { background: #22c55e; color: #070b1a; }
@@ -30,10 +31,14 @@
     th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #1e293b; }
     th { color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
     td { color: #eef2ff; }
+    .load-more-btn { margin-top: 16px; text-align: center; }
+    .loader { text-align: center; color: #94a3b8; padding: 20px; }
   </style>
 </head>
 <body>
+
 <div class="max-w-6xl mx-auto">
+
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold text-green-400">ArbiMine Admin</h1>
@@ -45,10 +50,10 @@
 
   <!-- Stats -->
   <div class="stats-grid" id="statsGrid">
-    <div class="stat-card"><div class="number" id="totalUsers">0</div><div class="label">Total Users</div></div>
-    <div class="stat-card"><div class="number" id="activeSubs">0</div><div class="label">Active Subs</div></div>
-    <div class="stat-card"><div class="number" id="totalRevenue">KES 0</div><div class="label">Total Revenue</div></div>
-    <div class="stat-card"><div class="number" id="failedPayments">0</div><div class="label">Failed Payments</div></div>
+    <div class="stat-card"><div class="number" id="totalUsers">—</div><div class="label">Total Users</div></div>
+    <div class="stat-card"><div class="number" id="activeSubs">—</div><div class="label">Active Subs</div></div>
+    <div class="stat-card"><div class="number" id="totalRevenue">—</div><div class="label">Total Revenue</div></div>
+    <div class="stat-card"><div class="number" id="failedPayments">—</div><div class="label">Failed Payments</div></div>
   </div>
 
   <!-- Tabs -->
@@ -66,8 +71,11 @@
   <div id="users" class="tab-content active">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">👥 Users</h2>
-      <div id="usersTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
-    <div id="usersLoader" class="text-slate-400">Loading...</div>
+      <div id="usersTable"><div class="loader">Loading users...</div></div>
+      <div id="usersLoadMore" class="load-more-btn" style="display:none;">
+        <button class="btn btn-sm" onclick="loadMoreUsers()">Load More (4)</button>
+      </div>
+      <div id="usersAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All users loaded</div>
     </div>
   </div>
 
@@ -75,8 +83,11 @@
   <div id="transactions" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">💰 Transactions</h2>
-      <div id="transactionsTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
-    <div id="transactionsLoader" class="text-slate-400">Loading...</div>
+      <div id="transactionsTable"><div class="loader">Loading transactions...</div></div>
+      <div id="transactionsLoadMore" class="load-more-btn" style="display:none;">
+        <button class="btn btn-sm" onclick="loadMoreTransactions()">Load More (4)</button>
+      </div>
+      <div id="transactionsAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All transactions loaded</div>
     </div>
   </div>
 
@@ -84,8 +95,11 @@
   <div id="messages" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">💬 Messages</h2>
-      <div id="messagesTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
-    <div id="messagesLoader" class="text-slate-400">Loading...</div>
+      <div id="messagesTable"><div class="loader">Loading messages...</div></div>
+      <div id="messagesLoadMore" class="load-more-btn" style="display:none;">
+        <button class="btn btn-sm" onclick="loadMoreMessages()">Load More (4)</button>
+      </div>
+      <div id="messagesAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All messages loaded</div>
     </div>
   </div>
 
@@ -151,254 +165,7 @@
   // Use sessionStorage for admin token
   const adminToken = sessionStorage.getItem('adminToken');
   if (!adminToken) {
-    // Redirect to login if not authenticated – but we keep it simple: show login form.
-    // However, the login is done via a separate page? Actually we handle login in the same page.
-    // We'll show a login overlay if no token.
-    // For simplicity, we'll just show login if no token.
-    // But since we have the login route /admin/login, we can implement a login form here.
-    // For now, we'll just show a login prompt.
-    // Better: we'll show a login modal.
-    // Let's add a login modal at the top.
-  }
-
-  // Helper
-  function api(method, url, body) {
-    return fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-      body: body ? JSON.stringify(body) : undefined
-    }).then(res => res.json());
-  }
-
-  // Load stats
-async function loadStats() {
-  try {
-    const data = await api("GET", "/admin/stats");
-    document.getElementById("totalUsers").textContent = data.totalUsers;
-    document.getElementById("activeSubs").textContent = data.activeSubs;
-    document.getElementById("totalRevenue").textContent = "KES " + data.totalRevenue;
-    document.getElementById("failedPayments").textContent = data.failedPayments;
-  } catch(e) { console.error(e); }
-}
-    try {
-      const users = await api('GET', '/admin/users?count=true');
-      document.getElementById('totalUsers').textContent = users.length;
-      const active = users.filter(u => u.subscription?.active).length;
-      document.getElementById('activeSubs').textContent = active;
-      const tx = await api('GET', '/admin/transactions');
-      const total = tx.filter(t => t.status === 'success').reduce((s, t) => s + (t.amount || 0), 0);
-      document.getElementById('totalRevenue').textContent = 'KES ' + total;
-      const failed = tx.filter(t => t.status === 'failed').length;
-      document.getElementById('failedPayments').textContent = failed;
-    } catch(e) { console.error(e); }
-  }
-
-  // Load tables
-  async function loadUsers() {
-  document.getElementById("usersLoader").style.display = "none";
-    const users = await api('GET', '/admin/users?count=true');
-    let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th></tr>`;
-    <th>Delete</th>
-    users.forEach(u => {
-      const isActive = u.subscription?.active ? true : false;
-      const plan = u.subscription?.plan || 'Free';
-      const expires = u.subscription?.expiresAt ? new Date(u.subscription.expiresAt).toLocaleDateString() : '—';
-      html += `<tr>
-        <td>${u.username}</td>
-        <td>${u.email}</td>
-        <td>${u.mpesa}</td>
-        <td>${plan}</td>
-        <td>${expires}</td>
-        <td>
-          <button class="btn btn-sm" onclick="toggleUserSubscription('${u._id}', ${!isActive}, '${plan === 'Free' ? 'weekly' : plan}')">
-            ${isActive ? 'Deactivate' : 'Activate'}
-          </button>
-        </td>
-      </tr>`;
-    });
-    html += '</table>';
-    document.getElementById('usersTable').innerHTML = html;
-  }
-
-  async function toggleUserSubscription(userId, active, plan) {
-    if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
-    try {
-      const res = await fetch(`/admin/user/${userId}/toggle-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-        body: JSON.stringify({ active, plan: active ? plan : null })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('✅ Subscription updated');
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
-    } catch(e) { alert('Error: ' + e.message); }
-  }
-
-  async function loadTransactions() {
-  document.getElementById("transactionsLoader").style.display = "none";
-    const tx = await api('GET', '/admin/transactions');
-    let html = `<table><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
-    <th>Delete</th>
-    tx.forEach(t => {
-      html += `<tr>
-        <td>${t.user}</td>
-        <td>${t.plan || '—'}</td>
-        <td>KES ${t.amount || 0}</td>
-        <td>${t.status}</td>
-        <td>${new Date(t.createdAt).toLocaleDateString()}</td>
-        <td>
-          <button class="btn btn-sm btn-secondary" onclick="deleteTransaction('${t._id}')">🗑️</button>
-      </tr>`;
-    });
-    html += '</table>';
-    document.getElementById('transactionsTable').innerHTML = html;
-  }
-
-  async function loadMessages() {
-  document.getElementById("messagesLoader").style.display = "none";
-    const msgs = await api('GET', '/admin/messages');
-    let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
-    <th>Delete</th>
-    msgs.forEach(m => {
-      html += `<tr>
-        <td>${m.user}</td>
-        <td>${m.content.substring(0, 50)}${m.content.length > 50 ? '...' : ''}</td>
-        <td>${m.status}</td>
-        <td>${new Date(m.createdAt).toLocaleDateString()}</td>
-      </tr>`;
-    });
-    html += '</table>';
-    document.getElementById('messagesTable').innerHTML = html;
-  }
-
-  // Plan settings
-  async function loadPlanSettings() {
-    const data = await api('GET', '/admin/settings/plans');
-    document.getElementById('weeklyAmount').value = data.weeklyAmount;
-    document.getElementById('weeklyDuration').value = data.weeklyDuration;
-    document.getElementById('monthlyAmount').value = data.monthlyAmount;
-    document.getElementById('monthlyDuration').value = data.monthlyDuration;
-    document.getElementById('threeDayAmount').value = data.threeDayAmount || 150;
-    document.getElementById('threeDayDuration').value = data.threeDayDuration || 3;
-  }
-
-  async function savePlanSettings() {
-    const payload = {
-      weeklyAmount: +document.getElementById('weeklyAmount').value,
-      weeklyDuration: +document.getElementById('weeklyDuration').value,
-      monthlyAmount: +document.getElementById('monthlyAmount').value,
-      monthlyDuration: +document.getElementById('monthlyDuration').value,
-      threeDayAmount: +document.getElementById('threeDayAmount').value,
-      threeDayDuration: +document.getElementById('threeDayDuration').value
-    };
-    try {
-      const data = await api('PUT', '/admin/settings/plans', payload);
-      if (data.success) alert('✅ Plans updated!');
-      else alert('❌ Error: ' + data.error);
-    } catch(e) { alert('Error: ' + e.message); }
-  }
-
-  // Broadcast
-  async function sendBroadcast() {
-    const message = document.getElementById('broadcastMessage').value.trim();
-    if (!message) return alert('Please enter a message.');
-    if (!confirm('Send this to ALL users via email and SMS?')) return;
-    const status = document.getElementById('broadcastStatus');
-    status.textContent = 'Sending...';
-    try {
-      const data = await api('POST', '/admin/broadcast', { message });
-      if (data.success) {
-        status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
-      } else {
-        status.textContent = '❌ Error: ' + data.error;
-      }
-    } catch(e) {
-      status.textContent = '❌ ' + e.message;
-    }
-  }
-
-  // General settings (referral URL)
-  async function loadGeneralSettings() {
-    try {
-      const res = await fetch('/admin/settings', { headers: { Authorization: adminToken } });
-      const data = await res.json();
-      if (data && data.referralBaseUrl) {
-        document.getElementById('referralUrl').value = data.referralBaseUrl;
-      }
-    } catch(e) { console.error(e); }
-  }
-
-  async function saveGeneralSettings() {
-    const url = document.getElementById('referralUrl').value.trim();
-    if (!url) return alert('Please enter a valid URL');
-    try {
-      const res = await fetch('/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-        body: JSON.stringify({ referralBaseUrl: url })
-      });
-      const data = await res.json();
-      const status = document.getElementById('generalStatus');
-      if (data.success) {
-        status.textContent = '✅ Saved!';
-        status.className = 'text-green-400';
-      } else {
-        status.textContent = '❌ ' + data.error;
-        status.className = 'text-red-400';
-      }
-    } catch(e) {
-      document.getElementById('generalStatus').textContent = '❌ ' + e.message;
-      document.getElementById('generalStatus').className = 'text-red-400';
-    }
-  }
-
-  // Security (2FA)
-  async function load2FA() {
-    try {
-      const res = await fetch('/admin/settings/totp/status', { headers: { Authorization: adminToken } });
-      const data = await res.json();
-      document.getElementById('twofaStatus').textContent = data.enabled ? '✅ Enabled' : '❌ Disabled';
-    } catch(e) { console.error(e); }
-  }
-  async function toggle2FA() {
-    alert('2FA toggle: implement using the existing endpoints (see docs)');
-  }
-
-  // Tabs
-  document.querySelectorAll('.tabs button').forEach(btn => {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      document.getElementById(this.dataset.tab).classList.add('active');
-    });
-  });
-
-  // Logout
-  function logout() {
-    sessionStorage.removeItem('adminToken');
-    window.location.href = '/admin';
-  }
-
-  // Init
-  if (adminToken) {
-    loadStats();
-    loadPlanSettings();
-    loadGeneralSettings();
-    load2FA();
-  } else {
-    // Show login form (simple redirect to login page if not logged in)
-    // Since we don't have a separate login page, we can redirect to /admin/login?error=unauthorized
-    // But we'll just show a login overlay.
-    // Let's redirect to /admin/login?error=unauthorized – but we need to handle that.
-    // For simplicity, we'll just show a login form embedded.
-    // I'll add a simple login form at the top.
-    // Actually, we'll handle login in a modal.
-    // We'll just redirect to the login page if we want.
-    // Instead, let's just show login form:
+    // Show login form
     document.body.innerHTML = `
       <div class="max-w-md mx-auto mt-20 glass p-8">
         <h1 class="text-2xl font-bold text-center text-green-400 mb-6">Admin Login</h1>
@@ -436,44 +203,400 @@ async function loadStats() {
         document.getElementById('loginError').classList.remove('hidden');
       }
     };
+    // Exit early
+    throw new Error('Not authenticated');
   }
+
+  // Helper
+  function api(method, url, body) {
+    return fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(res => res.json());
+  }
+
+  // ---------- Stats ----------
+  async function loadStats() {
+    try {
+      const data = await api('GET', '/admin/stats');
+      document.getElementById('totalUsers').textContent = data.totalUsers;
+      document.getElementById('activeSubs').textContent = data.activeSubs;
+      document.getElementById('totalRevenue').textContent = 'KES ' + data.totalRevenue;
+      document.getElementById('failedPayments').textContent = data.failedPayments;
+    } catch(e) { console.error(e); }
+  }
+
+  // ---------- Pagination state ----------
+  let allUsers = [];
+  let usersVisible = 0;
+  const PAGE_SIZE = 4;
+
+  let allTransactions = [];
+  let transactionsVisible = 0;
+
+  let allMessages = [];
+  let messagesVisible = 0;
+
+  // ---------- Render helper ----------
+  function renderUsers() {
+    const container = document.getElementById('usersTable');
+    const slice = allUsers.slice(0, usersVisible);
+    if (!slice.length) {
+      container.innerHTML = '<div class="text-slate-400 text-center py-4">No users found.</div>';
+      return;
+    }
+    let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th><th>Delete</th></tr>`;
+    slice.forEach(u => {
+      const isActive = u.subscription?.active ? true : false;
+      const plan = u.subscription?.plan || 'Free';
+      const expires = u.subscription?.expiresAt ? new Date(u.subscription.expiresAt).toLocaleDateString() : '—';
+      html += `<tr>
+        <td>${u.username}</td>
+        <td>${u.email}</td>
+        <td>${u.mpesa}</td>
+        <td>${plan}</td>
+        <td>${expires}</td>
+        <td>
+          <button class="btn btn-sm" onclick="toggleUserSubscription('${u._id}', ${!isActive}, '${plan === 'Free' ? 'weekly' : plan}')">
+            ${isActive ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="deleteUser('${u._id}', '${u.username}')">🗑️</button>
+        </td>
+      </tr>`;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+
+    // Update "Load More" button visibility
+    const loadMoreBtn = document.getElementById('usersLoadMore');
+    const allLoadedMsg = document.getElementById('usersAllLoaded');
+    if (usersVisible < allUsers.length) {
+      loadMoreBtn.style.display = 'block';
+      allLoadedMsg.style.display = 'none';
+    } else {
+      loadMoreBtn.style.display = 'none';
+      allLoadedMsg.style.display = 'block';
+    }
+  }
+
+  function renderTransactions() {
+    const container = document.getElementById('transactionsTable');
+    const slice = allTransactions.slice(0, transactionsVisible);
+    if (!slice.length) {
+      container.innerHTML = '<div class="text-slate-400 text-center py-4">No transactions found.</div>';
+      return;
+    }
+    let html = `<table><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th><th>Delete</th></tr>`;
+    slice.forEach(t => {
+      html += `<tr>
+        <td>${t.user}</td>
+        <td>${t.plan || '—'}</td>
+        <td>KES ${t.amount || 0}</td>
+        <td>${t.status}</td>
+        <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="deleteTransaction('${t._id}')">🗑️</button>
+        </td>
+      </tr>`;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+
+    const loadMoreBtn = document.getElementById('transactionsLoadMore');
+    const allLoadedMsg = document.getElementById('transactionsAllLoaded');
+    if (transactionsVisible < allTransactions.length) {
+      loadMoreBtn.style.display = 'block';
+      allLoadedMsg.style.display = 'none';
+    } else {
+      loadMoreBtn.style.display = 'none';
+      allLoadedMsg.style.display = 'block';
+    }
+  }
+
+  function renderMessages() {
+    const container = document.getElementById('messagesTable');
+    const slice = allMessages.slice(0, messagesVisible);
+    if (!slice.length) {
+      container.innerHTML = '<div class="text-slate-400 text-center py-4">No messages found.</div>';
+      return;
+    }
+    let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
+    slice.forEach(m => {
+      const short = m.content.length > 50 ? m.content.substring(0, 50) + '...' : m.content;
+      html += `<tr>
+        <td>${m.user}</td>
+        <td>${short}</td>
+        <td>${m.status}</td>
+        <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+      </tr>`;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+
+    const loadMoreBtn = document.getElementById('messagesLoadMore');
+    const allLoadedMsg = document.getElementById('messagesAllLoaded');
+    if (messagesVisible < allMessages.length) {
+      loadMoreBtn.style.display = 'block';
+      allLoadedMsg.style.display = 'none';
+    } else {
+      loadMoreBtn.style.display = 'none';
+      allLoadedMsg.style.display = 'block';
+    }
+  }
+
+  // ---------- Load More functions ----------
+  function loadMoreUsers() {
+    usersVisible = Math.min(usersVisible + PAGE_SIZE, allUsers.length);
+    renderUsers();
+  }
+
+  function loadMoreTransactions() {
+    transactionsVisible = Math.min(transactionsVisible + PAGE_SIZE, allTransactions.length);
+    renderTransactions();
+  }
+
+  function loadMoreMessages() {
+    messagesVisible = Math.min(messagesVisible + PAGE_SIZE, allMessages.length);
+    renderMessages();
+  }
+
+  // ---------- Load data ----------
+  async function loadUsers() {
+    try {
+      const data = await api('GET', '/admin/users');
+      allUsers = data || [];
+      usersVisible = Math.min(PAGE_SIZE, allUsers.length);
+      renderUsers();
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadTransactions() {
+    try {
+      const data = await api('GET', '/admin/transactions');
+      allTransactions = data || [];
+      transactionsVisible = Math.min(PAGE_SIZE, allTransactions.length);
+      renderTransactions();
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadMessages() {
+    try {
+      const data = await api('GET', '/admin/messages');
+      allMessages = data || [];
+      messagesVisible = Math.min(PAGE_SIZE, allMessages.length);
+      renderMessages();
+    } catch(e) { console.error(e); }
+  }
+
+  // ---------- Delete functions ----------
+  async function deleteUser(userId, username) {
+    if (!confirm(`Delete user "${username}" and all their data?`)) return;
+    try {
+      const res = await fetch(`/admin/user/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: adminToken }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ User deleted');
+        // Reload data
+        await loadUsers();
+        await loadStats();
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function deleteTransaction(transactionId) {
+    if (!confirm('Delete this transaction record?')) return;
+    try {
+      const res = await fetch(`/admin/transaction/${transactionId}`, {
+        method: 'DELETE',
+        headers: { Authorization: adminToken }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Transaction deleted');
+        await loadTransactions();
+        await loadStats();
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  // ---------- Toggle subscription ----------
+  async function toggleUserSubscription(userId, active, plan) {
+    if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
+    try {
+      const res = await fetch(`/admin/user/${userId}/toggle-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ active, plan: active ? plan : null })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Subscription updated');
+        await loadUsers();
+        await loadStats();
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  // ---------- Plan settings ----------
+  async function loadPlanSettings() {
+    const data = await api('GET', '/admin/settings/plans');
+    document.getElementById('weeklyAmount').value = data.weeklyAmount;
+    document.getElementById('weeklyDuration').value = data.weeklyDuration;
+    document.getElementById('monthlyAmount').value = data.monthlyAmount;
+    document.getElementById('monthlyDuration').value = data.monthlyDuration;
+    document.getElementById('threeDayAmount').value = data.threeDayAmount || 150;
+    document.getElementById('threeDayDuration').value = data.threeDayDuration || 3;
+  }
+
+  async function savePlanSettings() {
+    const payload = {
+      weeklyAmount: +document.getElementById('weeklyAmount').value,
+      weeklyDuration: +document.getElementById('weeklyDuration').value,
+      monthlyAmount: +document.getElementById('monthlyAmount').value,
+      monthlyDuration: +document.getElementById('monthlyDuration').value,
+      threeDayAmount: +document.getElementById('threeDayAmount').value,
+      threeDayDuration: +document.getElementById('threeDayDuration').value
+    };
+    try {
+      const data = await api('PUT', '/admin/settings/plans', payload);
+      if (data.success) alert('✅ Plans updated!');
+      else alert('❌ Error: ' + data.error);
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  // ---------- Broadcast ----------
+  async function sendBroadcast() {
+    const message = document.getElementById('broadcastMessage').value.trim();
+    if (!message) return alert('Please enter a message.');
+    if (!confirm('Send this to ALL users via email and SMS?')) return;
+    const status = document.getElementById('broadcastStatus');
+    status.textContent = 'Sending...';
+    try {
+      const data = await api('POST', '/admin/broadcast', { message });
+      if (data.success) {
+        status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
+      } else {
+        status.textContent = '❌ Error: ' + data.error;
+      }
+    } catch(e) {
+      status.textContent = '❌ ' + e.message;
+    }
+  }
+
+  // ---------- General settings ----------
+  async function loadGeneralSettings() {
+    try {
+      const res = await fetch('/admin/settings', { headers: { Authorization: adminToken } });
+      const data = await res.json();
+      if (data && data.referralBaseUrl) {
+        document.getElementById('referralUrl').value = data.referralBaseUrl;
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function saveGeneralSettings() {
+    const url = document.getElementById('referralUrl').value.trim();
+    if (!url) return alert('Please enter a valid URL');
+    try {
+      const res = await fetch('/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ referralBaseUrl: url })
+      });
+      const data = await res.json();
+      const status = document.getElementById('generalStatus');
+      if (data.success) {
+        status.textContent = '✅ Saved!';
+        status.className = 'text-green-400';
+      } else {
+        status.textContent = '❌ ' + data.error;
+        status.className = 'text-red-400';
+      }
+    } catch(e) {
+      document.getElementById('generalStatus').textContent = '❌ ' + e.message;
+      document.getElementById('generalStatus').className = 'text-red-400';
+    }
+  }
+
+  // ---------- Security (2FA) ----------
+  async function load2FA() {
+    try {
+      const res = await fetch('/admin/settings/totp/status', { headers: { Authorization: adminToken } });
+      const data = await res.json();
+      document.getElementById('twofaStatus').textContent = data.enabled ? '✅ Enabled' : '❌ Disabled';
+    } catch(e) { console.error(e); }
+  }
+  async function toggle2FA() {
+    alert('2FA toggle: implement using the existing endpoints (see docs)');
+  }
+
+  // ---------- Tab switching with lazy loading ----------
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const tab = this.dataset.tab;
+      document.getElementById(tab).classList.add('active');
+      // Lazy load content
+      if (tab === 'users' && !window._usersLoaded) {
+        document.getElementById('usersTable').innerHTML = '<div class="loader">Loading users...</div>';
+        loadUsers().then(() => { window._usersLoaded = true; });
+      } else if (tab === 'transactions' && !window._transactionsLoaded) {
+        document.getElementById('transactionsTable').innerHTML = '<div class="loader">Loading transactions...</div>';
+        loadTransactions().then(() => { window._transactionsLoaded = true; });
+      } else if (tab === 'messages' && !window._messagesLoaded) {
+        document.getElementById('messagesTable').innerHTML = '<div class="loader">Loading messages...</div>';
+        loadMessages().then(() => { window._messagesLoaded = true; });
+      }
+    });
+  });
+
+  // ---------- Logout ----------
+  function logout() {
+    sessionStorage.removeItem('adminToken');
+    window.location.href = '/admin';
+  }
+
+  // ---------- Init ----------
+  window._usersLoaded = false;
+  window._transactionsLoaded = false;
+  window._messagesLoaded = false;
+
+  // Load initial tab (Users)
+  loadStats();
+  loadPlanSettings();
+  loadGeneralSettings();
+  load2FA();
+
+  // Load users initially (active tab)
+  document.getElementById('usersTable').innerHTML = '<div class="loader">Loading users...</div>';
+  loadUsers().then(() => { window._usersLoaded = true; });
+
+  // Expose functions globally
+  window.loadMoreUsers = loadMoreUsers;
+  window.loadMoreTransactions = loadMoreTransactions;
+  window.loadMoreMessages = loadMoreMessages;
+  window.toggleUserSubscription = toggleUserSubscription;
+  window.deleteUser = deleteUser;
+  window.deleteTransaction = deleteTransaction;
+  window.savePlanSettings = savePlanSettings;
+  window.sendBroadcast = sendBroadcast;
+  window.saveGeneralSettings = saveGeneralSettings;
+  window.toggle2FA = toggle2FA;
+  window.logout = logout;
 </script>
 </body>
 </html>
-<script>
-// Delete user
-async function deleteUser(userId, username) {
-  if (!confirm(`Delete user "${username}" and all their data?`)) return;
-  try {
-    const res = await fetch(`/admin/user/${userId}`, {
-      method: 'DELETE',
-      headers: { Authorization: adminToken }
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert('✅ User deleted');
-      loadStats();
-    } else {
-      alert('❌ Error: ' + data.error);
-    }
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
-// Delete transaction
-async function deleteTransaction(transactionId) {
-  if (!confirm('Delete this transaction record?')) return;
-  try {
-    const res = await fetch(`/admin/transaction/${transactionId}`, {
-      method: 'DELETE',
-      headers: { Authorization: adminToken }
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert('✅ Transaction deleted');
-      loadStats();
-    } else {
-      alert('❌ Error: ' + data.error);
-    }
-  } catch(e) { alert('Error: ' + e.message); }
-}
-</script>
