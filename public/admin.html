@@ -186,6 +186,7 @@
   async function loadUsers() {
     const users = await api('GET', '/admin/users');
     let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th></tr>`;
+    <th>Delete</th>
     users.forEach(u => {
       const isActive = u.subscription?.active ? true : false;
       const plan = u.subscription?.plan || 'Free';
@@ -228,6 +229,7 @@
   async function loadTransactions() {
     const tx = await api('GET', '/admin/transactions');
     let html = `<table><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+    <th>Delete</th>
     tx.forEach(t => {
       html += `<tr>
         <td>${t.user}</td>
@@ -235,6 +237,8 @@
         <td>KES ${t.amount || 0}</td>
         <td>${t.status}</td>
         <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="deleteTransaction('${t._id}')">🗑️</button>
       </tr>`;
     });
     html += '</table>';
@@ -244,6 +248,7 @@
   async function loadMessages() {
     const msgs = await api('GET', '/admin/messages');
     let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
+    <th>Delete</th>
     msgs.forEach(m => {
       html += `<tr>
         <td>${m.user}</td>
@@ -425,3 +430,42 @@
 </script>
 </body>
 </html>
+<script>
+// Delete user
+async function deleteUser(userId, username) {
+  if (!confirm(`Delete user "${username}" and all their data?`)) return;
+  try {
+    const res = await fetch(`/admin/user/${userId}`, {
+      method: 'DELETE',
+      headers: { Authorization: adminToken }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ User deleted');
+      loadUsers();
+      loadStats();
+    } else {
+      alert('❌ Error: ' + data.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Delete transaction
+async function deleteTransaction(transactionId) {
+  if (!confirm('Delete this transaction record?')) return;
+  try {
+    const res = await fetch(`/admin/transaction/${transactionId}`, {
+      method: 'DELETE',
+      headers: { Authorization: adminToken }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ Transaction deleted');
+      loadTransactions();
+      loadStats();
+    } else {
+      alert('❌ Error: ' + data.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+</script>
