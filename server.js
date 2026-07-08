@@ -153,7 +153,7 @@ const pendingTotpSecrets = new Map();
 async function ensureAdmin() {
   const admin = await Admin.findOne({ username: ADMIN_USERNAME });
   if (!admin) {
-    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
+    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
     const newAdmin = new Admin({ username: ADMIN_USERNAME, passwordHash: hashed, isTotpEnabled: false });
     await newAdmin.save();
     console.log('🔐 Default admin created (2FA disabled)');
@@ -648,7 +648,7 @@ app.post('/api/register', async (req, res) => {
       return res.status(409).json({ error });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ username, email, mpesa, passwordHash: hashedPassword });
     await user.save();
     const token = generateToken();
@@ -749,7 +749,7 @@ app.post('/api/user/change-password', authMiddleware, async (req, res) => {
     const match = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!match) return res.status(401).json({ error: 'Current password incorrect' });
 
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
     await user.save();
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
