@@ -61,7 +61,7 @@
     .watchlist-star.inactive { color: #4a5568; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 16px; }
     .modal.show { display: flex; }
-    .modal-content { max-width: 560px; width: 100%; background: #0f172a; border-radius: 28px; padding: 24px; border: 1px solid rgba(255,255,255,.06); max-height: 90vh; overflow-y: auto; }
+    .modal-content { max-width: 420px; width: 100%; background: #0f172a; border-radius: 28px; padding: 24px; border: 1px solid rgba(255,255,255,.06); max-height: 90vh; overflow-y: auto; }
     .modal-content .close-btn { float: right; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; transition: .2s; }
     .modal-content .close-btn:hover { color: white; }
     .modal-content h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
@@ -179,7 +179,7 @@
 
 <!-- ===== LOGIN MODAL ===== -->
 <div id="loginModal" class="modal show">
-  <div class="modal-content" style="max-width:420px;">
+  <div class="modal-content">
     <div class="text-center">
       <div class="text-4xl mb-2">🔐</div>
       <h2 class="text-3xl font-bold">ArbiMine Pro</h2>
@@ -198,7 +198,7 @@
 
 <!-- ===== REGISTER MODAL ===== -->
 <div id="registerModal" class="modal">
-  <div class="modal-content" style="max-width:420px;">
+  <div class="modal-content">
     <div class="text-center">
       <div class="text-4xl mb-2">📝</div>
       <h2 class="text-3xl font-bold">Create Account</h2>
@@ -231,11 +231,7 @@
     <li onclick="showPage('watchlist'); closeSidebar();"><span class="icon">⭐</span> Watchlist</li>
     <li onclick="showPage('calculator'); closeSidebar();"><span class="icon">🧮</span> Calculator</li>
     <li onclick="showPage('pro'); closeSidebar();"><span class="icon">💎</span> Pro</li>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
     <li onclick="showPage('settings'); closeSidebar();"><span class="icon">⚙️</span> Settings</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
@@ -299,8 +295,6 @@
       </div>
       <div id="upgradePrompt" class="hidden">
         <button class="btn btn-sm" onclick="showPage('pro')">⬆ Upgrade to Pro</button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
       </div>
     </div>
   </div>
@@ -310,8 +304,6 @@
       <span class="text"><strong id="lockedCount">0</strong> opportunities above 2% are locked.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="dashboardOpportunities" class="mt-3"></div>
 </div>
@@ -337,8 +329,6 @@
       <span class="text"><strong id="lockedCountArbitrage">0</strong> opportunities above 2% are locked.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="arbitrageOpportunities"></div>
 </div>
@@ -355,8 +345,6 @@
       <span class="text">Upgrade to Pro to access the Top Coins list.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="topCoinsOpportunities"></div>
 </div>
@@ -489,42 +477,26 @@
     </div>
 
     <!-- Plans: 3‑Day → Weekly → Monthly -->
-      <div class="grid grid-cols-3 gap-6 mt-6">
-        <!-- 3‑Day Plan -->
-        <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-green-500/20 hover:border-green-400">
-          <div class="text-4xl mb-2">⚡</div>
-          <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
-          <div class="mt-2 text-slate-400 text-sm">3 Days</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)" data-plan="threeDay">Subscribe 3 Days</button>
-        </div>
-        <!-- Weekly Plan -->
-        <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-blue-500/20 hover:border-blue-400">
-          <div class="text-4xl mb-2">📅</div>
-          <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
-          <div class="mt-2 text-slate-400 text-sm">Weekly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)" data-plan="weekly">Subscribe Weekly</button>
-        </div>
-        <!-- Monthly Plan -->
-        <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-purple-500/20 hover:border-purple-400">
-          <div class="text-4xl mb-2">🏆</div>
-          <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
-          <div class="mt-2 text-slate-400 text-sm">Monthly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)" data-plan="monthly">Subscribe Monthly</button>
-        </div>
-      </div>
-        <div class="mt-2 text-slate-400">3 Days</div>
+    <div class="grid grid-cols-3 gap-6 mt-6">
+      <!-- 3‑Day Plan -->
+      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-green-500/20 hover:border-green-400">
+        <div class="text-4xl mb-2">⚡</div>
+        <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
+        <div class="mt-2 text-slate-400 text-sm">3 Days</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)" data-plan="threeDay">Subscribe 3 Days</button>
       </div>
       <!-- Weekly Plan -->
-      <div class="glass p-5 text-center">
+      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-blue-500/20 hover:border-blue-400">
+        <div class="text-4xl mb-2">📅</div>
         <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400">Weekly</div>
+        <div class="mt-2 text-slate-400 text-sm">Weekly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)" data-plan="weekly">Subscribe Weekly</button>
       </div>
       <!-- Monthly Plan -->
-      <div class="glass p-5 text-center">
+      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-purple-500/20 hover:border-purple-400">
+        <div class="text-4xl mb-2">🏆</div>
         <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400">Monthly</div>
+        <div class="mt-2 text-slate-400 text-sm">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)" data-plan="monthly">Subscribe Monthly</button>
       </div>
     </div>
@@ -546,7 +518,7 @@
       <p><strong>M-Pesa:</strong> <span id="profileMpesa">—</span></p>
       <p><strong>Plan:</strong> <span id="profilePlan" class="tier-green">Free</span></p>
       <p><strong>Expires:</strong> <span id="profileExpiry">—</span></p>
-    <p><strong>Time Remaining:</strong> <span id="expiryCountdown" class="text-green-400 font-mono">—</span></p>
+      <p><strong>Time Remaining:</strong> <span id="expiryCountdown" class="text-green-400 font-mono">—</span></p>
     </div>
     <h3 class="text-xl font-semibold mt-6">Referral Link</h3>
     <div class="referral-box">
@@ -661,11 +633,7 @@
   <button onclick="showPage('watchlist')"><span class="icon">⭐</span><span>Watch</span></button>
   <button onclick="showPage('calculator')"><span class="icon">🧮</span><span>Calc</span></button>
   <button onclick="showPage('pro')"><span class="icon">💎</span><span>Pro</span></button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
   <button onclick="showPage('profile')"><span class="icon">👤</span><span>Profile</span></button>
-    setTimeout(resetSubscriptionButtons, 100);
-    setTimeout(resetSubscriptionButtons, 100);
   <button onclick="showPage('settings')"><span class="icon">⚙️</span><span>Settings</span></button>
   <button onclick="showPage('help')"><span class="icon">💬</span><span>Help</span></button>
 </div>
@@ -788,7 +756,6 @@
       showLogin();
       document.getElementById('loginEmail').value = email;
     } catch (err) {
-    resetSubscriptionButtons();
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');
     }
@@ -827,10 +794,10 @@
         await loadOpportunities();
         await loadMessages();
         await loadSubscription();
-  resetSubscriptionButtons();
         await loadReferralLink();
         initExchangeFilters();
         setCurrency('KES');
+        resetSubscriptionButtons();
         showToast('✅ Login successful', 'success');
 
         if (refreshTimer) clearInterval(refreshTimer);
@@ -845,7 +812,6 @@
         errorEl.classList.remove('hidden');
       }
     } catch (err) {
-    resetSubscriptionButtons();
       errorEl.textContent = "Connection error";
       errorEl.classList.remove('hidden');
     } finally {
@@ -917,50 +883,6 @@
   // ==========================================
   // SUBSCRIPTION
   // ==========================================
-let countdownInterval = null;
-function updateCountdown(expiryDate) {
-  if (!expiryDate) { document.getElementById("expiryCountdown").textContent = "No active subscription"; return; }
-  const target = new Date(expiryDate).getTime();
-  if (countdownInterval) clearInterval(countdownInterval);
-  function tick() {
-    const now = Date.now();
-    const diff = target - now;
-    if (diff <= 0) {
-      document.getElementById("expiryCountdown").textContent = "Expired";
-      clearInterval(countdownInterval);
-      return;
-    }
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((diff % (1000 * 60)) / 1000);
-    document.getElementById("expiryCountdown").textContent = `${days}d ${hours}h ${mins}m ${secs}s`;
-  }
-  tick();
-  countdownInterval = setInterval(tick, 1000);
-}
-let countdownInterval = null;
-function updateCountdown(expiryDate) {
-  if (!expiryDate) { document.getElementById("expiryCountdown").textContent = "No active subscription"; return; }
-  const target = new Date(expiryDate).getTime();
-  if (countdownInterval) clearInterval(countdownInterval);
-  function tick() {
-    const now = Date.now();
-    const diff = target - now;
-    if (diff <= 0) {
-      document.getElementById("expiryCountdown").textContent = "Expired";
-      clearInterval(countdownInterval);
-      return;
-    }
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((diff % (1000 * 60)) / 1000);
-    document.getElementById("expiryCountdown").textContent = `${days}d ${hours}h ${mins}m ${secs}s`;
-  }
-  tick();
-  countdownInterval = setInterval(tick, 1000);
-}
   async function loadSubscription() {
     try {
       const res = await fetch('/api/user/subscription', { headers: { Authorization: token } });
@@ -970,30 +892,57 @@ function updateCountdown(expiryDate) {
         document.getElementById('profileExpiry').textContent = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : '—';
         document.getElementById('subPlanDisplay').textContent = data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
         isPro = true;
+        if (data.expiresAt) updateCountdown(data.expiresAt);
+        else document.getElementById('expiryCountdown').textContent = "No active subscription";
       } else {
         document.getElementById('profilePlan').textContent = 'Free';
         document.getElementById('profileExpiry').textContent = '—';
         document.getElementById('subPlanDisplay').textContent = 'Free';
         isPro = false;
+        document.getElementById('expiryCountdown').textContent = "No active subscription";
       }
+      resetSubscriptionButtons();
     } catch (e) {}
+  }
+
+  function resetSubscriptionButtons() {
+    document.querySelectorAll("#page-pro .btn").forEach(function(btn) {
+      btn.disabled = false;
+      var plan = btn.getAttribute("data-plan") || "weekly";
+      var labels = { weekly: "Subscribe Weekly", monthly: "Subscribe Monthly", threeDay: "Subscribe 3 Days" };
+      btn.textContent = labels[plan] || "Subscribe";
+    });
+  }
+
+  let countdownTimer = null;
+  function updateCountdown(expiryDate) {
+    if (!expiryDate) { document.getElementById("expiryCountdown").textContent = "No active subscription"; return; }
+    const target = new Date(expiryDate).getTime();
+    if (countdownTimer) clearInterval(countdownTimer);
+    function tick() {
+      const now = Date.now();
+      const diff = target - now;
+      if (diff <= 0) {
+        document.getElementById("expiryCountdown").textContent = "Expired";
+        clearInterval(countdownTimer);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      document.getElementById("expiryCountdown").textContent = `${days}d ${hours}h ${mins}m ${secs}s`;
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
   }
 
   async function refreshSubscription() {
     await loadSubscription();
-  resetSubscriptionButtons();
     await loadPlans();
     showToast("Subscription status refreshed", "info");
   }
 
-function resetSubscriptionButtons() {
-  document.querySelectorAll("#page-pro .btn").forEach(function(btn) {
-    btn.disabled = false;
-    var plan = btn.getAttribute("data-plan") || "weekly";
-    var labels = { weekly: "Subscribe Weekly", monthly: "Subscribe Monthly", threeDay: "Subscribe 3 Days" };
-    btn.textContent = labels[plan] || "Subscribe";
-  });
-}
   function checkPaymentStatus() {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
@@ -1003,12 +952,13 @@ function resetSubscriptionButtons() {
       msgEl.innerHTML = '✅ Payment successful! Your Pro plan is now active.';
       msgEl.className = 'text-green-400 text-center';
       loadSubscription();
-  resetSubscriptionButtons();
       loadOpportunities();
+      resetSubscriptionButtons();
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
     } else if (status === 'failed') {
       msgEl.innerHTML = '❌ Payment failed. Please try again.';
       msgEl.className = 'text-red-400 text-center';
+      resetSubscriptionButtons();
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
     }
   }
@@ -1061,12 +1011,13 @@ function resetSubscriptionButtons() {
       if (!res.ok) throw new Error(data.error || 'Payment initialization failed');
       window.location.href = data.authorization_url;
     } catch (err) {
-    resetSubscriptionButtons();
       showToast(err.message, 'error');
       btn.disabled = false;
-      btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : (plan === 'monthly' ? 'Subscribe Monthly' : 'Subscribe 3 Days');
+      const labels = { weekly: "Subscribe Weekly", monthly: "Subscribe Monthly", threeDay: "Subscribe 3 Days" };
+      btn.textContent = labels[plan] || "Subscribe";
       document.getElementById('subStatus').innerText = '❌ ' + err.message;
       document.getElementById('subStatus').className = 'text-red-400 text-center';
+      resetSubscriptionButtons();
     }
   }
 
@@ -1085,6 +1036,11 @@ function resetSubscriptionButtons() {
     btns.forEach(b => b.classList.remove('active'));
     if (btns[map[page]]) btns[map[page]].classList.add('active');
 
+    if (page === 'pro') {
+      checkPaymentStatus();
+      resetSubscriptionButtons();
+      setTimeout(resetSubscriptionButtons, 100);
+    }
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
       if (page === 'topcoins' && isPro) refreshTopCoins();
@@ -1092,7 +1048,6 @@ function resetSubscriptionButtons() {
     }
     if (page === 'help') loadMessages();
     if (page === 'profile') loadUserProfile();
-    if (page === 'pro') checkPaymentStatus();
     if (page === 'settings') loadUserProfile();
     closeSidebar();
   }
@@ -1694,7 +1649,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         status.className = 'text-red-400 text-sm mt-2';
       }
     } catch (err) {
-    resetSubscriptionButtons();
       status.textContent = '❌ Server error';
       status.className = 'text-red-400 text-sm mt-2';
     }
@@ -1732,7 +1686,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         status.className = 'text-red-400 text-sm mt-2';
       }
     } catch (err) {
-    resetSubscriptionButtons();
       status.textContent = '❌ Server error';
       status.className = 'text-red-400 text-sm mt-2';
     }
@@ -1816,7 +1769,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
       showToast('✅ Message sent successfully!', 'success');
       await loadMessages();
     } catch (err) {
-    resetSubscriptionButtons();
       showToast('❌ ' + err.message, 'error');
     }
   }
@@ -1837,7 +1789,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         showToast('Failed to update message', 'error');
       }
     } catch (err) { showToast(err.message, 'error'); }
-    resetSubscriptionButtons();
   }
 
   async function deleteMessage(id) {
@@ -1854,7 +1805,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         showToast('Failed to delete message', 'error');
       }
     } catch (err) { showToast(err.message, 'error'); }
-    resetSubscriptionButtons();
   }
 
   // ==========================================
@@ -1871,11 +1821,11 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           loadUserProfile();
           loadMessages();
           loadSubscription();
-  resetSubscriptionButtons();
           loadReferralLink();
           checkPaymentStatus();
           initExchangeFilters();
           setCurrency('KES');
+          resetSubscriptionButtons();
         } else {
           logout();
         }
@@ -1920,6 +1870,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.changeMpesa = changeMpesa;
   window.loadReferralLink = loadReferralLink;
   window.refreshSubscription = refreshSubscription;
+  window.resetSubscriptionButtons = resetSubscriptionButtons;
 
   console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
 </script>
