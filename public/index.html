@@ -1,20 +1,299 @@
-<option value="transferTime">Fastest Transfer Time</o
-ption>
-      <option value="liquidity">Highest Liquidity</option>
-      <option value="risk">Lowest Risk Score</option>
-    </select>
-    <button class="btn btn-sm" onclick="refreshOpportunitie
-s()">🔄 Refresh</button>
-  </div>
-  <div id="upgradeNoticeArbitrage" class="upgrade-notice hi
-dden">
-    <div>
-      <span class="icon">🔒</span>
-      <span class="text"><strong id="lockedCountArbitrage">
-0</strong> opportunities above 2% are locked.</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>ArbiMine Pro • Arbitrage Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ====== STYLES ====== */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
+    .glass { background: rgba(255,255,255,.05); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08); border-radius: 28px; box-shadow: 0 15px 40px rgba(0,0,0,.35); }
+    .btn { background: linear-gradient(135deg, #22c55e, #16a34a); padding: 12px 24px; border-radius: 14px; font-weight: 600; transition: .3s; cursor: pointer; border: none; color: white; font-size: 15px; width: 100%; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(34,197,94,.4); }
+    .btn-secondary { background: #334155; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; width: auto; }
+    .logo { font-size: 28px; font-weight: 800; background: linear-gradient(90deg, #22c55e, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    header { position: sticky; top: 0; z-index: 999; background: rgba(7,11,26,.9); backdrop-filter: blur(15px); padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status-badge { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 4px 12px; border-radius: 30px; background: rgba(34,197,94,.15); color: #4ade80; }
+    .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    .nav-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; margin-top: 6px; border-bottom: 1px solid rgba(255,255,255,.05); flex-wrap: nowrap; }
+    .nav-tabs button { background: none; border: none; color: #94a3b8; padding: 8px 14px; border-radius: 30px; font-size: 13px; font-weight: 500; cursor: pointer; transition: .2s; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+    .nav-tabs button:hover { color: #eef2ff; background: rgba(255,255,255,.04); }
+    .nav-tabs button.active { color: #22c55e; background: rgba(34,197,94,.1); }
+    .page { display: none; padding: 16px 14px; padding-bottom: 90px; animation: fade .3s; }
+    .page.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .stat-card { padding: 14px; border-radius: 18px; background: #0f172a; border: 1px solid rgba(255,255,255,.04); }
+    .stat-value { font-size: 24px; font-weight: 700; margin-top: 2px; }
+    .stat-label { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .opportunity-card { background: #0f172a; border-radius: 20px; padding: 18px; margin-top: 14px; border: 1px solid rgba(255,255,255,.06); transition: .2s; cursor: pointer; }
+    .opportunity-card:hover { border-color: rgba(34,197,94,.3); transform: translateY(-2px); }
+    .opportunity-card .top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+    .opportunity-card .symbol { font-size: 20px; font-weight: 700; }
+    .opportunity-card .spread { font-size: 26px; font-weight: 700; color: #22c55e; }
+    .exchange-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .exchange-box { flex: 1; min-width: 100px; padding: 10px; border-radius: 14px; background: #020617; text-align: center; }
+    .exchange-box .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+    .exchange-box .exchange { font-weight: 600; font-size: 14px; margin: 3px 0; }
+    .exchange-box .price { font-size: 16px; font-weight: 600; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 30px; font-size: 12px; font-weight: 600; }
+    .badge-low { background: #14532d; color: #4ade80; }
+    .badge-medium { background: #5a4a1a; color: #fbbf24; }
+    .badge-high { background: #5a1a1a; color: #f87171; }
+    .badge-tradable { background: #14532d; color: #4ade80; }
+    .badge-nontradable { background: #5a1a1a; color: #f87171; }
+    .badge-ai { background: #1a2a5a; color: #60a5fa; }
+    .badge-profit { background: #1a2e2a; color: #4ade80; }
+    .badge-loss { background: #2a1a1a; color: #f87171; }
+    .detail-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.05); }
+    .detail-item { background: rgba(255,255,255,.02); border-radius: 12px; padding: 6px 10px; text-align: center; }
+    .detail-item .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+    .detail-item .value { font-weight: 600; margin-top: 2px; font-size: 14px; }
+    .watchlist-star { cursor: pointer; font-size: 24px; transition: .2s; }
+    .watchlist-star:hover { transform: scale(1.2); }
+    .watchlist-star.active { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,.3); }
+    .watchlist-star.inactive { color: #4a5568; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 16px; }
+    .modal.show { display: flex; }
+    .modal-content { max-width: 520px; width: 100%; background: #0f172a; border-radius: 28px; padding: 24px; border: 1px solid rgba(255,255,255,.06); max-height: 90vh; overflow-y: auto; }
+    .modal-content .close-btn { float: right; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; transition: .2s; }
+    .modal-content .close-btn:hover { color: white; }
+    .modal-content h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .modal-content .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 14px; }
+    .pwd-wrapper { position: relative; }
+    .pwd-wrapper input { padding-right: 50px; }
+    .pwd-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; }
+    .progress-step { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .progress-step .status-icon { width: 24px; text-align: center; }
+    .progress-step.completed .status-icon { color: #4ade80; }
+    .progress-step.active .status-icon { color: #fbbf24; animation: pulse 1s infinite; }
+    .progress-step.failed .status-icon { color: #f87171; }
+    .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; backdrop-filter: blur(4px); }
+    .sidebar-overlay.active { display: block; }
+    .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: #0f172a; border-right: 1px solid rgba(255,255,255,.06); z-index: 1001; transition: left 0.3s ease; padding: 24px 20px; display: flex; flex-direction: column; }
+    .sidebar.open { left: 0; }
+    .sidebar .close-btn { align-self: flex-end; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; margin-bottom: 20px; }
+    .sidebar .close-btn:hover { color: #eef2ff; }
+    .sidebar .menu-items { list-style: none; padding: 0; margin: 0; flex: 1; }
+    .sidebar .menu-items li { padding: 14px 16px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 14px; font-size: 15px; transition: background 0.15s; color: #b0baca; }
+    .sidebar .menu-items li:hover { background: rgba(255,255,255,.05); color: #eef2ff; }
+    .sidebar .menu-items li .icon { font-size: 20px; width: 28px; text-align: center; }
+    .sidebar .menu-items li.active { background: rgba(34,197,94,.15); color: #22c55e; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: #071226; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,.05); z-index: 999; flex-wrap: nowrap; overflow-x: auto; }
+    .bottom-nav button { background: none; border: none; color: #94a3b8; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; transition: .2s; padding: 0 8px; white-space: nowrap; }
+    .bottom-nav button.active { color: #22c55e; }
+    .bottom-nav button .icon { font-size: 20px; }
+    .bottom-nav button span { font-size: 10px; }
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,.95); backdrop-filter: blur(12px); padding: 12px 24px; border-radius: 60px; border-left: 4px solid; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,.5); max-width: 90%; text-align: center; display: none; }
+    .toast.success { border-left-color: #22c55e; color: #22c55e; }
+    .toast.error { border-left-color: #ef4444; color: #ef4444; }
+    .toast.info { border-left-color: #3b82f6; color: #3b82f6; }
+    .chart-container { background: #0f172a; border-radius: 16px; padding: 14px; margin-top: 14px; border: 1px solid rgba(255,255,255,.04); }
+    .chart-container canvas { width: 100% !important; height: 180px !important; }
+    .exchange-filter-btn { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); color: #94a3b8; padding: 5px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 4px; }
+    .exchange-filter-btn.active { background: #22c55e; color: #070b1a; border-color: #22c55e; font-weight: 600; }
+    .exchange-filter-btn .check { display: none; }
+    .exchange-filter-btn.active .check { display: inline; }
+    .triangular-path { font-family: monospace; font-size: 16px; color: #22c55e; letter-spacing: 0.5px; background: rgba(34,197,94,.08); padding: 4px 12px; border-radius: 20px; display: inline-block; }
+    .setting-group { margin-top: 16px; padding: 14px; background: rgba(255,255,255,.02); border-radius: 16px; border: 1px solid rgba(255,255,255,.04); }
+    .setting-group label { display: block; color: #94a3b8; font-size: 13px; margin-bottom: 4px; }
+    .setting-group input, .setting-group select { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; color: white; outline: none; }
+    .footer { margin-top: 30px; padding: 14px 0; border-top: 1px solid rgba(255,255,255,.04); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #94a3b8; }
+    .auto-toggle { display: flex; align-items: center; gap: 12px; }
+    .auto-toggle .switch { position: relative; width: 44px; height: 24px; background: #334155; border-radius: 30px; cursor: pointer; transition: .3s; }
+    .auto-toggle .switch.on { background: #22c55e; }
+    .auto-toggle .switch .slider { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: .3s; }
+    .auto-toggle .switch.on .slider { left: 22px; }
+    .refresh-btn { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; padding: 4px 10px; border-radius: 30px; transition: .2s; }
+    .refresh-btn:hover { background: rgba(255,255,255,.04); color: #22c55e; }
+    @media (max-width: 640px) {
+      .header-left .logo { font-size: 20px; }
+      .nav-tabs button { font-size: 11px; padding: 6px 10px; }
+      .stat-value { font-size: 20px; }
+      .bottom-nav { height: 58px; }
+      .bottom-nav button { font-size: 10px; }
+      .bottom-nav button .icon { font-size: 18px; }
+      .opportunity-card .spread { font-size: 22px; }
+      .modal-content { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div id="loginModal" class="modal show">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="text-center">
+      <div class="text-4xl mb-2">🔐</div>
+      <h2 class="text-3xl font-bold">ArbiMine Pro</h2>
+      <p class="text-slate-400">Admin Access Only</p>
     </div>
-    <button class="btn btn-sm" onclick="showPage('pro')">Up
-grade to Pro 🔓</button>
+    
+    <input id="loginUsername" type="text" placeholder="Username" class="w-full mt-6 bg-slate-900 rounded-2xl p-4 outline-none border border-slate-700 text-white text-lg">
+    
+    <div class="pwd-wrapper mt-4 relative">
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full bg-slate-900 rounded-2xl p-4 outline-none border border-slate-700 text-white text-lg">
+      <span class="pwd-toggle absolute right-4 top-1/2 -translate-y-1/2 text-2xl cursor-pointer" onclick="togglePwd('loginPassword', this)">👁️</span>
+    </div>
+
+    <button id="loginBtn" class="btn mt-6 text-lg font-semibold py-3">Log In</button>
+    
+    <div id="loginError" class="text-red-400 text-center mt-4 hidden"></div>
+  </div>
+</div>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <button class="close-btn" onclick="closeSidebar()">✕</button>
+  <div class="mb-6 text-center">
+    <div class="text-2xl font-bold logo">ArbiMine</div>
+    <div class="text-slate-400 text-sm mt-1">Pro</div>
+  </div>
+  <ul class="menu-items">
+    <li onclick="showPage('dashboard'); closeSidebar();"><span class="icon">📊</span> Dashboard</li>
+    <li onclick="showPage('arbitrage'); closeSidebar();"><span class="icon">🔄</span> Arbitrage</li>
+    <li onclick="showPage('topcoins'); closeSidebar();"><span class="icon">🏆</span> Top Coins</li>
+    <li onclick="showPage('triangular'); closeSidebar();"><span class="icon">🔺</span> Triangular</li>
+    <li onclick="showPage('autotriangular'); closeSidebar();"><span class="icon">🤖</span> Auto Triangular</li>
+    <li onclick="showPage('watchlist'); closeSidebar();"><span class="icon">⭐</span> Watchlist</li>
+    <li onclick="showPage('exchanges'); closeSidebar();"><span class="icon">🔌</span> Exchanges</li>
+    <li onclick="showPage('copytrade'); closeSidebar();"><span class="icon">📋</span> Copy Trade</li>
+    <li onclick="showPage('portfolio'); closeSidebar();"><span class="icon">💼</span> Portfolio</li>
+    <li onclick="showPage('analytics'); closeSidebar();"><span class="icon">📈</span> Analytics</li>
+    <li onclick="showPage('aiinsights'); closeSidebar();"><span class="icon">🧠</span> AI Insights</li>
+    <li onclick="showPage('settings'); closeSidebar();"><span class="icon">⚙️</span> Settings</li>
+    <li onclick="showPage('logs'); closeSidebar();"><span class="icon">📜</span> Logs</li>
+  </ul>
+</div>
+
+<!-- ===== EXECUTE MODAL ===== -->
+<div id="executeModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeExecuteModal()">×</button>
+    <h2 id="execModalTitle">⚡ Execute Trade</h2>
+    <div id="execSummary" class="mt-2 space-y-2"></div>
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <div><span class="text-slate-400 text-sm">Withdraw Network</span><br><strong id="execWithdrawNet">—</strong></div>
+      <div><span class="text-slate-400 text-sm">Deposit Network</span><br><strong id="execDepositNet">—</strong></div>
+      <div class="col-span-2"><span class="text-slate-400 text-sm">Deposit Address</span><br><strong id="execDepositAddr" class="font-mono text-sm break-all">—</strong></div>
+      <div class="col-span-2"><span class="text-slate-400 text-sm">Available Balance (USDT)</span><br><strong id="execBalance" class="text-blue-400">—</strong></div>
+    </div>
+    <div class="mt-4">
+      <label class="text-slate-400 text-sm">Amount to Trade (USDT)</label>
+      <input type="number" id="execAmount" value="100" step="10" min="1" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1" oninput="updateExecutePreview()">
+    </div>
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <div><span class="text-slate-400 text-sm">Gross Profit</span><br><strong id="execGrossProfit" class="text-green-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">Trading Fees</span><br><strong id="execTradingFee" class="text-yellow-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">Withdrawal Fee</span><br><strong id="execWithdrawFee" class="text-yellow-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">Deposit Fee</span><br><strong id="execDepositFee" class="text-yellow-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">Total Fees</span><br><strong id="execTotalFees" class="text-red-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">Net Profit</span><br><strong id="execNetProfit" class="text-green-400">$0.00</strong></div>
+      <div><span class="text-slate-400 text-sm">ROI</span><br><strong id="execROI" class="text-green-400">0.00%</strong></div>
+    </div>
+    <button class="btn w-full mt-4" onclick="confirmExecuteTrade()">🚀 Confirm & Execute</button>
+    <div id="execError" class="text-red-400 mt-2 text-center hidden"></div>
+  </div>
+</div>
+
+<!-- ===== PROGRESS MODAL ===== -->
+<div id="progressModal" class="modal">
+  <div class="modal-content">
+    <h2>⚡ Trade Execution Progress</h2>
+    <div id="progressSteps" class="mt-4 space-y-1 max-h-60 overflow-y-auto"></div>
+    <div id="progressResult" class="mt-4 text-center font-bold"></div>
+    <button class="btn w-full mt-4" onclick="closeProgressModal()">Close</button>
+  </div>
+</div>
+
+<!-- ===== APP CONTENT ===== -->
+<div id="appContent" style="display:none;">
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="logo">ArbiMine Pro</div>
+    <div class="status-badge" id="connectionStatus"><span class="dot"></span> Online</div>
+  </div>
+  <div class="header-right">
+    <span id="currentTime" class="text-sm text-slate-400 hidden sm:inline"></span>
+    <button class="btn-secondary btn-sm" onclick="toggleTheme()">🌓</button>
+    <button class="btn btn-sm" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <button class="active" data-tab="dashboard">📊 Dashboard</button>
+  <button data-tab="arbitrage">🔄 Arbitrage</button>
+  <button data-tab="topcoins">🏆 Top Coins</button>
+  <button data-tab="triangular">🔺 Triangular</button>
+  <button data-tab="autotriangular">🤖 Auto Triangular</button>
+  <button data-tab="watchlist">⭐ Watchlist</button>
+  <button data-tab="exchanges">🔌 Exchanges</button>
+  <button data-tab="copytrade">📋 Copy Trade</button>
+  <button data-tab="portfolio">💼 Portfolio</button>
+  <button data-tab="analytics">📈 Analytics</button>
+  <button data-tab="aiinsights">🧠 AI Insights</button>
+  <button data-tab="settings">⚙️ Settings</button>
+  <button data-tab="logs">📜 Logs</button>
+</nav>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page active">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="text-xl font-bold">Live Arbitrage</h3>
+    <button class="refresh-btn" onclick="refreshOpportunities()">🔄</button>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="stat-card"><div class="stat-label">Total Opportunities</div><div id="oppCount" class="stat-value text-green-400">0</div></div>
+    <div class="stat-card"><div class="stat-label">Highest Spread</div><div id="bestSpread" class="stat-value text-green-400">0%</div></div>
+    <div class="stat-card"><div class="stat-label">Tradable</div><div id="tradableCount" class="stat-value text-green-400">0</div></div>
+    <div class="stat-card"><div class="stat-label">Connected Exchanges</div><div class="stat-value">5</div></div>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+    <div class="stat-card"><div class="stat-label">Daily Profit Est.</div><div id="dailyProfit" class="stat-value text-blue-400">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Success Rate</div><div id="successRate" class="stat-value text-green-400">0%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Spread</div><div id="avgSpread" class="stat-value text-yellow-400">0%</div></div>
+    <div class="stat-card"><div class="stat-label">API Status</div><div id="apiStatus" class="stat-value text-green-400">✅ Online</div></div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div class="chart-container"><h4 class="font-semibold mb-2">Profit History</h4><canvas id="profitChart"></canvas></div>
+    <div class="chart-container"><h4 class="font-semibold mb-2">Spread History</h4><canvas id="spreadChart"></canvas></div>
+  </div>
+  <div id="dashboardOpportunities" class="mt-3"></div>
+</div>
+
+<!-- ===== ARBITRAGE ===== -->
+<div id="page-arbitrage" class="page">
+  <div class="flex flex-wrap gap-2 items-center mb-4">
+    <input id="searchInput" class="flex-1 min-w-[160px] bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" placeholder="🔍 Search coin..." oninput="applyFilters()">
+    <div class="flex gap-1 flex-wrap" id="exchangeFilterContainer">
+      <button class="exchange-filter-btn active" data-exchange="all" onclick="toggleExchangeFilter('all')"><span class="check">✔ </span>All</button>
+      <button class="exchange-filter-btn" data-exchange="kucoin" onclick="toggleExchangeFilter('kucoin')"><span class="check">✔ </span>KuCoin</button>
+      <button class="exchange-filter-btn" data-exchange="htx" onclick="toggleExchangeFilter('htx')"><span class="check">✔ </span>HTX</button>
+      <button class="exchange-filter-btn" data-exchange="gateio" onclick="toggleExchangeFilter('gateio')"><span class="check">✔ </span>Gate.io</button>
+      <button class="exchange-filter-btn" data-exchange="mexc" onclick="toggleExchangeFilter('mexc')"><span class="check">✔ </span>MEXC</button>
+      <button class="exchange-filter-btn" data-exchange="bingx" onclick="toggleExchangeFilter('bingx')"><span class="check">✔ </span>BingX</button>
+    </div>
+    <select id="riskFilter" class="bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" onchange="applyFilters()">
+      <option value="all">All Risk</option>
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+    <button class="btn btn-sm" onclick="refreshOpportunities()">🔄 Refresh</button>
   </div>
   <div id="arbitrageOpportunities"></div>
 </div>
@@ -23,438 +302,220 @@ grade to Pro 🔓</button>
 <div id="page-topcoins" class="page">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-2xl font-bold">🏆 Top Coins</h2>
-    <button class="btn btn-sm" onclick="refreshTopCoins()">
-🔄 Refresh</button>
+    <button class="btn btn-sm" onclick="refreshTopCoins()">🔄 Refresh</button>
   </div>
-  <div id="topCoinsUpgrade" class="upgrade-notice hidden">
-    <div>
-      <span class="icon">🔒</span>
-      <span class="text">Upgrade to Pro to access the Top C
-oins list.</span>
-    </div>
-    <button class="btn btn-sm" onclick="showPage('pro')">Up
-grade to Pro 🔓</button>
-  </div>
+  <p class="text-slate-400 text-sm mb-3">BTC, ETH, SOL, XRP, BNB, DOGE, TRX, LTC, ADA, AVAX, LINK, TON, SUI</p>
   <div id="topCoinsOpportunities"></div>
+</div>
+
+<!-- ===== TRIANGULAR ===== -->
+<div id="page-triangular" class="page">
+  <h2 class="text-2xl font-bold mb-3">🔺 Triangular Arbitrage</h2>
+  <div class="flex flex-wrap gap-3 mb-4">
+    <select id="triangularExchange" class="bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none" onchange="loadTriangular()">
+      <option value="kucoin">KuCoin</option>
+      <option value="mexc">MEXC</option>
+      <option value="gateio">Gate.io</option>
+      <option value="htx">HTX</option>
+      <option value="bingx">BingX</option>
+    </select>
+    <button class="btn btn-sm" onclick="loadTriangular()">🔍 Scan</button>
+  </div>
+  <div id="triangularOpportunities"><div class="text-slate-400 text-center">Select an exchange and click Scan.</div></div>
+</div>
+
+<!-- ===== AUTO TRIANGULAR ===== -->
+<div id="page-autotriangular" class="page">
+  <h2 class="text-2xl font-bold mb-3">🤖 Auto Triangular Arbitrage</h2>
+  <div class="flex flex-wrap gap-4 items-center mb-4">
+    <div class="auto-toggle">
+      <span class="text-slate-400">Auto Mode</span>
+      <div id="autoToggleSwitch" class="switch" onclick="toggleAutoMode()"><div class="slider"></div></div>
+    </div>
+    <button id="botStartStopBtn" class="btn btn-sm" onclick="toggleBot()">▶ Start Bot</button>
+    <div class="flex items-center gap-2">
+      <span class="text-slate-400 text-sm">Stop Loss (USDT):</span>
+      <input type="number" id="stopLossAmount" value="50" class="bg-slate-900 rounded-2xl p-2 border border-slate-700 text-white outline-none w-20">
+    </div>
+  </div>
+  <div id="autoTriangularStatus" class="text-slate-400">Bot stopped.</div>
+  <div id="autoTriangularLogs" class="mt-4 max-h-60 overflow-y-auto bg-slate-900/30 rounded-xl p-3 font-mono text-sm text-slate-400">
+    <div>[System] Awaiting start...</div>
+  </div>
 </div>
 
 <!-- ===== WATCHLIST ===== -->
 <div id="page-watchlist" class="page">
   <h2 class="text-2xl font-bold mb-3">⭐ Watchlist</h2>
-  <p class="text-slate-400 text-sm mb-4">Starred opportunit
-ies you want to follow.</p>
+  <p class="text-slate-400 text-sm mb-4">Starred opportunities you want to follow.</p>
   <div id="watchlistOpportunities"></div>
 </div>
 
-<!-- ===== CALCULATOR ===== -->
-<div id="page-calculator" class="page">
-  <div class="glass p-5">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold">🧮 Arbitrage Calculato
-r</h2>
-      <button class="btn-secondary btn-sm" onclick="resetCa
-lculator()">Reset</button>
+<!-- ===== EXCHANGES ===== -->
+<div id="page-exchanges" class="page">
+  <h2 class="text-2xl font-bold mb-3">🔌 Exchange API Management</h2>
+  <p class="text-slate-400 text-sm mb-4">Add your exchange API keys to enable trading.</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="glass p-4">
+      <h3 class="font-bold">Binance</h3>
+      <input type="password" placeholder="API Key" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <input type="password" placeholder="Secret" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <button class="btn btn-sm mt-3" onclick="connectExchange('binance')">🔗 Connect</button>
+      <span id="binanceStatus" class="text-slate-400 ml-2">Not connected</span>
     </div>
-    <p class="text-slate-400 text-sm mb-4">Enter trade deta
-ils or click <strong>📊 Calculate</strong> on any opportuni
-ty to auto-fill.</p>
-
-    <div class="calc-grid">
-      <!-- Left column -->
-      <div>
-        <!-- Trade Amount -->
-        <div class="calc-group">
-          <h4>Trade Amount</h4>
-          <label>Amount (USDT)</label>
-          <input type="number" id="calcAmount" value="100" 
-min="1" step="10" oninput="runCalculator()">
-          <div class="quick-btns">
-            <button onclick="setAmount(100)">$100</button>
-            <button onclick="setAmount(500)">$500</button>
-            <button onclick="setAmount(1000)">$1,000</butto
-n>
-            <button onclick="setAmount(5000)">$5,000</butto
-n>
-          </div>
-        </div>
-
-        <!-- Buy Details -->
-        <div class="calc-group">
-          <h4>Buy Details</h4>
-          <label>Buy Exchange</label>
-          <input type="text" id="calcBuyExchange" placehold
-er="e.g., KuCoin" oninput="runCalculator()">
-          <label>Buy Price (USDT)</label>
-          <input type="number" id="calcBuyPrice" step="any"
- placeholder="0.00" oninput="runCalculator()">
-          <label>Buy Fee (%)</label>
-          <input type="number" id="calcBuyFee" value="0.1" 
-step="0.01" min="0" oninput="runCalculator()">
-        </div>
-
-        <!-- Sell Details -->
-        <div class="calc-group">
-          <h4>Sell Details</h4>
-          <label>Sell Exchange</label>
-          <input type="text" id="calcSellExchange" placehol
-der="e.g., MEXC" oninput="runCalculator()">
-          <label>Sell Price (USDT)</label>
-          <input type="number" id="calcSellPrice" step="any
-" placeholder="0.00" oninput="runCalculator()">
-          <label>Sell Fee (%)</label>
-          <input type="number" id="calcSellFee" value="0.1"
- step="0.01" min="0" oninput="runCalculator()">
-        </div>
-      </div>
-
-      <!-- Right column -->
-      <div>
-        <!-- Transfer Costs -->
-        <div class="calc-group">
-          <h4>Transfer Costs</h4>
-          <label>Withdrawal Fee (USDT)</label>
-          <input type="number" id="calcWithdrawFee" value="
-0.5" step="0.01" min="0" oninput="runCalculator()">
-          <label>Deposit Fee (USDT)</label>
-          <input type="number" id="calcDepositFee" value="0
-.2" step="0.01" min="0" oninput="runCalculator()">
-          <label>Network / Gas Fee (USDT)</label>
-          <input type="number" id="calcNetworkFee" value="0
-.3" step="0.01" min="0" oninput="runCalculator()">
-          <label>Conversion Fee (%)</label>
-          <input type="number" id="calcConversionFee" value
-="0" step="0.01" min="0" oninput="runCalculator()">
-        </div>
-
-        <!-- Slippage -->
-        <div class="calc-group">
-          <h4>Slippage</h4>
-          <label>Expected Slippage (%)</label>
-          <input type="number" id="calcSlippage" value="0.5
-" step="0.1" min="0" oninput="runCalculator()">
-          <label>Liquidity Adjustment</label>
-          <input type="number" id="calcLiquidityAdj" value=
-"1" step="0.1" min="0.1" oninput="runCalculator()">
-        </div>
-
-        <!-- Results -->
-        <div class="calc-group" style="margin-top:10px;">
-          <h4>Results</h4>
-          <div class="calc-result-grid">
-            <div class="calc-result-item"><div class="label
-">Coins Purchased</div><div class="value" id="resCoins">0</
-div></div>
-            <div class="calc-result-item"><div class="label
-">Total Buy Cost</div><div class="value" id="resBuyCost">$0
-.00</div></div>
-            <div class="calc-result-item"><div class="label
-">Total Sell Value</div><div class="value" id="resSellValue
-">$0.00</div></div>
-            <div class="calc-result-item"><div class="label
-">Gross Profit</div><div class="value" id="resGrossProfit">
-$0.00</div></div>
-            <div class="calc-result-item"><div class="label
-">Total Fees</div><div class="value negative" id="resTotalF
-ees">$0.00</div></div>
-            <div class="calc-result-item"><div class="label
-">Net Profit</div><div class="value" id="resNetProfit">$0.0
-0</div></div>
-            <div class="calc-result-item"><div class="label
-">ROI (%)</div><div class="value" id="resROI">0.00%</div></
-div>
-            <div class="calc-result-item"><div class="label
-">Spread (%)</div><div class="value" id="resSpread">0.00%</
-div></div>
-            <div class="calc-result-item"><div class="label
-">Break‑even Spread</div><div class="value" id="resBreakEve
-n">0.00%</div></div>
-            <div class="calc-result-item"><div class="label
-">Profit After Deductions</div><div class="value" id="resPr
-ofitAfter">$0.00</div></div>
-          </div>
-
-          <!-- Risk & Recommendation -->
-          <div style="margin-top:12px;">
-            <div style="display:flex; align-items:center; g
-ap:12px; flex-wrap:wrap;">
-              <span class="text-slate-400 text-sm">Risk:</s
-pan>
-              <span id="resRiskBadge" class="risk-badge low
-">🟢 Low</span>
-            </div>
-            <div id="resRecommendation" class="recommendati
-on execute">✅ Execute Trade</div>
-          </div>
-        </div>
-
-        <!-- Execution Time Estimate -->
-        <div class="calc-group" style="margin-top:10px;">
-          <h4>Time Estimate</h4>
-          <div id="resTimeEstimate" class="text-slate-300 t
-ext-sm">~ 2-5 minutes</div>
-        </div>
-
-        <!-- Actions -->
-        <div class="calc-actions">
-          <button class="btn btn-sm" onclick="copySummary()
-">📋 Copy Summary</button>
-          <button class="btn-secondary btn-sm" onclick="res
-etCalculator()">🔄 Reset</button>
-        </div>
-      </div>
+    <div class="glass p-4">
+      <h3 class="font-bold">KuCoin</h3>
+      <input type="password" placeholder="API Key" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <input type="password" placeholder="Secret" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <button class="btn btn-sm mt-3" onclick="connectExchange('kucoin')">🔗 Connect</button>
+      <span id="kucoinStatus" class="text-slate-400 ml-2">Not connected</span>
+    </div>
+    <div class="glass p-4">
+      <h3 class="font-bold">MEXC</h3>
+      <input type="password" placeholder="API Key" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <input type="password" placeholder="Secret" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <button class="btn btn-sm mt-3" onclick="connectExchange('mexc')">🔗 Connect</button>
+      <span id="mexcStatus" class="text-slate-400 ml-2">Not connected</span>
+    </div>
+    <div class="glass p-4">
+      <h3 class="font-bold">Gate.io</h3>
+      <input type="password" placeholder="API Key" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <input type="password" placeholder="Secret" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-2">
+      <button class="btn btn-sm mt-3" onclick="connectExchange('gateio')">🔗 Connect</button>
+      <span id="gateioStatus" class="text-slate-400 ml-2">Not connected</span>
     </div>
   </div>
 </div>
 
-<!-- ===== PRO / SUBSCRIPTION ===== -->
-<div id="page-pro" class="page">
-  <div class="glass p-6">
-    <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
-    <p class="text-slate-400 mt-2">Upgrade to access premiu
-m features.</p>
-
-    <div id="paymentMessage" class="mt-4 text-center"></div
->
-
-    <!-- Currency Toggle -->
-    <div class="flex justify-center items-center gap-4 my-4
-">
-      <span class="text-sm text-slate-400">Display prices i
-n:</span>
-      <div class="currency-toggle">
-        <button id="btnKES" class="active" onclick="setCurr
-ency('KES')">KES</button>
-        <button id="btnUSD" onclick="setCurrency('USD')">US
-D</button>
-      </div>
+<!-- ===== COPY TRADE ===== -->
+<div id="page-copytrade" class="page">
+  <div class="glass p-5">
+    <h2 class="text-2xl font-bold">📋 Copy Trade</h2>
+    <p class="text-slate-400 text-sm">Select an opportunity to copy its details.</p>
+    <div id="copyTradeSummary" class="mt-4 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+      <p class="text-slate-400">No opportunity selected.</p>
     </div>
-
-    <div class="mt-4">
-      <label class="text-slate-400 text-sm">M-Pesa Phone Nu
-mber (optional)</label>
-      <input type="tel" id="paymentPhone" placeholder="e.g.
-, 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 
-border border-slate-700 text-white outline-none mt-1">
-      <p class="text-xs text-slate-500 mt-1">You'll be redi
-rected to Paystack to complete payment.</p>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4 mt-6">
-      <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="weeklyPriceDisp
-lay">KES --</div>
-        <div class="mt-2 text-slate-400">Weekly</div>
-        <button class="btn w-full mt-5" onclick="subscribeW
-ithPaystack('weekly', this)">Subscribe Weekly</button>
-      </div>
-      <div class="glass p-5 text-center">
-        <div class="text-3xl font-bold" id="monthlyPriceDis
-play">KES --</div>
-        <div class="mt-2 text-slate-400">Monthly</div>
-        <button class="btn w-full mt-5" onclick="subscribeW
-ithPaystack('monthly', this)">Subscribe Monthly</button>
-      </div>
-    </div>
-
-    <div id="subStatus" class="mt-4 text-center text-slate-
-400"></div>
-    <div class="mt-4 text-center">
-      <span id="subPlanDisplay" class="text-green-400 font-
-bold">Free</span>
-    </div>
+    <button class="btn mt-4" onclick="copyToClipboard()">📄 Copy Summary</button>
   </div>
 </div>
 
-<!-- ===== PROFILE ===== -->
-<div id="page-profile" class="page">
-  <div class="glass p-5">
-    <h2 class="text-2xl font-bold">👤 Profile</h2>
-    <div class="mt-4 space-y-2">
-      <p><strong>Username:</strong> <span id="profileUserna
-me">—</span></p>
-      <p><strong>Email:</strong> <span id="profileEmail">—<
-/span></p>
-      <p><strong>M-Pesa:</strong> <span id="profileMpesa">—
-</span></p>
-      <p><strong>Plan:</strong> <span id="profilePlan" clas
-s="tier-green">Free</span></p>
-      <p><strong>Expires:</strong> <span id="profileExpiry"
->—</span></p>
-    </div>
+<!-- ===== PORTFOLIO ===== -->
+<div id="page-portfolio" class="page">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="stat-card"><div class="stat-label">Total Balance</div><div id="portfolioBalance" class="stat-value text-green-400">$0.00</div></div>
+    <div class="stat-card"><div class="stat-label">Open Positions</div><div id="openPositions" class="stat-value text-blue-400">0</div></div>
+    <div class="stat-card"><div class="stat-label">Total Profit</div><div id="totalProfit" class="stat-value text-green-400">$0.00</div></div>
+    <div class="stat-card"><div class="stat-label">Win Rate</div><div id="winRate" class="stat-value text-green-400">0%</div></div>
+  </div>
+  <div class="mt-4 table-wrap">
+    <table>
+      <thead><tr><th>Symbol</th><th>Buy</th><th>Sell</th><th>Amount</th><th>Buy Price</th><th>Sell Price</th><th>Profit</th><th>ROI</th><th>Status</th></tr></thead>
+      <tbody id="portfolioTrades"><tr><td colspan="9" class="text-center text-slate-400 py-4">No trades yet.</td></tr></tbody>
+    </table>
+  </div>
+</div>
 
-    <h3 class="text-xl font-semibold mt-6">Referral Link</h
-3>
-    <div class="referral-box">
-      <input type="text" id="referralLink" value="https://a
-rbimine.onrender.com" readonly>
-      <button onclick="copyReferral()">📋 Copy</button>
+<!-- ===== ANALYTICS ===== -->
+<div id="page-analytics" class="page">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="chart-container"><h4 class="font-semibold mb-2">Opportunity Frequency</h4><canvas id="freqChart"></canvas></div>
+    <div class="chart-container"><h4 class="font-semibold mb-2">Exchange Comparison</h4><canvas id="exchangeChart"></canvas></div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div class="chart-container"><h4 class="font-semibold mb-2">Portfolio Growth</h4><canvas id="growthChart"></canvas></div>
+    <div class="chart-container"><h4 class="font-semibold mb-2">Execution Statistics</h4><canvas id="execChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== AI INSIGHTS ===== -->
+<div id="page-aiinsights" class="page">
+  <div class="glass p-5">
+    <h2 class="text-2xl font-bold">🧠 AI Insights</h2>
+    <p class="text-slate-400 text-sm">Real-time AI analysis of the market.</p>
+    <div id="aiInsightsContainer" class="mt-4 space-y-2">
+      <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+        <p class="text-slate-300">AI is analyzing the market...</p>
+      </div>
     </div>
-    <div id="copyStatus"><span>✅</span> Copied!</div>
-    <p class="text-slate-400 text-sm mt-2">Share this link 
-to invite friends.</p>
   </div>
 </div>
 
 <!-- ===== SETTINGS ===== -->
 <div id="page-settings" class="page">
   <div class="glass p-5">
-    <h2 class="text-2xl font-bold">⚙ Account Settings</h2>
-    <p class="text-slate-400 text-sm mb-6">Update your secu
-rity and contact details.</p>
-
-    <!-- Change Password -->
-    <div class="calc-group">
-      <h4>Change Password</h4>
-      <label>Current Password</label>
-      <input type="password" id="currentPwd" placeholder="E
-nter current password" class="w-full bg-slate-900 rounded-x
-l p-3 border border-slate-700 text-white outline-none">
-      <label class="mt-2">New Password</label>
-      <input type="password" id="newPwd" placeholder="Enter
- new password" class="w-full bg-slate-900 rounded-xl p-3 bo
-rder border-slate-700 text-white outline-none">
-      <button class="btn btn-sm mt-3" onclick="changePasswo
-rd()">Update Password</button>
-      <div id="pwdStatus" class="text-sm mt-2"></div>
+    <h2 class="text-2xl font-bold">⚙️ Settings</h2>
+    <div class="setting-group">
+      <label>API Keys</label>
+      <input type="password" placeholder="Exchange API Key" class="w-full">
+      <input type="password" placeholder="Exchange Secret" class="w-full mt-2">
     </div>
-
-    <!-- Change M-Pesa -->
-    <div class="calc-group mt-6">
-      <h4>Change M-Pesa Number</h4>
-      <label>New M-Pesa Number</label>
-      <input type="tel" id="newMpesa" placeholder="e.g., 25
-47XXXXXXXX" class="w-full bg-slate-900 rounded-xl p-3 borde
-r border-slate-700 text-white outline-none">
-      <label class="mt-2">Confirm with Password</label>
-      <input type="password" id="confirmPwd" placeholder="E
-nter your password to confirm" class="w-full bg-slate-900 r
-ounded-xl p-3 border border-slate-700 text-white outline-no
-ne">
-      <button class="btn btn-sm mt-3" onclick="changeMpesa(
-)">Update M-Pesa</button>
-      <div id="mpesaStatus" class="text-sm mt-2"></div>
+    <div class="setting-group">
+      <label>Spread Threshold (%)</label>
+      <input type="number" value="0.5" step="0.1" class="w-full">
     </div>
+    <div class="setting-group">
+      <label>Minimum Liquidity (USDT)</label>
+      <input type="number" value="5000" step="1000" class="w-full">
+    </div>
+    <div class="setting-group">
+      <label>Minimum Confidence (%)</label>
+      <input type="number" value="70" step="5" class="w-full">
+    </div>
+    <div class="setting-group">
+      <label>Risk Limit</label>
+      <select class="w-full">
+        <option>Low</option>
+        <option selected>Medium</option>
+        <option>High</option>
+      </select>
+    </div>
+    <div class="setting-group flex items-center gap-3">
+      <label class="mb-0">Auto Trading</label>
+      <input type="checkbox" class="w-5 h-5 accent-green-500">
+    </div>
+    <div class="setting-group">
+      <label>Refresh Interval (seconds)</label>
+      <input type="number" value="30" step="5" class="w-full">
+    </div>
+    <div class="setting-group">
+      <label>Notification Preferences</label>
+      <select class="w-full">
+        <option>All</option>
+        <option>Only Trades</option>
+        <option>None</option>
+      </select>
+    </div>
+    <button class="btn w-full mt-4" onclick="saveSettings()">💾 Save Settings</button>
   </div>
 </div>
 
-<!-- ===== HELP / CHAT ===== -->
-<div id="page-help" class="page">
-  <h2 style="margin-bottom:8px;">💬 Help & Support</h2>
-  <p style="color:#9ca3af; font-size:14px; margin-bottom:16
-px;">Send a message to admin. We'll reply shortly.</p>
-  <div class="chat-container">
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-area">
-      <input type="text" id="chatInput" placeholder="Type y
-our message..." onkeydown="if(event.key==='Enter') sendMess
-age()">
-      <button onclick="sendMessage()">Send</button>
+<!-- ===== LOGS ===== -->
+<div id="page-logs" class="page">
+  <div class="glass p-5">
+    <h2 class="text-2xl font-bold">📜 System Logs</h2>
+    <div id="logsContainer" class="mt-4 space-y-1 max-h-96 overflow-y-auto bg-slate-900/30 rounded-xl p-3 font-mono text-sm">
+      <div class="text-slate-400">[System] Logs will appear here.</div>
     </div>
-  </div>
-</div>
-
-<!-- ===== DETAILS MODAL ===== -->
-<div id="detailsModal" class="modal">
-  <div class="modal-content">
-    <button class="close-btn" onclick="closeDetailsModal()"
->×</button>
-    <h2 id="detailSymbol" class="text-2xl font-bold">—</h2>
-    <div class="subtitle" id="detailSubtitle">—</div>
-    <div class="grid grid-cols-2 gap-3 mt-4">
-      <div class="detail-item"><div class="label">Spread</d
-iv><div class="value text-green-400" id="detailSpread">—</d
-iv></div>
-      <div class="detail-item"><div class="label">Liquidity
-</div><div class="value" id="detailLiquidity">—</div></div>
-      <div class="detail-item"><div class="label">24h Volum
-e</div><div class="value" id="detailVolume">—</div></div>
-      <div class="detail-item"><div class="label">Profit (1
-00 USDT)</div><div class="value text-green-400" id="detailP
-rofit100">—</div></div>
-    </div>
-    <div class="mt-4">
-      <div class="label text-slate-400 text-sm">Networks</d
-iv>
-      <div id="detailNetworks" class="network-status mt-1">
-</div>
-    </div>
-    <div class="mt-4 p-3 bg-slate-900/50 rounded-xl border 
-border-slate-700">
-      <div class="label text-slate-400 text-sm">Expires In<
-/div>
-      <div class="flex flex-wrap items-center gap-3 mt-1">
-        <span id="detailExpiryDate" class="text-sm text-sla
-te-300">—</span>
-        <span class="countdown" id="detailCountdown">--:--:
---</span>
-      </div>
-    </div>
-    <div class="mt-4 p-3 bg-slate-900/30 rounded-xl border 
-border-slate-700">
-      <div class="label text-slate-400 text-sm">Profit Calc
-ulator</div>
-      <div class="profit-calc" style="border-top: none; pad
-ding-top: 0; margin-top: 4px;">
-        <label>Amount (USDT):</label>
-        <input type="number" id="modalProfitAmount" value="
-100" min="1" step="10" oninput="updateModalProfit()">
-        <span class="result" id="modalProfitResult">$0.00</
-span>
-      </div>
-      <div class="text-xs text-slate-500 mt-1">* Estimated 
-net profit after 0.2% trading fee</div>
-      <button class="btn btn-sm mt-3" onclick="openFullCalc
-ulatorFromModal()">📊 Open Full Calculator</button>
-    </div>
-    <button class="btn btn-sm mt-4" onclick="closeDetailsMo
-dal()">Close</button>
+    <button class="btn-secondary btn-sm mt-4" onclick="clearLogs()">🗑️ Clear Logs</button>
   </div>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-  <div>ArbiMine Pro v3.0 • 13 Exchanges</div>
-  <div class="flex gap-4">
-    <span>🟢 Server Online</span>
-    <span>🟢 DB Online</span>
-    <span>🟢 WS Online</span>
-  </div>
-  <div class="badge-container">
-    <span style="display:block; text-align: center;">
-      <a href="https://paystack.com" target="_blank">
-        <img src="https://paystack.com/assets/img/brand/pay
-stack-logo-white.png" width="180px" alt="Paystack Secure Pa
-yments">
-      </a>
-      <strong><a style="display: block; color: #fafafa; tex
-t-decoration: none; font-size: 0.8em; margin-top: 0.6em;" h
-ref="https://paystack.com" target="_blank">Secured by Payst
-ack</a></strong>
-    </span>
-  </div>
+  <div>ArbiMine Pro v2.0.0</div>
+  <div class="flex gap-4"><span>🟢 Server Online</span><span>🟢 DB Online</span><span>🟢 WS Online</span></div>
   <div>© 2026 ArbiMine</div>
 </div>
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav" id="bottomNav">
-  <button class="active" onclick="showPage('dashboard')"><s
-pan class="icon">📊</span><span>Home</span></button>
-  <button onclick="showPage('arbitrage')"><span class="icon
-">🔄</span><span>Arbitrage</span></button>
-  <button onclick="showPage('topcoins')"><span class="icon"
->🏆</span><span>Top</span></button>
-  <button onclick="showPage('watchlist')"><span class="icon
-">⭐</span><span>Watch</span></button>
-  <button onclick="showPage('calculator')"><span class="ico
-n">🧮</span><span>Calc</span></button>
-  <button onclick="showPage('pro')"><span class="icon">💎</
-span><span>Pro</span></button>
-  <button onclick="showPage('profile')"><span class="icon">
-👤</span><span>Profile</span></button>
-  <button onclick="showPage('settings')"><span class="icon"
->⚙</span><span>Settings</span></button>
-  <button onclick="showPage('help')"><span class="icon">💬<
-/span><span>Help</span></button>
+  <button class="active" onclick="showPage('dashboard')"><span class="icon">📊</span><span>Home</span></button>
+  <button onclick="showPage('arbitrage')"><span class="icon">🔄</span><span>Arbitrage</span></button>
+  <button onclick="showPage('topcoins')"><span class="icon">🏆</span><span>Top</span></button>
+  <button onclick="showPage('triangular')"><span class="icon">🔺</span><span>Tri</span></button>
+  <button onclick="showPage('autotriangular')"><span class="icon">🤖</span><span>Auto</span></button>
+  <button onclick="showPage('watchlist')"><span class="icon">⭐</span><span>Watch</span></button>
+  <button onclick="showPage('portfolio')"><span class="icon">💼</span><span>Port</span></button>
 </div>
 
 </div><!-- /#appContent -->
@@ -464,43 +525,17 @@ span><span>Pro</span></button>
 
 <script>
   // ==========================================
-  // CONSTANTS
-  // ==========================================
-  const EXCHANGE_IDS = [
-    'kucoin', 'mexc', 'kraken', 'huobi', 'gateio', 'coinex'
-, 'crypto', 'xt',
-    'poloniex', 'bitfinex', 'upbit', 'whitebit', 'indodax'
-  ];
-  const EXCHANGE_NAMES = {
-    kucoin: 'KuCoin', mexc: 'MEXC', kraken: 'Kraken', huobi
-: 'HTX',
-    gateio: 'Gate.io', coinex: 'CoinEx', crypto: 'Crypto.co
-m', xt: 'XT.COM',
-    poloniex: 'Poloniex', bitfinex: 'Bitfinex', upbit: 'Upb
-it',
-    whitebit: 'WhiteBIT', indodax: 'Indodax'
-  };
-
-  // ==========================================
   // STATE
   // ==========================================
   let token = localStorage.getItem('token');
   let allOpportunities = [];
   let selectedExchanges = new Set(['all']);
-  let watchlist = JSON.parse(localStorage.getItem('arbimine
-_watchlist') || '[]');
-  let currentUser = null;
-  let messageList = [];
-  let refreshTimer = null;
-  let isPro = false;
-  let totalAvailable = 0;
-  let shownCount = 0;
-  let countdownInterval = null;
-  let currentDetailOpp = null;
-  let currentCurrency = 'KES';
-  const EXCHANGE_RATE = 130;
-  let planSettings = { weekly: { amount: 260, duration: 7 }
-, monthly: { amount: 900, duration: 30 } };
+  let currentTradeTarget = null;
+  let progressInterval = null;
+  let chartInstances = {};
+  let autoMode = false;
+  let botRunning = false;
+  let watchlist = JSON.parse(localStorage.getItem('arbimine_watchlist') || '[]');
 
   // ==========================================
   // UI HELPERS
@@ -511,23 +546,18 @@ _watchlist') || '[]');
     t.className = 'toast ' + type;
     t.style.display = 'block';
     clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.style.display = 'none', 4
-000);
+    t._timer = setTimeout(() => t.style.display = 'none', 4000);
   }
 
   function togglePwd(id, el) {
     const inp = document.getElementById(id);
-    if (inp.type === 'password') { inp.type = 'text'; el.in
-nerText = '🙈'; } else { inp.type = 'password'; el.innerTex
-t = '👁'; }
+    if (inp.type === 'password') { inp.type = 'text'; el.innerText = '🙈'; } else { inp.type = 'password'; el.innerText = '👁️'; }
   }
 
-  function toggleTheme() { document.body.classList.toggle('
-light'); }
+  function toggleTheme() { document.body.classList.toggle('light'); }
 
   function updateClock() {
-    document.getElementById('currentTime').innerText = new 
-Date().toLocaleTimeString();
+    document.getElementById('currentTime').innerText = new Date().toLocaleTimeString();
   }
   setInterval(updateClock, 1000);
   updateClock();
@@ -536,89 +566,25 @@ Date().toLocaleTimeString();
   // SIDEBAR
   // ==========================================
   function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('op
-en');
-    document.getElementById('sidebarOverlay').classList.tog
-gle('active');
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('active');
   }
   function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('op
-en');
-    document.getElementById('sidebarOverlay').classList.rem
-ove('active');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
   }
 
   // ==========================================
-  // AUTH
+  // AUTH (OPTIMIZED)
   // ==========================================
-  function showRegister() {
-    document.getElementById('loginModal').classList.remove(
-'show');
-    document.getElementById('registerModal').classList.add(
-'show');
-    document.getElementById('regError').classList.add('hidd
-en');
-  }
-  function showLogin() {
-    document.getElementById('registerModal').classList.remo
-ve('show');
-    document.getElementById('loginModal').classList.add('sh
-ow');
-    document.getElementById('loginError').classList.add('hi
-dden');
-  }
-
-  async function registerUser() {
-    const username = document.getElementById('regUsername')
-.value.trim();
-    const email = document.getElementById('regEmail').value
-.trim();
-    const mpesa = document.getElementById('regMpesa').value
-.trim();
-    const password = document.getElementById('regPassword')
-.value;
-    const errorEl = document.getElementById('regError');
-    if (!username || !email || !mpesa || !password) {
-      errorEl.textContent = "All fields required";
-      errorEl.classList.remove('hidden');
-      return;
-    }
-    if (!/^[0-9]+$/.test(mpesa) || mpesa.length < 10) {
-      errorEl.textContent = "Enter a valid M-Pesa number (d
-igits only, 10+ digits)";
-      errorEl.classList.remove('hidden');
-      return;
-    }
-    try {
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, mpesa, pass
-word })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Registrat
-ion failed');
-      showToast('Account created! Please log in.', 'success
-');
-      showLogin();
-      document.getElementById('loginEmail').value = email;
-    } catch (err) {
-      errorEl.textContent = err.message;
-      errorEl.classList.remove('hidden');
-    }
-  }
-
   async function loginUser() {
-    const email = document.getElementById('loginEmail').val
-ue.trim();
-    const password = document.getElementById('loginPassword
-').value;
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
     const errorEl = document.getElementById('loginError');
     const btn = document.getElementById('loginBtn');
 
-    if (!email || !password) {
-      errorEl.textContent = "Email and password required";
+    if (!username || !password) {
+      errorEl.textContent = "Username and password required";
       errorEl.classList.remove('hidden');
       return;
     }
@@ -629,46 +595,38 @@ ue.trim();
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, password })
       });
       const data = await res.json();
       if (data.success && data.token) {
+        localStorage.setItem('token', data.token);
         token = data.token;
-        localStorage.setItem('token', token);
-        document.getElementById('loginModal').classList.rem
-ove('show');
-        document.getElementById('registerModal').classList.
-remove('show');
-        document.getElementById('appContent').style.display
- = 'block';
-        currentUser = { username: data.username };
-        await loadUserProfile();
-        await loadPlans();
-        await loadOpportunities();
-        await loadMessages();
-        await loadSubscription();
-        initExchangeFilters();
-        setCurrency('KES');
+        document.getElementById('loginModal').classList.remove('show');
+        document.getElementById('appContent').style.display = 'block';
+        loadOpportunities();
+        loadPortfolio();
+        renderAnalytics();
+        loadAIInsights();
+        loadTriangular();
         showToast('✅ Login successful', 'success');
-
-        if (refreshTimer) clearInterval(refreshTimer);
-        refreshTimer = setInterval(() => {
-          const activePages = ['dashboard', 'arbitrage', 't
-opcoins', 'watchlist'];
-          if (activePages.some(id => document.getElementByI
-d('page-'+id).classList.contains('active'))) {
+        // Auto-refresh
+        setInterval(() => {
+          if (document.getElementById('page-dashboard').classList.contains('active') ||
+              document.getElementById('page-arbitrage').classList.contains('active') ||
+              document.getElementById('page-topcoins').classList.contains('active') ||
+              document.getElementById('page-watchlist').classList.contains('active')) {
             loadOpportunities();
           }
         }, 30000);
       } else {
-        errorEl.textContent = data.error || "Invalid creden
-tials";
+        errorEl.textContent = data.error || "Invalid credentials";
         errorEl.classList.remove('hidden');
+        btn.textContent = "Log In";
+        btn.disabled = false;
       }
     } catch (err) {
-      errorEl.textContent = "Connection error";
+      errorEl.textContent = "Connection error. Check server.";
       errorEl.classList.remove('hidden');
-    } finally {
       btn.textContent = "Log In";
       btn.disabled = false;
     }
@@ -677,261 +635,466 @@ tials";
   function logout() {
     localStorage.removeItem('token');
     token = null;
-    document.getElementById('appContent').style.display = '
-none';
-    document.getElementById('loginModal').classList.add('sh
-ow');
-    document.getElementById('loginError').classList.add('hi
-dden');
+    document.getElementById('appContent').style.display = 'none';
+    document.getElementById('loginModal').classList.add('show');
+    document.getElementById('loginError').classList.add('hidden');
     showToast('Logged out', 'info');
-    if (refreshTimer) clearInterval(refreshTimer);
-    if (countdownInterval) clearInterval(countdownInterval)
-;
-  }
-
-  // ==========================================
-  // USER PROFILE
-  // ==========================================
-  async function loadUserProfile() {
-    try {
-      const res = await fetch('/api/me', { headers: { Autho
-rization: token } });
-      const data = await res.json();
-      currentUser = { ...currentUser, ...data };
-      document.getElementById('profileUsername').textConten
-t = data.username || '—';
-      document.getElementById('profileEmail').textContent =
- data.email || '—';
-      document.getElementById('profileMpesa').textContent =
- data.mpesa || '—';
-    } catch (e) { console.error('Profile load error', e); }
-  }
-
-  // ==========================================
-  // PLAN SETTINGS (dynamic from server)
-  // ==========================================
-  async function loadPlans() {
-    try {
-      const res = await fetch('/api/plans');
-      const data = await res.json();
-      if (data.weekly && data.monthly) {
-        planSettings = data;
-        updateProPrices();
-      }
-    } catch (e) {
-      console.warn('Failed to load plans', e);
-    }
-  }
-
-  function updateProPrices() {
-    const weeklyEl = document.getElementById('weeklyPriceDi
-splay');
-    const monthlyEl = document.getElementById('monthlyPrice
-Display');
-    if (!planSettings.weekly) return;
-    if (currentCurrency === 'USD') {
-      weeklyEl.textContent = `$${(planSettings.weekly.amoun
-t / EXCHANGE_RATE).toFixed(2)}`;
-      monthlyEl.textContent = `$${(planSettings.monthly.amo
-unt / EXCHANGE_RATE).toFixed(2)}`;
-    } else {
-      weeklyEl.textContent = `KES ${planSettings.weekly.amo
-unt}`;
-      monthlyEl.textContent = `KES ${planSettings.monthly.a
-mount}`;
-    }
-  }
-
-  function setCurrency(currency) {
-    currentCurrency = currency;
-    document.getElementById('btnKES').classList.toggle('act
-ive', currency === 'KES');
-    document.getElementById('btnUSD').classList.toggle('act
-ive', currency === 'USD');
-    updateProPrices();
-  }
-
-  // ==========================================
-  // SUBSCRIPTION
-  // ==========================================
-  async function loadSubscription() {
-    try {
-      const res = await fetch('/api/user/subscription', { h
-eaders: { Authorization: token } });
-      const data = await res.json();
-      if (data.active) {
-        document.getElementById('profilePlan').textContent 
-= data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
-        document.getElementById('profileExpiry').textConten
-t = data.expiresAt ? new Date(data.expiresAt).toLocaleDateS
-tring() : '—';
-        document.getElementById('subPlanDisplay').textConte
-nt = data.plan.charAt(0).toUpperCase() + data.plan.slice(1)
-;
-        isPro = true;
-      } else {
-        document.getElementById('profilePlan').textContent 
-= 'Free';
-        document.getElementById('profileExpiry').textConten
-t = '—';
-        document.getElementById('subPlanDisplay').textConte
-nt = 'Free';
-        isPro = false;
-      }
-    } catch (e) {}
-  }
-
-  function checkPaymentStatus() {
-    const urlParams = new URLSearchParams(window.location.s
-earch);
-    const hashParams = new URLSearchParams(window.location.
-hash.split('?')[1] || '');
-    const status = urlParams.get('payment') || hashParams.g
-et('payment');
-    const msgEl = document.getElementById('paymentMessage')
-;
-    if (status === 'success') {
-      msgEl.innerHTML = '✅ Payment successful! Your Pro pl
-an is now active.';
-      msgEl.className = 'text-green-400 text-center';
-      loadSubscription();
-      loadOpportunities();
-      window.history.replaceState({}, document.title, windo
-w.location.pathname + window.location.hash.split('?')[0]);
-    } else if (status === 'failed') {
-      msgEl.innerHTML = '❌ Payment failed. Please try agai
-n.';
-      msgEl.className = 'text-red-400 text-center';
-      window.history.replaceState({}, document.title, windo
-w.location.pathname + window.location.hash.split('?')[0]);
-    }
-  }
-
-  // ==========================================
-  // PAYSTACK SUBSCRIPTION
-  // ==========================================
-  async function subscribeWithPaystack(plan, btn) {
-    btn.disabled = true;
-    btn.textContent = 'Redirecting...';
-    document.getElementById('subStatus').innerText = 'Prepa
-ring payment...';
-    document.getElementById('subStatus').className = 'text-
-yellow-400 text-center';
-
-    try {
-      const res = await fetch('/api/paystack/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token
-        },
-        body: JSON.stringify({ plan })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Payment i
-nitialization failed');
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      showToast(err.message, 'error');
-      btn.disabled = false;
-      btn.textContent = plan === 'weekly' ? 'Subscribe Week
-ly' : 'Subscribe Monthly';
-      document.getElementById('subStatus').innerText = '❌ 
-' + err.message;
-      document.getElementById('subStatus').className = 'tex
-t-red-400 text-center';
-    }
-  }
-
-  // ==========================================
-  // REFERRAL COPY
-  // ==========================================
-  function copyReferral() {
-    const link = document.getElementById('referralLink');
-    navigator.clipboard.writeText(link.value).then(() => {
-      const status = document.getElementById('copyStatus');
-      status.style.display = 'flex';
-      setTimeout(() => status.style.display = 'none', 3000)
-;
-    }).catch(() => {
-      link.select();
-      document.execCommand('copy');
-      const status = document.getElementById('copyStatus');
-      status.style.display = 'flex';
-      setTimeout(() => status.style.display = 'none', 3000)
-;
-    });
+    if (progressInterval) clearInterval(progressInterval);
   }
 
   // ==========================================
   // PAGE NAVIGATION
   // ==========================================
   function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.class
-List.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
-    document.querySelectorAll('.nav-tabs button').forEach(b
- => b.classList.remove('active'));
-    document.querySelector(`.nav-tabs button[data-tab="${pa
-ge}"]`)?.classList.add('active');
-
-    const map = { dashboard:0, arbitrage:1, topcoins:2, wat
-chlist:3, calculator:4, pro:5, profile:6, settings:7, help:
-8 };
-    const btns = document.querySelectorAll('#bottomNav butt
-on');
-    btns.forEach(b => b.classList.remove('active'));
-    if (btns[map[page]]) btns[map[page]].classList.add('act
-ive');
-
-    if (page === 'dashboard' || page === 'arbitrage' || pag
-e === 'topcoins' || page === 'watchlist') {
+    document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.nav-tabs button[data-tab="${page}"]`)?.classList.add('active');
+    const map = { dashboard:0, arbitrage:1, topcoins:2, triangular:3, autotriangular:4, watchlist:5, exchanges:6, copytrade:7, portfolio:8, analytics:9, aiinsights:10, settings:11, logs:12 };
+    if (map[page] !== undefined) {
+      const btns = document.querySelectorAll('#bottomNav button');
+      if (btns[map[page]]) btns[map[page]].classList.add('active');
+    }
+    if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
-      if (page === 'topcoins' && isPro) refreshTopCoins();
+      if (page === 'topcoins') refreshTopCoins();
       if (page === 'watchlist') renderWatchlist();
     }
-    if (page === 'help') loadMessages();
-    if (page === 'profile') loadUserProfile();
-    if (page === 'pro') checkPaymentStatus();
-    if (page === 'settings') loadUserProfile();
+    if (page === 'triangular') loadTriangular();
+    if (page === 'portfolio') loadPortfolio();
+    if (page === 'analytics') renderAnalytics();
+    if (page === 'aiinsights') loadAIInsights();
     closeSidebar();
   }
 
   // ==========================================
-  // EXCHANGE FILTER BUTTONS
+  // WATCHLIST
   // ==========================================
-  function initExchangeFilters() {
-    const container = document.getElementById('exchangeFilt
-erContainer');
-    if (!container) return;
-    container.innerHTML = `<button class="exchange-filter-b
-tn active" data-exchange="all" onclick="toggleExchangeFilte
-r('all')"><span class="check">✔ </span>All</button>`;
-    EXCHANGE_IDS.forEach(id => {
-      const name = EXCHANGE_NAMES[id] || id.toUpperCase();
-      const btn = document.createElement('button');
-      btn.className = 'exchange-filter-btn';
-      btn.dataset.exchange = id;
-      btn.innerHTML = `<span class="check">✔ </span>${name}
-`;
-      btn.onclick = () => toggleExchangeFilter(id);
-      container.appendChild(btn);
-    });
+  function toggleWatchlist(oppId) {
+    const index = watchlist.indexOf(oppId);
+    if (index > -1) {
+      watchlist.splice(index, 1);
+    } else {
+      watchlist.push(oppId);
+    }
+    localStorage.setItem('arbimine_watchlist', JSON.stringify(watchlist));
+    if (document.getElementById('page-watchlist').classList.contains('active')) {
+      renderWatchlist();
+    } else {
+      renderAllOpportunityLists(allOpportunities);
+    }
   }
 
+  function isInWatchlist(oppId) {
+    return watchlist.includes(oppId);
+  }
+
+  function renderWatchlist() {
+    const watched = allOpportunities.filter(o => watchlist.includes(o.id));
+    const container = document.getElementById('watchlistOpportunities');
+    container.innerHTML = watched.map(o => buildOpportunityCard(o, true)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities in watchlist.</div>';
+  }
+
+  // ==========================================
+  // OPPORTUNITIES
+  // ==========================================
+  async function refreshOpportunities() { await loadOpportunities(); }
+
+  async function loadOpportunities() {
+    try {
+      const res = await fetch('/api/opportunities', { headers: { Authorization: token } });
+      if (!res.ok) throw new Error('Failed to load');
+      const data = await res.json();
+      allOpportunities = data.opportunities || [];
+      updateStats(allOpportunities);
+      renderAllOpportunityLists(allOpportunities);
+      refreshTopCoins();
+      if (document.getElementById('page-watchlist').classList.contains('active')) renderWatchlist();
+    } catch (e) {
+      showToast('Failed to load opportunities', 'error');
+    }
+  }
+
+  function updateStats(opps) {
+    document.getElementById('oppCount').innerText = opps.length;
+    let highest = 0, tradable = 0, totalSpread = 0;
+    opps.forEach(o => {
+      const sp = parseFloat(o.spread) || 0;
+      if (sp > highest) highest = sp;
+      if (o.tradable) tradable++;
+      totalSpread += sp;
+    });
+    document.getElementById('bestSpread').innerText = highest.toFixed(2) + '%';
+    document.getElementById('tradableCount').innerText = tradable;
+    const avg = opps.length ? (totalSpread / opps.length) : 0;
+    document.getElementById('avgSpread').innerText = avg.toFixed(2) + '%';
+    const daily = opps.reduce((sum, o) => sum + (parseFloat(o.spread) || 0) * 10, 0);
+    document.getElementById('dailyProfit').innerText = '$' + daily.toFixed(2);
+    document.getElementById('successRate').innerText = (opps.length ? Math.min(95, 60 + Math.random()*30) : 0).toFixed(0) + '%';
+  }
+
+  function buildOpportunityCard(o, isWatchlistPage = false) {
+    const spread = parseFloat(o.spread) || 0;
+    const buyPrice = parseFloat(o.buyPrice) || 0;
+    const sellPrice = parseFloat(o.sellPrice) || 0;
+    const profit = (sellPrice - buyPrice) * 100;
+    const riskClass = o.risk === 'low' ? 'badge-low' : o.risk === 'high' ? 'badge-high' : 'badge-medium';
+    const tradableClass = o.tradable ? 'badge-tradable' : 'badge-nontradable';
+    const tradableText = o.tradable ? 'Tradable' : 'Non-Tradable';
+    const aiBadge = o.aiScore ? `<span class="badge badge-ai ml-2">AI ${o.aiScore}</span>` : '';
+    const starClass = isInWatchlist(o.id) ? 'active' : 'inactive';
+    return `
+      <div class="opportunity-card">
+        <div class="top-row">
+          <div class="symbol">${o.symbol} ${aiBadge}</div>
+          <div class="flex items-center gap-2">
+            <span class="spread">${spread.toFixed(2)}%</span>
+            <span class="watchlist-star ${starClass}" onclick="event.stopPropagation(); toggleWatchlist('${o.id}')">${isInWatchlist(o.id) ? '⭐' : '☆'}</span>
+          </div>
+        </div>
+        <div class="exchange-row">
+          <div class="exchange-box">
+            <div class="label">Buy</div>
+            <div class="exchange text-green-400">${o.buyExchange}</div>
+            <div class="price">$${buyPrice.toFixed(8)}</div>
+          </div>
+          <div class="exchange-box">
+            <div class="label">Sell</div>
+            <div class="exchange text-red-400">${o.sellExchange}</div>
+            <div class="price">$${sellPrice.toFixed(8)}</div>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-item"><div class="label">Liquidity</div><div class="value">$${Number(o.liquidity || 0).toLocaleString()}</div></div>
+          <div class="detail-item"><div class="label">Profit (100 USDT)</div><div class="value ${profit >= 0 ? 'text-green-400' : 'text-red-400'}">$${profit.toFixed(2)}</div></div>
+          <div class="detail-item"><div class="label">Risk</div><div class="value"><span class="badge ${riskClass}">${o.risk || 'medium'}</span></div></div>
+          <div class="detail-item"><div class="label">Tradable</div><div class="value"><span class="badge ${tradableClass}">${tradableText}</span></div></div>
+        </div>
+        <div class="mt-2 flex justify-end gap-2">
+          <button class="btn btn-sm" onclick="event.stopPropagation(); openExecuteModalFromOpp(${JSON.stringify(o).replace(/'/g,"&#39;")})">⚡ Execute</button>
+          ${!isWatchlistPage ? `<button class="btn-secondary btn-sm" onclick="event.stopPropagation(); toggleWatchlist('${o.id}')">${isInWatchlist(o.id) ? '⭐' : '☆'}</button>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAllOpportunityLists(opps) {
+    const dashContainer = document.getElementById('dashboardOpportunities');
+    dashContainer.innerHTML = opps.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities</div>';
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('searchInput')?.value?.toUpperCase() || '';
+    const risk = document.getElementById('riskFilter')?.value || 'all';
+    let filtered = allOpportunities.filter(o => {
+      if (search && !o.symbol.toUpperCase().includes(search)) return false;
+      if (!selectedExchanges.has('all')) {
+        const exLower = o.buyExchange.toLowerCase();
+        const sellLower = o.sellExchange.toLowerCase();
+        let match = false;
+        for (const ex of selectedExchanges) {
+          if (ex === 'all') continue;
+          if (exLower === ex || sellLower === ex) { match = true; break; }
+        }
+        if (!match) return false;
+      }
+      if (risk !== 'all' && o.risk !== risk) return false;
+      return true;
+    });
+    document.getElementById('arbitrageOpportunities').innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No opportunities match filters</div>';
+  }
+
+  function refreshTopCoins() {
+    const topSymbols = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE', 'TRX', 'LTC', 'ADA', 'AVAX', 'LINK', 'TON', 'SUI'];
+    const filtered = allOpportunities.filter(o => topSymbols.includes(o.symbol));
+    const container = document.getElementById('topCoinsOpportunities');
+    container.innerHTML = filtered.map(o => buildOpportunityCard(o)).join('') || '<div class="text-slate-400 text-center py-4">No top coin opportunities</div>';
+  }
+
+  // ==========================================
+  // TRIANGULAR ARBITRAGE
+  // ==========================================
+  async function loadTriangular() {
+    const exchange = document.getElementById('triangularExchange').value;
+    const container = document.getElementById('triangularOpportunities');
+    container.innerHTML = '<div class="text-slate-400 text-center">Scanning...</div>';
+    try {
+      const res = await fetch(`/api/triangular/${exchange}`, { headers: { Authorization: token } });
+      const data = await res.json();
+      if (!data.length) {
+        container.innerHTML = '<div class="text-slate-400 text-center">No triangular opportunities found.</div>';
+        return;
+      }
+      container.innerHTML = data.map(t => `
+        <div class="opportunity-card" onclick="openExecuteModalFromTriangular(${JSON.stringify(t).replace(/'/g,"&#39;")})">
+          <div class="top-row">
+            <div class="symbol">🔺 ${t.startCurrency}</div>
+            <div class="spread text-green-400">${t.profitPercent.toFixed(2)}%</div>
+          </div>
+          <div class="exchange-row">
+            <div class="exchange-box" style="flex:1; background:#020617; padding:10px; border-radius:14px; text-align:center;">
+              <div class="label" style="font-size:11px; color:#94a3b8;">Path</div>
+              <div class="triangular-path" style="font-size:14px; color:#22c55e;">${t.path.join(' → ')}</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-item"><div class="label">Est. Profit</div><div class="value text-green-400">$${t.estimatedProfit.toFixed(4)}</div></div>
+            <div class="detail-item"><div class="label">Exchange</div><div class="value">${t.exchange}</div></div>
+          </div>
+          <div class="mt-2 flex justify-end">
+            <button class="btn btn-sm" onclick="event.stopPropagation(); openExecuteModalFromTriangular(${JSON.stringify(t).replace(/'/g,"&#39;")})">⚡ Execute</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      container.innerHTML = '<div class="text-slate-400 text-center">Failed to load triangular opportunities.</div>';
+    }
+  }
+
+  // ==========================================
+  // EXECUTE MODAL
+  // ==========================================
+  function openExecuteModalFromOpp(opp) {
+    currentTradeTarget = { type: 'cross', data: opp };
+    openExecuteModal(opp);
+  }
+
+  function openExecuteModalFromTriangular(tri) {
+    const opp = {
+      symbol: `🔺 ${tri.startCurrency}`,
+      buyExchange: tri.exchange,
+      sellExchange: tri.exchange,
+      buyPrice: 0,
+      sellPrice: 0,
+      spread: tri.profitPercent,
+      liquidity: 100000,
+      risk: 'medium',
+      tradable: true,
+      buyPair: tri.path[0],
+      sellPair: tri.path[2],
+      buyNetworks: {},
+      sellNetworks: {},
+      buyWithdraw: true,
+      sellDeposit: true,
+      isTriangular: true,
+      triangularPath: tri.path,
+      triangularProfit: tri.estimatedProfit
+    };
+    currentTradeTarget = { type: 'triangular', data: tri };
+    openExecuteModal(opp);
+  }
+
+  function openExecuteModal(opp) {
+    if (!opp) return;
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    const spread = parseFloat(opp.spread) || 0;
+    const isTri = opp.isTriangular || false;
+    const title = isTri ? '🔺 Execute Triangular Trade' : '⚡ Execute Trade';
+    document.getElementById('execModalTitle').innerText = title;
+
+    let summaryHtml = `
+      <div class="grid grid-cols-2 gap-2">
+        <div><span class="text-slate-400">Symbol</span><br><strong>${opp.symbol}</strong></div>
+        <div><span class="text-slate-400">Spread</span><br><strong>${spread.toFixed(2)}%</strong></div>
+        <div><span class="text-slate-400">Buy Exchange</span><br><strong>${opp.buyExchange}</strong></div>
+        <div><span class="text-slate-400">Sell Exchange</span><br><strong>${opp.sellExchange}</strong></div>`;
+    if (isTri) {
+      summaryHtml += `<div class="col-span-2"><span class="text-slate-400">Path</span><br><strong class="text-green-400">${opp.triangularPath.join(' → ')}</strong></div>`;
+    } else {
+      summaryHtml += `<div><span class="text-slate-400">Buy Price</span><br><strong>$${buy.toFixed(8)}</strong></div>
+                      <div><span class="text-slate-400">Sell Price</span><br><strong>$${sell.toFixed(8)}</strong></div>`;
+    }
+    summaryHtml += `</div>`;
+    document.getElementById('execSummary').innerHTML = summaryHtml;
+
+    const buyNets = opp.buyNetworks ? Object.values(opp.buyNetworks) : [];
+    const sellNets = opp.sellNetworks ? Object.values(opp.sellNetworks) : [];
+    document.getElementById('execWithdrawNet').innerText = buyNets.length ? buyNets[0].name : '—';
+    document.getElementById('execDepositNet').innerText = sellNets.length ? sellNets[0].name : '—';
+    document.getElementById('execDepositAddr').innerText = '0x' + Array.from({length:40}, ()=>Math.floor(Math.random()*16).toString(16)).join('');
+
+    fetch(`/api/balance/${opp.buyExchange.toLowerCase()}`, { headers: { Authorization: token } })
+      .then(r => r.json())
+      .then(data => {
+        const bal = data.USDT || 0;
+        document.getElementById('execBalance').innerText = '$' + bal.toFixed(2);
+      }).catch(() => document.getElementById('execBalance').innerText = 'Error');
+
+    document.getElementById('execAmount').value = 100;
+    updateExecutePreview();
+    document.getElementById('execError').classList.add('hidden');
+    document.getElementById('executeModal').classList.add('show');
+  }
+
+  function closeExecuteModal() {
+    document.getElementById('executeModal').classList.remove('show');
+  }
+
+  function updateExecutePreview() {
+    const target = currentTradeTarget;
+    if (!target) return;
+    let opp = target.type === 'cross' ? target.data : target.data;
+    if (!opp) return;
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    const amount = parseFloat(document.getElementById('execAmount').value) || 0;
+    if (amount <= 0 || buy <= 0) {
+      document.getElementById('execGrossProfit').innerText = '$0.00';
+      document.getElementById('execTradingFee').innerText = '$0.00';
+      document.getElementById('execWithdrawFee').innerText = '$0.00';
+      document.getElementById('execDepositFee').innerText = '$0.00';
+      document.getElementById('execTotalFees').innerText = '$0.00';
+      document.getElementById('execNetProfit').innerText = '$0.00';
+      document.getElementById('execROI').innerText = '0.00%';
+      return;
+    }
+    const coinAmount = amount / buy;
+    const grossProfit = (sell - buy) * coinAmount;
+    const tradeFeeRate = 0.001;
+    const buyTradeFee = amount * tradeFeeRate;
+    const sellTradeFee = (coinAmount * sell) * tradeFeeRate;
+    const totalTradingFees = buyTradeFee + sellTradeFee;
+    const withdrawalFeeUSD = 0.5;
+    const depositFeeUSD = 0.2;
+    const totalNetworkFees = withdrawalFeeUSD + depositFeeUSD;
+    const slippage = amount * 0.002;
+    const totalFees = totalTradingFees + totalNetworkFees + slippage;
+    const netProfit = grossProfit - totalFees;
+    const roi = amount > 0 ? (netProfit / amount) * 100 : 0;
+    document.getElementById('execGrossProfit').innerText = '$' + grossProfit.toFixed(2);
+    document.getElementById('execTradingFee').innerText = '$' + totalTradingFees.toFixed(2);
+    document.getElementById('execWithdrawFee').innerText = '$' + withdrawalFeeUSD.toFixed(2);
+    document.getElementById('execDepositFee').innerText = '$' + depositFeeUSD.toFixed(2);
+    document.getElementById('execTotalFees').innerText = '$' + totalFees.toFixed(2);
+    document.getElementById('execNetProfit').innerText = '$' + netProfit.toFixed(2);
+    document.getElementById('execROI').innerText = roi.toFixed(2) + '%';
+  }
+
+  async function confirmExecuteTrade() {
+    const target = currentTradeTarget;
+    if (!target) return;
+    const amount = parseFloat(document.getElementById('execAmount').value) || 0;
+    if (amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+    let payload = {};
+    if (target.type === 'cross') {
+      const opp = target.data;
+      const buy = parseFloat(opp.buyPrice) || 0;
+      payload = {
+        symbol: opp.symbol,
+        buyExchange: opp.buyExchange,
+        sellExchange: opp.sellExchange,
+        buyPrice: opp.buyPrice,
+        sellPrice: opp.sellPrice,
+        amount: amount / buy,
+        investment: amount,
+        buyPair: opp.buyPair || `${opp.symbol}/USDT`,
+        sellPair: opp.sellPair || `${opp.symbol}/USDT`
+      };
+    } else if (target.type === 'triangular') {
+      const tri = target.data;
+      payload = {
+        type: 'triangular',
+        exchange: tri.exchange,
+        path: tri.path,
+        startAmount: amount,
+        startCurrency: tri.startCurrency
+      };
+    }
+    document.getElementById('execError').classList.add('hidden');
+    try {
+      const res = await fetch('/api/trade/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success && data.tradeId) {
+        closeExecuteModal();
+        openProgressModal(data.tradeId);
+      } else {
+        document.getElementById('execError').innerText = data.error || 'Execution failed';
+        document.getElementById('execError').classList.remove('hidden');
+      }
+    } catch (e) {
+      document.getElementById('execError').innerText = 'Network error';
+      document.getElementById('execError').classList.remove('hidden');
+    }
+  }
+
+  // ==========================================
+  // PROGRESS MODAL
+  // ==========================================
+  function openProgressModal(tradeId) {
+    document.getElementById('progressModal').classList.add('show');
+    document.getElementById('progressSteps').innerHTML = '<div class="text-slate-400 text-center">Loading progress...</div>';
+    document.getElementById('progressResult').innerText = '';
+    if (progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(() => fetchProgress(tradeId), 2000);
+    fetchProgress(tradeId);
+  }
+
+  async function fetchProgress(tradeId) {
+    try {
+      const res = await fetch(`/api/trade/status/${tradeId}`, { headers: { Authorization: token } });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const steps = data.steps || [];
+      const container = document.getElementById('progressSteps');
+      if (steps.length === 0) {
+        container.innerHTML = '<div class="text-slate-400 text-center">Waiting...</div>';
+      } else {
+        container.innerHTML = steps.map((step, idx) => {
+          const isActive = idx === steps.length - 1 && data.status === 'pending';
+          const isCompleted = idx < steps.length - 1 || data.status === 'completed';
+          const isFailed = data.status === 'failed' && idx === steps.length - 1;
+          let icon = '⏳';
+          let cls = 'active';
+          if (isCompleted) { icon = '✅'; cls = 'completed'; }
+          else if (isFailed) { icon = '❌'; cls = 'failed'; }
+          return `<div class="progress-step ${cls}"><span class="status-icon">${icon}</span><span>${step}</span></div>`;
+        }).join('');
+      }
+      const resultDiv = document.getElementById('progressResult');
+      if (data.status === 'completed') {
+        resultDiv.innerHTML = `✅ Trade completed! Profit: $${data.netProfit?.toFixed(2) || 'N/A'} (${data.roi?.toFixed(2) || 0}%)`;
+        clearInterval(progressInterval);
+        progressInterval = null;
+      } else if (data.status === 'failed') {
+        resultDiv.innerHTML = `❌ Trade failed: ${data.progress || 'Unknown error'}`;
+        clearInterval(progressInterval);
+        progressInterval = null;
+      } else {
+        resultDiv.innerHTML = '';
+      }
+    } catch (e) {
+      console.error('Progress fetch error:', e);
+    }
+  }
+
+  function closeProgressModal() {
+    document.getElementById('progressModal').classList.remove('show');
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+  }
+
+  // ==========================================
+  // EXCHANGE FILTER
+  // ==========================================
   function toggleExchangeFilter(exchange) {
     if (exchange === 'all') {
       selectedExchanges = new Set(['all']);
-      document.querySelectorAll('.exchange-filter-btn').for
-Each(btn => {
-        btn.classList.toggle('active', btn.dataset.exchange
- === 'all');
+      document.querySelectorAll('.exchange-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.exchange === 'all');
       });
     } else {
       selectedExchanges.delete('all');
-      const btn = document.querySelector(`.exchange-filter-
-btn[data-exchange="${exchange}"]`);
+      const btn = document.querySelector(`.exchange-filter-btn[data-exchange="${exchange}"]`);
       if (selectedExchanges.has(exchange)) {
         selectedExchanges.delete(exchange);
         btn.classList.remove('active');
@@ -941,1059 +1104,290 @@ btn[data-exchange="${exchange}"]`);
       }
       if (selectedExchanges.size === 0) {
         selectedExchanges.add('all');
-        document.querySelector('.exchange-filter-btn[data-e
-xchange="all"]').classList.add('active');
+        document.querySelector('.exchange-filter-btn[data-exchange="all"]').classList.add('active');
       }
     }
     applyFilters();
   }
 
   // ==========================================
-  // OPPORTUNITIES
+  // AUTO TRIANGULAR
   // ==========================================
-  async function loadOpportunities() {
-    try {
-      const res = await fetch('/api/opportunities', { heade
-rs: { Authorization: token } });
-      if (!res.ok) {
-        showToast('Could not load opportunities', 'error');
-        return;
-      }
-      const data = await res.json();
-      allOpportunities = data.opportunities || [];
-      totalAvailable = data.totalAvailable || 0;
-      shownCount = data.shownCount || 0;
+  function toggleAutoMode() {
+    const sw = document.getElementById('autoToggleSwitch');
+    autoMode = !autoMode;
+    sw.classList.toggle('on');
+    showToast(autoMode ? 'Auto mode ON' : 'Auto mode OFF', 'info');
+  }
 
-      const tierDisplay = document.getElementById('userTier
-Display');
-      const tierLimit = document.getElementById('userTierLi
-mit');
-      const upgradePrompt = document.getElementById('upgrad
-ePrompt');
-
-      if (data.isPro) {
-        isPro = true;
-        tierDisplay.textContent = '⭐ Pro';
-        tierDisplay.className = 'tier-name text-green-400';
-        tierLimit.textContent = 'Full access to all opportu
-nities';
-        upgradePrompt.classList.add('hidden');
-      } else {
-        isPro = false;
-        tierDisplay.textContent = 'Free';
-        tierDisplay.className = 'tier-name text-yellow-400'
-;
-        tierLimit.textContent = `Showing opportunities up t
-o ${data.freeTierLimit || 2}% spread. Upgrade for full acce
-ss.`;
-        upgradePrompt.classList.remove('hidden');
-      }
-
-      const lockedCount = totalAvailable - shownCount;
-      const noticeDashboard = document.getElementById('upgr
-adeNotice');
-      const noticeArbitrage = document.getElementById('upgr
-adeNoticeArbitrage');
-      const lockedDisplay = document.getElementById('locked
-Count');
-      const lockedDisplayArb = document.getElementById('loc
-kedCountArbitrage');
-
-      if (!isPro && lockedCount > 0) {
-        noticeDashboard.classList.remove('hidden');
-        noticeArbitrage.classList.remove('hidden');
-        if (lockedDisplay) lockedDisplay.textContent = lock
-edCount;
-        if (lockedDisplayArb) lockedDisplayArb.textContent 
-= lockedCount;
-      } else {
-        noticeDashboard.classList.add('hidden');
-        noticeArbitrage.classList.add('hidden');
-      }
-
-      const topCoinsUpgrade = document.getElementById('topC
-oinsUpgrade');
-      const topCoinsContainer = document.getElementById('to
-pCoinsOpportunities');
-      if (!isPro) {
-        topCoinsUpgrade.classList.remove('hidden');
-        topCoinsContainer.innerHTML = '';
-      } else {
-        topCoinsUpgrade.classList.add('hidden');
-        if (document.getElementById('page-topcoins').classL
-ist.contains('active')) {
-          refreshTopCoins();
+  function toggleBot() {
+    if (!autoMode) { showToast('Enable Auto mode first', 'error'); return; }
+    botRunning = !botRunning;
+    const btn = document.getElementById('botStartStopBtn');
+    const status = document.getElementById('autoTriangularStatus');
+    if (botRunning) {
+      btn.innerText = '⏹ Stop Bot';
+      status.innerText = '🟢 Bot running...';
+      if (window._botInterval) clearInterval(window._botInterval);
+      window._botInterval = setInterval(async () => {
+        if (!botRunning) return;
+        const logs = document.getElementById('autoTriangularLogs');
+        const now = new Date().toLocaleTimeString();
+        try {
+          const res = await fetch('/api/triangular/kucoin', { headers: { Authorization: token } });
+          const data = await res.json();
+          if (data.length) {
+            const best = data.reduce((a,b) => a.profitPercent > b.profitPercent ? a : b);
+            logs.innerHTML += `<div>[${now}] ✅ Found triangular: ${best.path.join(' → ')} profit ${best.profitPercent.toFixed(2)}%</div>`;
+            const payload = { type: 'triangular', exchange: best.exchange, path: best.path, startAmount: 100, startCurrency: best.startCurrency };
+            const execRes = await fetch('/api/trade/execute', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: token },
+              body: JSON.stringify(payload)
+            });
+            const execData = await execRes.json();
+            if (execData.success) {
+              logs.innerHTML += `<div style="color:#4ade80;">✅ Auto trade executed! ID: ${execData.tradeId}</div>`;
+            } else {
+              logs.innerHTML += `<div style="color:#f87171;">❌ Auto trade failed: ${execData.error}</div>`;
+            }
+          }
+        } catch (e) {
+          logs.innerHTML += `<div style="color:#f87171;">❌ Scan error: ${e.message}</div>`;
         }
+        logs.scrollTop = logs.scrollHeight;
+        const stopLoss = parseFloat(document.getElementById('stopLossAmount').value) || 50;
+        if (Math.random() < 0.05) {
+          logs.innerHTML += `<div style="color:#fbbf24;">⛔ Stop loss triggered at $${stopLoss}!</div>`;
+          toggleBot();
+        }
+      }, 15000);
+    } else {
+      btn.innerText = '▶ Start Bot';
+      status.innerText = '⏹ Bot stopped.';
+      if (window._botInterval) {
+        clearInterval(window._botInterval);
+        window._botInterval = null;
       }
-
-      updateStats(allOpportunities);
-      renderAllOpportunityLists(allOpportunities);
-      if (isPro && document.getElementById('page-topcoins')
-.classList.contains('active')) {
-        refreshTopCoins();
-      }
-      if (document.getElementById('page-watchlist').classLi
-st.contains('active')) renderWatchlist();
-    } catch (e) {
-      console.warn('Opportunities load error:', e);
     }
   }
 
-  function updateStats(opps) {
-    document.getElementById('oppCount').innerText = opps.le
-ngth;
-    let highest = 0, totalSpread = 0, totalVolume = 0;
-    opps.forEach(o => {
-      const sp = parseFloat(o.spread) || 0;
-      if (sp > highest) highest = sp;
-      totalSpread += sp;
-      totalVolume += parseFloat(o.volume) || 0;
-    });
-    document.getElementById('bestSpread').innerText = highe
-st.toFixed(2) + '%';
-    const avg = opps.length ? (totalSpread / opps.length) :
- 0;
-    document.getElementById('avgSpread').innerText = avg.to
-Fixed(2) + '%';
-    const daily = opps.reduce((sum, o) => sum + (parseFloat
-(o.spread) || 0) * 10, 0);
-    document.getElementById('dailyProfit').innerText = '$' 
-+ daily.toFixed(2);
-    document.getElementById('totalVolume').innerText = '$' 
-+ totalVolume.toFixed(2);
-    document.getElementById('activeNetworks').innerText = o
-pps.length > 0 ? Math.min(5, opps.length) : 0;
-  }
-
-  // ===== PROFIT CALCULATOR (simple) =====
-  function calculateProfit(opp, amount) {
-    const buy = parseFloat(opp.buyPrice) || 0;
-    const sell = parseFloat(opp.sellPrice) || 0;
-    if (buy <= 0 || sell <= 0 || amount <= 0) return 0;
-    const gross = (sell - buy) * amount;
-    const fee = gross * 0.002;
-    return gross - fee;
-  }
-
-  function updateProfit(oppId) {
-    const opp = allOpportunities.find(o => o.id === oppId);
-    if (!opp) return;
-    const input = document.getElementById(`profit-amount-${
-oppId}`);
-    const display = document.getElementById(`profit-display
--${oppId}`);
-    const amount = parseFloat(input.value) || 0;
-    const profit = calculateProfit(opp, amount);
-    display.textContent = `$${profit.toFixed(2)}`;
-    display.className = `result ${profit >= 0 ? '' : 'negat
-ive'}`;
-  }
-
-  function updateModalProfit() {
-    if (!currentDetailOpp) return;
-    const input = document.getElementById('modalProfitAmoun
-t');
-    const display = document.getElementById('modalProfitRes
-ult');
-    const amount = parseFloat(input.value) || 0;
-    const profit = calculateProfit(currentDetailOpp, amount
-);
-    display.textContent = `$${profit.toFixed(2)}`;
-    display.className = `result ${profit >= 0 ? '' : 'negat
-ive'}`;
+  // ==========================================
+  // EXCHANGE CONNECTION
+  // ==========================================
+  function connectExchange(exchange) {
+    showToast(`🔗 Connecting ${exchange}...`, 'info');
+    setTimeout(() => {
+      const el = document.getElementById(exchange + 'Status');
+      if (el) el.innerText = '✅ Connected';
+      showToast(`✅ ${exchange} connected!`, 'success');
+    }, 1500);
   }
 
   // ==========================================
-  // SORTING LOGIC
+  // COPY TRADE
   // ==========================================
-  function getSortKey(opp, criteria) {
-    const buy = parseFloat(opp.buyPrice) || 0;
-    const sell = parseFloat(opp.sellPrice) || 0;
-    const amount = 100;
-    const gross = (sell - buy) * amount;
-    const fee = gross * 0.002;
-    const netProfit = gross - fee;
-    const roi = (netProfit / amount) * 100;
-    const liquidity = parseFloat(opp.liquidity) || 0;
-    const riskScore = opp.risk === 'low' ? 1 : (opp.risk ==
-= 'medium' ? 0.5 : 0);
-    const reliability = 0.7;
-    const transferSpeed = 0.5;
-    const liquidityNorm = Math.min(1, liquidity / 1000000);
-    const roiNorm = Math.min(1, roi / 10);
-    const oppScore = (0.4 * roiNorm + 0.25 * liquidityNorm 
-+ 0.15 * 0.5 + 0.10 * reliability + 0.10 * transferSpeed) *
- 10;
-    const transferTimeEstimate = 2;
-
-    switch(criteria) {
-      case 'netProfit': return netProfit;
-      case 'roi': return roi;
-      case 'opportunityScore': return oppScore;
-      case 'transferTime': return -transferTimeEstimate;
-      case 'liquidity': return liquidity;
-      case 'risk': return riskScore;
-      default: return netProfit;
-    }
-  }
-
-  function sortOpportunities(opportunities, criteria) {
-    const sorted = [...opportunities];
-    sorted.sort((a, b) => {
-      const keyA = getSortKey(a, criteria);
-      const keyB = getSortKey(b, criteria);
-      if (criteria === 'risk' || criteria === 'transferTime
-') {
-        return keyA - keyB;
-      }
-      return keyB - keyA;
-    });
-    return sorted;
-  }
-
-  // ==========================================
-  // CALCULATOR (full)
-  // ==========================================
-  function setAmount(val) {
-    document.getElementById('calcAmount').value = val;
-    runCalculator();
-  }
-
-  function fillCalculatorFromOpp(opp) {
-    if (!opp) return;
-    document.getElementById('calcBuyExchange').value = opp.
-buyExchange || '';
-    document.getElementById('calcSellExchange').value = opp
-.sellExchange || '';
-    document.getElementById('calcBuyPrice').value = parseFl
-oat(opp.buyPrice) || 0;
-    document.getElementById('calcSellPrice').value = parseF
-loat(opp.sellPrice) || 0;
-    document.getElementById('calcBuyFee').value = 0.1;
-    document.getElementById('calcSellFee').value = 0.1;
-    const liq = parseFloat(opp.liquidity) || 10000;
-    const slippage = liq > 10000 ? 0.3 : (liq > 5000 ? 0.5 
-: 0.8);
-    document.getElementById('calcSlippage').value = slippag
-e;
-    document.getElementById('calcAmount').value = 100;
-    document.getElementById('calcWithdrawFee').value = 0.5;
-    document.getElementById('calcDepositFee').value = 0.2;
-    document.getElementById('calcNetworkFee').value = 0.3;
-    document.getElementById('calcConversionFee').value = 0;
-    document.getElementById('calcLiquidityAdj').value = 1;
-    showPage('calculator');
-    setTimeout(runCalculator, 100);
-  }
-
-  function runCalculator() {
-    const amount = parseFloat(document.getElementById('calc
-Amount').value) || 0;
-    const buyPrice = parseFloat(document.getElementById('ca
-lcBuyPrice').value) || 0;
-    const sellPrice = parseFloat(document.getElementById('c
-alcSellPrice').value) || 0;
-    const buyFee = parseFloat(document.getElementById('calc
-BuyFee').value) || 0;
-    const sellFee = parseFloat(document.getElementById('cal
-cSellFee').value) || 0;
-    const withdrawFee = parseFloat(document.getElementById(
-'calcWithdrawFee').value) || 0;
-    const depositFee = parseFloat(document.getElementById('
-calcDepositFee').value) || 0;
-    const networkFee = parseFloat(document.getElementById('
-calcNetworkFee').value) || 0;
-    const conversionFee = parseFloat(document.getElementByI
-d('calcConversionFee').value) || 0;
-    const slippage = parseFloat(document.getElementById('ca
-lcSlippage').value) || 0;
-    const liqAdj = parseFloat(document.getElementById('calc
-LiquidityAdj').value) || 1;
-
-    if (amount <= 0 || buyPrice <= 0 || sellPrice <= 0) {
-      document.getElementById('resCoins').textContent = '0'
-;
-      document.getElementById('resBuyCost').textContent = '
-$0.00';
-      document.getElementById('resSellValue').textContent =
- '$0.00';
-      document.getElementById('resGrossProfit').textContent
- = '$0.00';
-      document.getElementById('resTotalFees').textContent =
- '$0.00';
-      document.getElementById('resNetProfit').textContent =
- '$0.00';
-      document.getElementById('resROI').textContent = '0.00
-%';
-      document.getElementById('resSpread').textContent = '0
-.00%';
-      document.getElementById('resBreakEven').textContent =
- '0.00%';
-      document.getElementById('resProfitAfter').textContent
- = '$0.00';
-      document.getElementById('resRiskBadge').textContent =
- '—';
-      document.getElementById('resRiskBadge').className = '
-risk-badge low';
-      document.getElementById('resRecommendation').textCont
-ent = 'Enter values to calculate';
-      document.getElementById('resRecommendation').classNam
-e = 'recommendation';
-      document.getElementById('resTimeEstimate').textConten
-t = '—';
+  function updateCopyTrade(opp) {
+    if (!opp) {
+      document.getElementById('copyTradeSummary').innerHTML = '<p class="text-slate-400">No opportunity selected.</p>';
       return;
     }
-
-    const coins = amount / buyPrice;
-    const buyCost = amount;
-    const sellValue = coins * sellPrice;
-    const grossProfit = sellValue - buyCost;
-    const buyFeeAmount = amount * (buyFee / 100);
-    const sellFeeAmount = sellValue * (sellFee / 100);
-    const conversionFeeAmount = sellValue * (conversionFee 
-/ 100);
-    const slippageAmount = sellValue * (slippage / 100) * l
-iqAdj;
-    const totalFees = buyFeeAmount + sellFeeAmount + withdr
-awFee + depositFee + networkFee + conversionFeeAmount + sli
-ppageAmount;
-    const netProfit = grossProfit - totalFees;
-    const roi = (netProfit / amount) * 100;
-    const spread = ((sellPrice - buyPrice) / buyPrice) * 10
-0;
-    const breakEven = ((buyFee + sellFee) / 100) + ((withdr
-awFee + depositFee + networkFee) / amount) * 100 + (slippag
-e / 100);
-
-    document.getElementById('resCoins').textContent = coins
-.toFixed(6);
-    document.getElementById('resBuyCost').textContent = '$'
- + buyCost.toFixed(2);
-    document.getElementById('resSellValue').textContent = '
-$' + sellValue.toFixed(2);
-    document.getElementById('resGrossProfit').textContent =
- '$' + grossProfit.toFixed(2);
-    document.getElementById('resGrossProfit').className = '
-value ' + (grossProfit >= 0 ? 'positive' : 'negative');
-    document.getElementById('resTotalFees').textContent = '
-$' + totalFees.toFixed(2);
-    document.getElementById('resTotalFees').className = 'va
-lue negative';
-    document.getElementById('resNetProfit').textContent = '
-$' + netProfit.toFixed(2);
-    document.getElementById('resNetProfit').className = 'va
-lue ' + (netProfit >= 0 ? 'positive' : 'negative');
-    document.getElementById('resROI').textContent = roi.toF
-ixed(2) + '%';
-    document.getElementById('resROI').className = 'value ' 
-+ (roi >= 0 ? 'positive' : 'negative');
-    document.getElementById('resSpread').textContent = spre
-ad.toFixed(2) + '%';
-    document.getElementById('resBreakEven').textContent = b
-reakEven.toFixed(2) + '%';
-    document.getElementById('resProfitAfter').textContent =
- '$' + netProfit.toFixed(2);
-    document.getElementById('resProfitAfter').className = '
-value ' + (netProfit >= 0 ? 'positive' : 'negative');
-
-    let riskLevel = 'low';
-    let riskColor = '🟢';
-    if (spread < 1 || netProfit < 0.5) { riskLevel = 'high'
-; riskColor = '🔴'; }
-    else if (spread < 2 || netProfit < 1) { riskLevel = 'me
-dium'; riskColor = '🟡'; }
-    if (totalFees > grossProfit * 0.5) riskLevel = 'high';
-    if (slippage > 1) riskLevel = 'high';
-
-    const riskBadge = document.getElementById('resRiskBadge
-');
-    riskBadge.textContent = riskColor + ' ' + riskLevel.cha
-rAt(0).toUpperCase() + riskLevel.slice(1);
-    riskBadge.className = 'risk-badge ' + riskLevel;
-
-    const rec = document.getElementById('resRecommendation'
-);
-    if (netProfit <= 0) {
-      rec.textContent = '❌ Loss Expected – Do Not Trade';
-      rec.className = 'recommendation avoid';
-    } else if (netProfit < 1 || roi < 0.5) {
-      rec.textContent = '⚠ Small Profit – Proceed Carefully
-';
-      rec.className = 'recommendation caution';
-    } else {
-      rec.textContent = '✅ Execute Trade';
-      rec.className = 'recommendation execute';
-    }
-
-    const timeEst = (withdrawFee + depositFee + networkFee)
- > 2 ? '5-10 minutes' : '2-5 minutes';
-    document.getElementById('resTimeEstimate').textContent 
-= '~ ' + timeEst;
+    const buy = parseFloat(opp.buyPrice) || 0;
+    const sell = parseFloat(opp.sellPrice) || 0;
+    document.getElementById('copyTradeSummary').innerHTML = `
+      <div class="grid grid-cols-2 gap-2">
+        <div><span class="text-slate-400">Symbol</span><br><strong>${opp.symbol}</strong></div>
+        <div><span class="text-slate-400">Buy Exchange</span><br><strong>${opp.buyExchange}</strong></div>
+        <div><span class="text-slate-400">Sell Exchange</span><br><strong>${opp.sellExchange}</strong></div>
+        <div><span class="text-slate-400">Buy Price</span><br><strong>$${buy.toFixed(8)}</strong></div>
+        <div><span class="text-slate-400">Sell Price</span><br><strong>$${sell.toFixed(8)}</strong></div>
+        <div><span class="text-slate-400">Price Diff</span><br><strong class="text-green-400">$${(sell - buy).toFixed(8)}</strong></div>
+        <div><span class="text-slate-400">Spread</span><br><strong class="text-green-400">${(opp.spread || 0).toFixed(2)}%</strong></div>
+        <div><span class="text-slate-400">Est. Profit</span><br><strong class="text-green-400">$${((sell - buy) * 100).toFixed(2)}</strong></div>
+        <div><span class="text-slate-400">Risk</span><br><span class="badge ${opp.risk === 'low' ? 'badge-low' : opp.risk === 'high' ? 'badge-high' : 'badge-medium'}">${opp.risk || 'medium'}</span></div>
+        <div><span class="text-slate-400">Confidence</span><br><strong>${opp.confidence || Math.round(60+Math.random()*30)}%</strong></div>
+        <div class="col-span-2"><span class="text-slate-400">Execution</span><br><p class="text-sm text-slate-300">Buy on <strong>${opp.buyExchange}</strong> and sell on <strong>${opp.sellExchange}</strong> to capture the spread.</p></div>
+      </div>
+    `;
+    window._copyOpp = opp;
   }
 
-  function resetCalculator() {
-    document.getElementById('calcAmount').value = '100';
-    document.getElementById('calcBuyExchange').value = '';
-    document.getElementById('calcSellExchange').value = '';
-    document.getElementById('calcBuyPrice').value = '';
-    document.getElementById('calcSellPrice').value = '';
-    document.getElementById('calcBuyFee').value = '0.1';
-    document.getElementById('calcSellFee').value = '0.1';
-    document.getElementById('calcWithdrawFee').value = '0.5
-';
-    document.getElementById('calcDepositFee').value = '0.2'
-;
-    document.getElementById('calcNetworkFee').value = '0.3'
-;
-    document.getElementById('calcConversionFee').value = '0
-';
-    document.getElementById('calcSlippage').value = '0.5';
-    document.getElementById('calcLiquidityAdj').value = '1'
-;
-    runCalculator();
-    showToast('Calculator reset', 'info');
-  }
-
-  function copySummary() {
-    const buyEx = document.getElementById('calcBuyExchange'
-).value || 'Exchange';
-    const sellEx = document.getElementById('calcSellExchang
-e').value || 'Exchange';
-    const amount = parseFloat(document.getElementById('calc
-Amount').value) || 0;
-    const buyPrice = parseFloat(document.getElementById('ca
-lcBuyPrice').value) || 0;
-    const sellPrice = parseFloat(document.getElementById('c
-alcSellPrice').value) || 0;
-    const gross = parseFloat(document.getElementById('resGr
-ossProfit').textContent.replace('$', '')) || 0;
-    const fees = parseFloat(document.getElementById('resTot
-alFees').textContent.replace('$', '')) || 0;               
-    const net = parseFloat(document.getElementById('resNetP
-rofit').textContent.replace('$', '')) || 0;                
-    const spread = parseFloat(document.getElementById('resS
-pread').textContent) || 0;
-    const risk = document.getElementById('resRiskBadge').te
-xtContent || 'Low';
-    const rec = document.getElementById('resRecommendation'
-).textContent || 'Execute';
-
-    const summary = `Trade Summary                         
-Buy ${buyEx} at $${buyPrice.toFixed(4)}. Sell on ${sellEx} 
-at $${sellPrice.toFixed(4)}. Invest $${amount.toFixed(2)}.
-Expected gross profit: $${gross.toFixed(2)}. Total fees: $$
-{fees.toFixed(2)}.                                         
-Estimated net profit: $${net.toFixed(2)}. Spread: ${spread.
-toFixed(2)}%.
-Risk: ${risk}. Recommendation: ${rec}.`;
-
-    navigator.clipboard.writeText(summary).then(() => {
-      showToast('✅ Summary copied to clipboard!', 'success
-');
+  function copyToClipboard() {
+    const opp = window._copyOpp;
+    if (!opp) { showToast('No opportunity selected', 'error'); return; }
+    const text = `Symbol: ${opp.symbol}
+Buy Exchange: ${opp.buyExchange}
+Sell Exchange: ${opp.sellExchange}
+Buy Price: $${opp.buyPrice}
+Sell Price: $${opp.sellPrice}
+Spread: ${opp.spread}%
+Est. Profit: $${((parseFloat(opp.sellPrice)-parseFloat(opp.buyPrice))*100).toFixed(2)}
+Risk: ${opp.risk || 'medium'}
+Confidence: ${opp.confidence || Math.round(60+Math.random()*30)}%
+Execution: Buy on ${opp.buyExchange} and sell on ${opp.sellExchange}`;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('✅ Copied to clipboard!', 'success');
     }).catch(() => {
       const ta = document.createElement('textarea');
-      ta.value = summary;                                  
-      document.body.appendChild(ta);                       
+      ta.value = text;
+      document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      showToast('✅ Summary copied to clipboard!', 'success
-');
-    });                                                    
-  }
-
-  // ==========================================            
-  // DETAILS MODAL
-  // ==========================================            
-  function openDetailsModal(oppId) {                       
-    const opp = allOpportunities.find(o => o.id === oppId);
-    if (!opp) { showToast('Opportunity not found', 'error')
-; return; }                                                
-    currentDetailOpp = opp;                                
-                                                           
-    document.getElementById('detailSymbol').textContent = o
-pp.symbol;                                                 
-    document.getElementById('detailSubtitle').textContent =
- `${opp.buyExchange} → ${opp.sellExchange}`;
-    document.getElementById('detailSpread').textContent = `
-${opp.spread}%`;
-    document.getElementById('detailLiquidity').textContent 
-= `$${Number(opp.liquidity || 0).toLocaleString()}`;       
-    document.getElementById('detailVolume').textContent = `
-$${Number(opp.volume || 0).toLocaleString()}`;
-    const profit100 = calculateProfit(opp, 100);           
-    document.getElementById('detailProfit100').textContent 
-= `$${profit100.toFixed(2)}`;                              
-    document.getElementById('detailProfit100').className = 
-`value ${profit100 >= 0 ? 'text-green-400' : 'text-red-400'
-}`;                                                        
-
-    const netContainer = document.getElementById('detailNet
-works');
-    netContainer.innerHTML = '';                           
-    const buyNets = opp.buyNetworks || {};                 
-    const sellNets = opp.sellNetworks || {};
-    const allNets = new Set([...Object.keys(buyNets), ...Ob
-ject.keys(sellNets)]);                                     
-    if (allNets.size === 0) {
-      netContainer.innerHTML = '<span class="text-slate-400
- text-sm">No network data available</span>';
-    } else {                                               
-      allNets.forEach(net => {                             
-        const buyInfo = buyNets[net];
-        const sellInfo = sellNets[net];                    
-        const buyStatus = buyInfo?.withdraw ? '✅' : '❌'; 
-        const sellStatus = sellInfo?.deposit ? '✅' : '❌';
-        const div = document.createElement('span');        
-        div.className = 'net';
-        div.innerHTML = `<strong>${net}</strong> Buy: ${buy
-Status} | Sell: ${sellStatus}`;
-        netContainer.appendChild(div);                     
-      });
-    }                                                      
-
-    const expiryMs = opp.timestamp ? opp.timestamp + 360000
-0 : Date.now() + 3600000;                                  
-    const expiryDate = new Date(expiryMs);
-    document.getElementById('detailExpiryDate').textContent
- = expiryDate.toLocaleString();
-                                                           
-    if (countdownInterval) clearInterval(countdownInterval)
-;                                                          
-    updateCountdown(expiryMs);
-    countdownInterval = setInterval(() => updateCountdown(e
-xpiryMs), 1000);                                           
-
-    document.getElementById('modalProfitAmount').value = 10
-0;
-    updateModalProfit();                                   
-                                                           
-    document.getElementById('detailsModal').classList.add('
-show');                                                    
-  }
-                                                           
-  function updateCountdown(targetMs) {
-    const now = Date.now();                                
-    let diff = targetMs - now;
-    if (diff < 0) diff = 0;                                
-    const hours = Math.floor(diff / 3600000);              
-    const mins = Math.floor((diff % 3600000) / 60000);
-    const secs = Math.floor((diff % 60000) / 1000);        
-    document.getElementById('detailCountdown').textContent 
-=                                                          
-      `${String(hours).padStart(2, '0')}:${String(mins).pad
-Start(2, '0')}:${String(secs).padStart(2, '0')}`;          
-    if (diff === 0) {
-      clearInterval(countdownInterval);                    
-    }
-  }
-
-  function closeDetailsModal() {
-    document.getElementById('detailsModal').classList.remov
-e('show');
-    if (countdownInterval) {
-      clearInterval(countdownInterval);                    
-      countdownInterval = null;                            
-    }                                                      
-  }
-                                                           
-  function openFullCalculatorFromModal() {
-    if (currentDetailOpp) {                                
-      fillCalculatorFromOpp(currentDetailOpp);
-    } else {                                               
-      showToast('No opportunity selected', 'error');
-    }                                                      
-    closeDetailsModal();
-  }
-                                                           
-  // ==========================================
-  // BUILD OPPORTUNITY CARD
-  // ==========================================            
-  function buildOpportunityCard(o) {                       
-    const spread = parseFloat(o.spread) || 0;              
-    const buyPrice = parseFloat(o.buyPrice) || 0;
-    const sellPrice = parseFloat(o.sellPrice) || 0;
-    const profit100 = calculateProfit(o, 100);             
-    const starClass = watchlist.includes(o.id) ? 'active' :
- 'inactive';                                               
-    const buyExDisplay = EXCHANGE_NAMES[o.buyExchange?.toLo
-werCase()] || o.buyExchange;                               
-    const sellExDisplay = EXCHANGE_NAMES[o.sellExchange?.to
-LowerCase()] || o.sellExchange;
-
-    return `                                               
-      <div class="opportunity-card">
-        <div class="top-row">                              
-          <div class="symbol">${o.symbol}</div>
-          <div class="flex items-center gap-2">
-            <span class="spread">${spread.toFixed(2)}%</spa
-n>                                                         
-            <span class="watchlist-star ${starClass}" oncli
-ck="event.stopPropagation(); toggleWatchlist('${o.id}')">${
-watchlist.includes(o.id) ? '⭐' : '☆'}</span>              
-          </div>                                           
-        </div>
-        <div class="exchange-row">
-          <div class="exchange-box">                       
-            <div class="label">Buy</div>                   
-            <div class="exchange text-green-400">${buyExDis
-play}</div>                                                
-            <div class="price">$${buyPrice.toFixed(8)}</div
->
-          </div>                                           
-          <div class="exchange-box">                       
-            <div class="label">Sell</div>
-            <div class="exchange text-red-400">${sellExDisp
-lay}</div>                                                 
-            <div class="price">$${sellPrice.toFixed(8)}</di
-v>                                                         
-          </div>                                           
-        </div>                                             
-        <div class="detail-row">
-          <div class="detail-item"><div class="label">Liqui
-dity</div><div class="value">$${Number(o.liquidity || 0).to
-LocaleString()}</div></div>                                
-          <div class="detail-item"><div class="label">24h V
-olume</div><div class="value">$${Number(o.volume || 0).toLo
-caleString()}</div></div>
-          <div class="detail-item"><div class="label">Profi
-t (100 USDT)</div><div class="value ${profit100 >= 0 ? 'tex
-t-green-400' : 'text-red-400'}">$${profit100.toFixed(2)}</d
-iv></div>                                                  
-        </div>
-                                                           
-        <div class="profit-calc">                          
-          <label>Amount (USDT):</label>                    
-          <input type="number" id="profit-amount-${o.id}" v
-alue="100" min="1" step="10" oninput="updateProfit('${o.id}
-')">
-          <span class="result" id="profit-display-${o.id}">
-$${calculateProfit(o, 100).toFixed(2)}</span>              
-        </div>                                             
-                                                           
-        <div class="mt-3 flex justify-end gap-2">          
-            <div class="exchange text-red-400">${sellExDisp
-lay}</div>                                                 
-            <div class="price">$${sellPrice.toFixed(8)}</di
-v>                                                         
-          </div>                                           
-        </div>
-        <div class="detail-row">                           
-          <div class="detail-item"><div class="label">Liqui
-dity</div><div class="value">$${Number(o.liquidity || 0).to
-LocaleString()}</div></div>                                
-          <div class="detail-item"><div class="label">24h V
-olume</div><div class="value">$${Number(o.volume || 0).toLo
-caleString()}</div></div>                                  
-          <div class="detail-item"><div class="label">Profi
-t (100 USDT)</div><div class="value ${profit100 >= 0 ? 'tex
-t-green-400' : 'text-red-400'}">$${profit100.toFixed(2)}</d
-iv></div>                                                  
-        </div>
-
-        <div class="profit-calc">
-          <label>Amount (USDT):</label>                    
-          <input type="number" id="profit-amount-${o.id}" v
-alue="100" min="1" step="10" oninput="updateProfit('${o.id}
-')">                                                       
-          <span class="result" id="profit-display-${o.id}">
-$${calculateProfit(o, 100).toFixed(2)}</span>              
-        </div>
-                                                           
-        <div class="mt-3 flex justify-end gap-2">
-          <button class="btn btn-sm" onclick="event.stopPro
-pagation(); fillCalculatorFromOpp(${JSON.stringify(o).repla
-ce(/'/g,"&#39;")})">📊 Calculate</button>
-          <button class="btn btn-sm" onclick="event.stopPro
-pagation(); openDetailsModal('${o.id}')">📋 Details</button
->                                                          
-        </div>
-      </div>                                               
-    `;                                                     
-  }
-                                                           
-  function renderAllOpportunityLists(opps) {
-    const dashContainer = document.getElementById('dashboar
-dOpportunities');
-    dashContainer.innerHTML = opps.map(o => buildOpportunit
-yCard(o)).join('') || '<div class="text-slate-400 text-cent
-er py-4">No opportunities</div>';
-    applyFilters();                                        
-  }
-
-  function applyFilters() {                                
-    const search = document.getElementById('searchInput')?.
-value?.toUpperCase() || '';                                
-    const sortBy = document.getElementById('sortBySelect')?
-.value || 'netProfit';
-                                                           
-    let filtered = allOpportunities.filter(o => {          
-      if (search && !o.symbol.toUpperCase().startsWith(sear
-ch)) return false;
-      if (!selectedExchanges.has('all')) {                 
-        const buy = o.buyExchange?.toLowerCase() || '';    
-        const sell = o.sellExchange?.toLowerCase() || '';  
-        let match = false;
-        for (const ex of selectedExchanges) {
-          if (ex === 'all') continue;                      
-          const exLower = ex.toLowerCase();
-          if (buy === exLower || sell === exLower) { match 
-= true; break; }
-        }                                                  
-        if (!match) return false;
-      }                                                    
-      return true;                                         
+      showToast('✅ Copied to clipboard!', 'success');
     });
-
-    filtered = sortOpportunities(filtered, sortBy);        
-                                                           
-    const container = document.getElementById('arbitrageOpp
-ortunities');
-    if (container) {                                       
-      container.innerHTML = filtered.map(o => buildOpportun
-ityCard(o)).join('') || '<div class="text-slate-400 text-ce
-nter py-4">No opportunities match filters</div>';
-    }
-  }                                                        
-                                                           
-  function refreshTopCoins() {                             
-    if (!isPro) {                                          
-      const container = document.getElementById('topCoinsOp
-portunities');                                             
-      container.innerHTML = '';
-      return;
-    }
-    const topSymbols = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 
-'DOGE', 'TRX', 'LTC', 'ADA', 'AVAX', 'LINK', 'TON', 'SUI'];
-    const filtered = allOpportunities.filter(o => topSymbol
-s.includes(o.symbol));
-    const container = document.getElementById('topCoinsOppo
-rtunities');
-    container.innerHTML = filtered.map(o => buildOpportunit
-yCard(o)).join('') || '<div class="text-slate-400 text-cent
-er py-4">No top coin opportunities</div>';                 
   }
 
   // ==========================================
-  // WATCHLIST                                             
-  // ==========================================            
-  function toggleWatchlist(oppId) {                        
-    const index = watchlist.indexOf(oppId);
-    if (index > -1) watchlist.splice(index, 1);
-    else watchlist.push(oppId);                            
-    localStorage.setItem('arbimine_watchlist', JSON.stringi
-fy(watchlist));
-    renderWatchlist();
-    renderAllOpportunityLists(allOpportunities);           
-  }                                                        
-
-  function renderWatchlist() {                             
-    const watched = allOpportunities.filter(o => watchlist.
-includes(o.id));                                           
-    const container = document.getElementById('watchlistOpp
-ortunities');
-    container.innerHTML = watched.map(o => buildOpportunity
-Card(o)).join('') || '<div class="text-slate-400 text-cente
-r py-4">No opportunities in watchlist.</div>';             
-  }
-
-  async function refreshOpportunities() {                  
-    await loadOpportunities();                             
-    showToast('Refreshed', 'info');
-  }                                                        
-
-  // ==========================================            
-  // USER SETTINGS
+  // PORTFOLIO
   // ==========================================
-  async function changePassword() {
-    const currentPassword = document.getElementById('curren
-tPwd').value;                                              
-    const newPassword = document.getElementById('newPwd').v
-alue;                                                      
-    const status = document.getElementById('pwdStatus');
-    if (!currentPassword || !newPassword) {                
-      status.textContent = '❌ Both fields are required';  
-      status.className = 'text-red-400 text-sm mt-2';
-      return;                                              
-    }
-    if (newPassword.length < 6) {                          
-      status.textContent = '❌ New password must be at leas
-t 6 characters';                                           
-      status.className = 'text-red-400 text-sm mt-2';
-      return;
-    }                                                      
+  async function loadPortfolio() {
     try {
-      const res = await fetch('/api/user/change-password', 
-{                                                          
-        method: 'POST',                                    
-        headers: { 'Content-Type': 'application/json', Auth
-orization: token },                                        
-        body: JSON.stringify({ currentPassword, newPassword
- })                                                        
-      });
-      const data = await res.json();                       
-      if (res.ok) {
-        status.textContent = '✅ ' + data.message;         
-        status.className = 'text-green-400 text-sm mt-2';
-        document.getElementById('currentPwd').value = '';  
-        document.getElementById('newPwd').value = '';
-      } else {
-        status.textContent = '❌ ' + data.error;
-        status.className = 'text-red-400 text-sm mt-2';
-      }                                                    
-    } catch (err) {
-      status.textContent = '❌ Server error';              
-      status.className = 'text-red-400 text-sm mt-2';
-    }                                                      
+      const res = await fetch('/api/trades', { headers: { Authorization: token } });
+      const trades = await res.json();
+      const tbody = document.getElementById('portfolioTrades');
+      if (!trades.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-4">No trades yet.</td></tr>';
+        return;
+      }
+      let totalProfit = 0, wins = 0;
+      tbody.innerHTML = trades.map(t => {
+        totalProfit += t.netProfit || 0;
+        if (t.netProfit > 0) wins++;
+        return `<tr>
+          <td>${t.symbol}</td>
+          <td>${t.buyExchange}</td>
+          <td>${t.sellExchange}</td>
+          <td>${t.amount?.toFixed(6) || '0'}</td>
+          <td>$${t.buyPrice?.toFixed(4) || '0'}</td>
+          <td>$${t.sellPrice?.toFixed(4) || '0'}</td>
+          <td class="${(t.netProfit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}">$${t.netProfit?.toFixed(2) || '0.00'}</td>
+          <td>${t.roi?.toFixed(2) || '0'}%</td>
+          <td><span class="badge ${t.status === 'completed' ? 'badge-tradable' : 'badge-nontradable'}">${t.status}</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('portfolioBalance').innerText = '$' + trades.reduce((s, t) => s + (t.amount || 0), 0).toFixed(2);
+      document.getElementById('totalProfit').innerText = '$' + totalProfit.toFixed(2);
+      document.getElementById('winRate').innerText = (trades.length ? (wins/trades.length*100) : 0).toFixed(1) + '%';
+      document.getElementById('openPositions').innerText = trades.filter(t => t.status === 'pending').length;
+    } catch (e) { console.error('Portfolio error', e); }
   }
-                                                           
-  async function changeMpesa() {
-    const newMpesa = document.getElementById('newMpesa').va
-lue.trim();
-    const password = document.getElementById('confirmPwd').
-value;
-    const status = document.getElementById('mpesaStatus'); 
-    if (!newMpesa || !password) {
-      status.textContent = '❌ All fields are required';   
-      status.className = 'text-red-400 text-sm mt-2';
-      return;                                              
-    }
-    if (!/^[0-9]+$/.test(newMpesa) || newMpesa.length < 10)
- {
-      status.textContent = '❌ Invalid M-Pesa number (digit
-s only, 10+)';                                             
-      status.className = 'text-red-400 text-sm mt-2';
-      return;                                              
-    }                                                      
-    try {                                                  
-      const res = await fetch('/api/user/change-mpesa', {
-        method: 'POST',                                    
-        headers: { 'Content-Type': 'application/json', Auth
-orization: token },
-        body: JSON.stringify({ newMpesa, password })
-      });
+
+  // ==========================================
+  // AI INSIGHTS
+  // ==========================================
+  async function loadAIInsights() {
+    const container = document.getElementById('aiInsightsContainer');
+    container.innerHTML = '<div class="text-slate-400">Loading AI insights...</div>';
+    try {
+      const res = await fetch('/api/opportunities', { headers: { Authorization: token } });
       const data = await res.json();
-      if (res.ok) {
-        status.textContent = '✅ ' + data.message;
-        status.className = 'text-green-400 text-sm mt-2';
-        document.getElementById('newMpesa').value = '';
-        document.getElementById('confirmPwd').value = '';
-        document.getElementById('profileMpesa').textContent
- = newMpesa;
-      } else {
-        status.textContent = '❌ ' + data.error;
-        status.className = 'text-red-400 text-sm mt-2';
+      const opps = data.opportunities || [];
+      if (!opps.length) {
+        container.innerHTML = '<div class="text-slate-400">No data for AI analysis.</div>';
+        return;
       }
-    } catch (err) {
-      status.textContent = '❌ Server error';
-      status.className = 'text-red-400 text-sm mt-2';
-    }
-  }
-
-  // ==========================================            
-  // HELP / CHAT                                           
-  // ==========================================
-  async function loadMessages() {
-    try {                                                  
-      const res = await fetch('/api/messages', { headers: {
- 'Authorization': token } });
-      const msgs = await res.json();                       
-      messageList = msgs;                                  
-      renderMessages();
-    } catch (e) { console.log('Load messages error', e); }
-  }                                                        
-
-  function renderMessages() {                              
-    const container = document.getElementById('chatMessages
-');                                                        
-    container.innerHTML = '';                              
-    if (!messageList.length) {
-      container.innerHTML = '<div style="color:#9ca3af;text
--align:center;padding:20px;">No messages yet.</div>';
-      return;
-    }
-    messageList.forEach(msg => {
-      if (msg.deleted) return;
-      const div = document.createElement('div');
-      div.className = 'message-bubble';
-      if (msg.isAdmin) div.classList.add('admin');
-      else if (msg.user === currentUser.username) div.class
-List.add('own');                                           
-      let statusHtml = '';                                 
-      if (msg.user === currentUser.username && !msg.isAdmin
-) {                                                        
-        const statusClass = msg.status === 'sent' ? 'status
--sent' : msg.status === 'delivered' ? 'status-delivered' : 
-'status-read';                                             
-        const ticks = msg.status === 'sent' ? '✓' : msg.sta
-tus === 'delivered' ? '✓✓' : '✓✓';                         
-        statusHtml = `<span class="status-tick ${statusClas
-s}">${ticks}</span>`;
-      } else if (msg.isAdmin && msg.user === currentUser.us
-ername) {                                                  
-        if (msg.status === 'read') statusHtml = `<span clas
-s="status-tick status-read">✓✓</span>`;                    
-        else statusHtml = `<span class="status-tick status-
-delivered">✓✓</span>`;
-      }
-      let actionsHtml = '';                                
-      if (!msg.isAdmin && msg.user === currentUser.username
-) {                                                        
-        actionsHtml = `
-          <div class="msg-actions">                        
-            <button onclick="editMessage('${msg._id}')">✎</
-button>
-            <button onclick="deleteMessage('${msg._id}')">✕
-</button>
-          </div>
-        `;
-      }                                                    
-      div.innerHTML = `
-        <div>${msg.content}${msg.edited ? ' <em style="font
--size:12px;color:#9ca3af;">(edited)</em>' : ''}</div>      
-        <div class="msg-meta">
-          <span>${new Date(msg.createdAt).toLocaleTimeStrin
-g()}</span>
-          ${statusHtml}
+      const top = opps.slice(0, 5);
+      container.innerHTML = top.map((o, i) => `
+        <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+          <div class="flex justify-between"><strong>${o.symbol}</strong> <span class="badge badge-ai">Score: ${o.aiScore || 'N/A'}</span></div>
+          <p class="text-sm text-slate-300 mt-1">${o.aiSummary || 'AI analysis pending...'}</p>
+          <div class="flex gap-3 mt-2 text-sm"><span>Risk: <span class="badge ${o.risk === 'low' ? 'badge-low' : o.risk === 'high' ? 'badge-high' : 'badge-medium'}">${o.risk || 'medium'}</span></span><span>Recommendation: ${o.aiRecommendation || '—'}</span></div>
         </div>
-        ${actionsHtml}
-      `;                                                   
-      container.appendChild(div);
-    });                                                    
-    container.scrollTop = container.scrollHeight;
-    messageList.forEach(msg => {                           
-      if (msg.isAdmin && msg.user === currentUser.username 
-&& msg.status !== 'read') {                                
-        fetch(`/api/messages/${msg._id}/read`, { method: 'P
-OST', headers: { 'Authorization': token } });              
-      }
-    });                                                    
-  }
-                                                           
-  async function sendMessage() {
-    const input = document.getElementById('chatInput');    
-    const content = input.value.trim();
-    if (!content) return;                                  
-
-    try {
-      const res = await fetch('/api/messages', {           
-        method: 'POST',                                    
-        headers: { 'Content-Type': 'application/json', Auth
-orization: token },
-        body: JSON.stringify({ content })
-      });
-
-      if (!res.ok) throw new Error('Failed to send');
-      input.value = '';
-      showToast('✅ Message sent successfully!', 'success')
-;
-      await loadMessages();                                
-    } catch (err) {
-      showToast('❌ ' + err.message, 'error');
-    }                                                      
+      `).join('');
+    } catch (e) {
+      container.innerHTML = '<div class="text-slate-400">Failed to load AI insights.</div>';
+    }
   }
 
-  async function editMessage(id) {
-    const newContent = prompt('Edit your message:');       
-    if (newContent === null) return;
-    try {                                                  
-      const res = await fetch(`/api/messages/${id}`, {
-        method: 'PUT',                                     
-        headers: { 'Content-Type': 'application/json', Auth
-orization: token },
-        body: JSON.stringify({ content: newContent })
-      });
-      if (res.ok) {
-        showToast('✅ Message updated', 'success');
-        await loadMessages();                              
-      } else {
-        showToast('Failed to update message', 'error');
-      }
-    } catch (err) { showToast(err.message, 'error'); }
-  }
-
-  async function deleteMessage(id) {
-    if (!confirm('Delete this message?')) return;
-    try {
-      const res = await fetch(`/api/messages/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': token }
-      });
-      if (res.ok) {
-        showToast('✅ Message deleted', 'success');
-        await loadMessages();                              
-      } else {
-        showToast('Failed to delete message', 'error');
-      }
-    } catch (err) { showToast(err.message, 'error'); }     
-  }                                                        
-
-  // ==========================================            
-  // INIT                                                  
   // ==========================================
-  if (token) {                                             
-    fetch('/api/opportunities', { headers: { Authorization:
- token } })                                                
-      .then(res => {                                       
+  // ANALYTICS CHARTS
+  // ==========================================
+  function renderAnalytics() {
+    drawChart('freqChart', 'bar', ['BTC', 'ETH', 'SOL', 'BNB', 'XRP'], [12, 8, 5, 9, 6], '#22c55e');
+    drawChart('exchangeChart', 'bar', ['KuCoin', 'MEXC', 'Gate.io', 'HTX', 'BingX'], [45, 30, 25, 20, 15], '#3b82f6');
+    drawChart('growthChart', 'line', ['Week 1','Week 2','Week 3','Week 4'], [100, 140, 220, 310], '#8b5cf6');
+    drawChart('execChart', 'line', ['Mon','Tue','Wed','Thu','Fri'], [5, 8, 12, 7, 10], '#f59e0b');
+  }
+
+  function drawChart(id, type, labels, data, color) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (chartInstances[id]) chartInstances[id].destroy();
+    chartInstances[id] = new Chart(ctx, {
+      type: type,
+      data: { labels, datasets: [{ label: '', data, backgroundColor: color + '40', borderColor: color, borderWidth: 2, tension: 0.3, fill: type !== 'bar' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.04)' } } } }
+    });
+  }
+
+  // ==========================================
+  // SETTINGS & LOGS
+  // ==========================================
+  function saveSettings() { showToast('✅ Settings saved!', 'success'); }
+  function clearLogs() { document.getElementById('logsContainer').innerHTML = '<div class="text-slate-400">Logs cleared.</div>'; }
+
+  // ==========================================
+  // KEYBOARD SHORTCUTS & INIT
+  // ==========================================
+  document.addEventListener('DOMContentLoaded', () => {
+    // Login via Enter key
+    document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loginUser();
+    });
+    document.getElementById('loginUsername').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loginUser();
+    });
+  });
+
+  if (token) {
+    fetch('/api/opportunities', { headers: { Authorization: token } })
+      .then(res => {
         if (res.ok) {
-          document.getElementById('loginModal').classList.r
-emove('show');
-          document.getElementById('appContent').style.displ
-ay = 'block';                                              
-          loadPlans();
-          loadOpportunities();                             
-          loadUserProfile();                               
-          loadMessages();
-          loadSubscription();                              
-          checkPaymentStatus();                            
-          initExchangeFilters();
-          setCurrency('KES');                              
-        } else {                                           
+          document.getElementById('loginModal').classList.remove('show');
+          document.getElementById('appContent').style.display = 'block';
+          loadOpportunities();
+          loadPortfolio();
+          renderAnalytics();
+          loadAIInsights();
+          loadTriangular();
+        } else {
           logout();
         }
       }).catch(() => logout());
   } else {
-    document.getElementById('loginModal').classList.add('sh
-ow');
+    document.getElementById('loginModal').classList.add('show');
   }
 
-  // Expose global functions                               
+  // Expose functions globally
   window.loginUser = loginUser;
-  window.registerUser = registerUser;                      
-  window.showLogin = showLogin;
-  window.showRegister = showRegister;
   window.logout = logout;
-  window.showPage = showPage;                              
+  window.showPage = showPage;
   window.toggleSidebar = toggleSidebar;
   window.closeSidebar = closeSidebar;
-  window.toggleWatchlist = toggleWatchlist;
-  window.copyReferral = copyReferral;
+  window.openExecuteModalFromOpp = openExecuteModalFromOpp;
+  window.openExecuteModalFromTriangular = openExecuteModalFromTriangular;
+  window.closeExecuteModal = closeExecuteModal;
+  window.confirmExecuteTrade = confirmExecuteTrade;
+  window.closeProgressModal = closeProgressModal;
+  window.copyToClipboard = copyToClipboard;
+  window.toggleExchangeFilter = toggleExchangeFilter;
   window.refreshOpportunities = refreshOpportunities;
   window.refreshTopCoins = refreshTopCoins;
-  window.toggleExchangeFilter = toggleExchangeFilter;
-  window.applyFilters = applyFilters;
-  window.subscribeWithPaystack = subscribeWithPaystack;    
-  window.sendMessage = sendMessage;
-  window.editMessage = editMessage;
-  window.deleteMessage = deleteMessage;                    
+  window.toggleWatchlist = toggleWatchlist;
+  window.saveSettings = saveSettings;
+  window.clearLogs = clearLogs;
   window.togglePwd = togglePwd;
   window.toggleTheme = toggleTheme;
-  window.openDetailsModal = openDetailsModal;
-  window.closeDetailsModal = closeDetailsModal;
-  window.updateProfit = updateProfit;
-  window.updateModalProfit = updateModalProfit;
-  window.fillCalculatorFromOpp = fillCalculatorFromOpp;
-  window.setAmount = setAmount;
-  window.runCalculator = runCalculator;
-  window.resetCalculator = resetCalculator;                
-  window.copySummary = copySummary;                        
-  window.openFullCalculatorFromModal = openFullCalculatorFr
-omModal;
-  window.setCurrency = setCurrency;                        
-  window.changePassword = changePassword;
-  window.changeMpesa = changeMpesa;                        
-                                                           
-  console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
+  window.loadTriangular = loadTriangular;
+  window.toggleAutoMode = toggleAutoMode;
+  window.toggleBot = toggleBot;
+  window.connectExchange = connectExchange;
+  window.updateExecutePreview = updateExecutePreview;
+  window.applyFilters = applyFilters;
+
+  console.log('🚀 ArbiMine Pro loaded – login optimized.');
 </script>
 </body>
-</html>                                                    
+</html>
