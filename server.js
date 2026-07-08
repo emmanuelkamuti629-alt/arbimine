@@ -22,6 +22,11 @@ app.set('trust proxy', 1);
 // ==================== MongoDB ====================
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+// Create indexes for faster admin queries
+User.createIndexes({ email: 1 });
+User.createIndexes({ username: 1 });
+Transaction.createIndexes({ user: 1, status: 1, createdAt: -1 });
+Message.createIndexes({ user: 1, createdAt: -1 });
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err.message));
 
@@ -514,7 +519,7 @@ app.get('/api/referral', async (req, res) => {
 // ==================== Admin Routes (Users, Messages, etc.) ====================
 app.get('/admin/users', adminAuth, async (req, res) => {
   try {
-    const users = await User.find({}, '-passwordHash');
+    const users = await User.find({}, '-passwordHash').limit(100).lean();
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -523,7 +528,7 @@ app.get('/admin/users', adminAuth, async (req, res) => {
 
 app.get('/admin/transactions', adminAuth, async (req, res) => {
   try {
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    const transactions = await Transaction.find().sort({ createdAt: -1 }).limit(100).lean();
     res.json(transactions);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -532,7 +537,7 @@ app.get('/admin/transactions', adminAuth, async (req, res) => {
 
 app.get('/admin/messages', adminAuth, async (req, res) => {
   try {
-    const messages = await Message.find().sort({ createdAt: -1 });
+    const messages = await Message.find().sort({ createdAt: -1 }).limit(100).lean();
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });

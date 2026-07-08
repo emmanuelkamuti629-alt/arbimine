@@ -170,7 +170,15 @@
   // Load stats
   async function loadStats() {
     try {
-      const users = await api('GET', '/admin/users');
+      const data = await api('GET', '/admin/stats');
+      document.getElementById('totalUsers').textContent = data.totalUsers;
+      document.getElementById('activeSubs').textContent = data.activeSubs;
+      document.getElementById('totalRevenue').textContent = 'KES ' + data.totalRevenue;
+      document.getElementById('failedPayments').textContent = data.failedPayments;
+    } catch(e) { console.error(e); }
+  }
+    try {
+      const users = await api('GET', '/admin/users?count=true');
       document.getElementById('totalUsers').textContent = users.length;
       const active = users.filter(u => u.subscription?.active).length;
       document.getElementById('activeSubs').textContent = active;
@@ -184,7 +192,7 @@
 
   // Load tables
   async function loadUsers() {
-    const users = await api('GET', '/admin/users');
+    const users = await api('GET', '/admin/users?count=true');
     let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th></tr>`;
     <th>Delete</th>
     users.forEach(u => {
