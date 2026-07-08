@@ -8,6 +8,8 @@ const mongoose = require('mongoose');
 const ccxt = require('ccxt');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require("nodemailer");
+const twilio = require("twilio");
 const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
 

@@ -399,6 +399,14 @@
           </div>
           <div class="input-group">
             <label>Monthly Duration (days)</label>
+    <div class="form-group">
+      <label>3‑Day Price (KES)</label>
+      <input type="number" id="threeDayAmount" />
+    </div>
+    <div class="form-group">
+      <label>3‑Day Duration (days)</label>
+      <input type="number" id="threeDayDuration" />
+    </div>
             <input type="number" id="monthlyDuration" step="1" min="1" required>
           </div>
         </div>
@@ -964,3 +972,70 @@
 </script>
 </body>
 </html>
+<script>
+// Extend existing admin JS with threeDay and broadcast
+function loadPlanSettings() {
+  fetch('/admin/settings/plans', { headers: { Authorization: localStorage.getItem('adminToken') } })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('weeklyAmount').value = data.weeklyAmount;
+      document.getElementById('weeklyDuration').value = data.weeklyDuration;
+      document.getElementById('monthlyAmount').value = data.monthlyAmount;
+      document.getElementById('monthlyDuration').value = data.monthlyDuration;
+      document.getElementById('threeDayAmount').value = data.threeDayAmount || 150;
+      document.getElementById('threeDayDuration').value = data.threeDayDuration || 3;
+    })
+    .catch(console.error);
+}
+
+function savePlanSettings() {
+  const payload = {
+    weeklyAmount: +document.getElementById('weeklyAmount').value,
+    weeklyDuration: +document.getElementById('weeklyDuration').value,
+    monthlyAmount: +document.getElementById('monthlyAmount').value,
+    monthlyDuration: +document.getElementById('monthlyDuration').value,
+    threeDayAmount: +document.getElementById('threeDayAmount').value,
+    threeDayDuration: +document.getElementById('threeDayDuration').value
+  };
+  fetch('/admin/settings/plans', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) alert('Plans updated!');
+      else alert('Error: ' + data.error);
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function sendBroadcast() {
+  const message = document.getElementById('broadcastMessage').value.trim();
+  if (!message) return alert('Please enter a message.');
+
+  if (!confirm('Send this message to ALL users via email and SMS?')) return;
+
+  const status = document.getElementById('broadcastStatus');
+  status.textContent = 'Sending...';
+  fetch('/admin/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
+    body: JSON.stringify({ message })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
+      } else {
+        status.textContent = '❌ Error: ' + data.error;
+      }
+    })
+    .catch(err => {
+      status.textContent = '❌ ' + err.message;
+    });
+}
+
+// Call loadPlanSettings on page load (if not already)
+document.addEventListener('DOMContentLoaded', loadPlanSettings);
+</script>
