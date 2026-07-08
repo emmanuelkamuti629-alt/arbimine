@@ -231,7 +231,9 @@
     <li onclick="showPage('watchlist'); closeSidebar();"><span class="icon">⭐</span> Watchlist</li>
     <li onclick="showPage('calculator'); closeSidebar();"><span class="icon">🧮</span> Calculator</li>
     <li onclick="showPage('pro'); closeSidebar();"><span class="icon">💎</span> Pro</li>
+    setTimeout(resetSubscriptionButtons, 100);
     <li onclick="showPage('profile'); closeSidebar();"><span class="icon">👤</span> Profile</li>
+    setTimeout(resetSubscriptionButtons, 100);
     <li onclick="showPage('settings'); closeSidebar();"><span class="icon">⚙️</span> Settings</li>
     <li onclick="showPage('help'); closeSidebar();"><span class="icon">💬</span> Help</li>
   </ul>
@@ -295,6 +297,7 @@
       </div>
       <div id="upgradePrompt" class="hidden">
         <button class="btn btn-sm" onclick="showPage('pro')">⬆ Upgrade to Pro</button>
+    setTimeout(resetSubscriptionButtons, 100);
       </div>
     </div>
   </div>
@@ -304,6 +307,7 @@
       <span class="text"><strong id="lockedCount">0</strong> opportunities above 2% are locked.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
+    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="dashboardOpportunities" class="mt-3"></div>
 </div>
@@ -329,6 +333,7 @@
       <span class="text"><strong id="lockedCountArbitrage">0</strong> opportunities above 2% are locked.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
+    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="arbitrageOpportunities"></div>
 </div>
@@ -345,6 +350,7 @@
       <span class="text">Upgrade to Pro to access the Top Coins list.</span>
     </div>
     <button class="btn btn-sm" onclick="showPage('pro')">Upgrade to Pro 🔓</button>
+    setTimeout(resetSubscriptionButtons, 100);
   </div>
   <div id="topCoinsOpportunities"></div>
 </div>
@@ -483,37 +489,37 @@
           <div class="text-4xl mb-2">⚡</div>
           <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
           <div class="mt-2 text-slate-400 text-sm">3 Days</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
+          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)" data-plan="threeDay">Subscribe 3 Days</button>
         </div>
         <!-- Weekly Plan -->
         <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-blue-500/20 hover:border-blue-400">
           <div class="text-4xl mb-2">📅</div>
           <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
           <div class="mt-2 text-slate-400 text-sm">Weekly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
+          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)" data-plan="weekly">Subscribe Weekly</button>
         </div>
         <!-- Monthly Plan -->
         <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-purple-500/20 hover:border-purple-400">
           <div class="text-4xl mb-2">🏆</div>
           <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
           <div class="mt-2 text-slate-400 text-sm">Monthly</div>
-          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
+          <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)" data-plan="monthly">Subscribe Monthly</button>
         </div>
       </div>
         <div class="mt-2 text-slate-400">3 Days</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)" data-plan="threeDay">Subscribe 3 Days</button>
       </div>
       <!-- Weekly Plan -->
       <div class="glass p-5 text-center">
         <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Weekly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)" data-plan="weekly">Subscribe Weekly</button>
       </div>
       <!-- Monthly Plan -->
       <div class="glass p-5 text-center">
         <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Monthly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)" data-plan="monthly">Subscribe Monthly</button>
       </div>
     </div>
 
@@ -649,7 +655,9 @@
   <button onclick="showPage('watchlist')"><span class="icon">⭐</span><span>Watch</span></button>
   <button onclick="showPage('calculator')"><span class="icon">🧮</span><span>Calc</span></button>
   <button onclick="showPage('pro')"><span class="icon">💎</span><span>Pro</span></button>
+    setTimeout(resetSubscriptionButtons, 100);
   <button onclick="showPage('profile')"><span class="icon">👤</span><span>Profile</span></button>
+    setTimeout(resetSubscriptionButtons, 100);
   <button onclick="showPage('settings')"><span class="icon">⚙️</span><span>Settings</span></button>
   <button onclick="showPage('help')"><span class="icon">💬</span><span>Help</span></button>
 </div>
@@ -772,6 +780,7 @@
       showLogin();
       document.getElementById('loginEmail').value = email;
     } catch (err) {
+    resetSubscriptionButtons();
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');
     }
@@ -810,6 +819,7 @@
         await loadOpportunities();
         await loadMessages();
         await loadSubscription();
+  resetSubscriptionButtons();
         await loadReferralLink();
         initExchangeFilters();
         setCurrency('KES');
@@ -827,6 +837,7 @@
         errorEl.classList.remove('hidden');
       }
     } catch (err) {
+    resetSubscriptionButtons();
       errorEl.textContent = "Connection error";
       errorEl.classList.remove('hidden');
     } finally {
@@ -940,10 +951,19 @@ function updateCountdown(expiryDate) {
 
   async function refreshSubscription() {
     await loadSubscription();
+  resetSubscriptionButtons();
     await loadPlans();
     showToast("Subscription status refreshed", "info");
   }
 
+function resetSubscriptionButtons() {
+  document.querySelectorAll("#page-pro .btn").forEach(function(btn) {
+    btn.disabled = false;
+    var plan = btn.getAttribute("data-plan") || "weekly";
+    var labels = { weekly: "Subscribe Weekly", monthly: "Subscribe Monthly", threeDay: "Subscribe 3 Days" };
+    btn.textContent = labels[plan] || "Subscribe";
+  });
+}
   function checkPaymentStatus() {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
@@ -953,6 +973,7 @@ function updateCountdown(expiryDate) {
       msgEl.innerHTML = '✅ Payment successful! Your Pro plan is now active.';
       msgEl.className = 'text-green-400 text-center';
       loadSubscription();
+  resetSubscriptionButtons();
       loadOpportunities();
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
     } else if (status === 'failed') {
@@ -1010,6 +1031,7 @@ function updateCountdown(expiryDate) {
       if (!res.ok) throw new Error(data.error || 'Payment initialization failed');
       window.location.href = data.authorization_url;
     } catch (err) {
+    resetSubscriptionButtons();
       showToast(err.message, 'error');
       btn.disabled = false;
       btn.textContent = plan === 'weekly' ? 'Subscribe Weekly' : (plan === 'monthly' ? 'Subscribe Monthly' : 'Subscribe 3 Days');
@@ -1642,6 +1664,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         status.className = 'text-red-400 text-sm mt-2';
       }
     } catch (err) {
+    resetSubscriptionButtons();
       status.textContent = '❌ Server error';
       status.className = 'text-red-400 text-sm mt-2';
     }
@@ -1679,6 +1702,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         status.className = 'text-red-400 text-sm mt-2';
       }
     } catch (err) {
+    resetSubscriptionButtons();
       status.textContent = '❌ Server error';
       status.className = 'text-red-400 text-sm mt-2';
     }
@@ -1762,6 +1786,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
       showToast('✅ Message sent successfully!', 'success');
       await loadMessages();
     } catch (err) {
+    resetSubscriptionButtons();
       showToast('❌ ' + err.message, 'error');
     }
   }
@@ -1782,6 +1807,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         showToast('Failed to update message', 'error');
       }
     } catch (err) { showToast(err.message, 'error'); }
+    resetSubscriptionButtons();
   }
 
   async function deleteMessage(id) {
@@ -1798,6 +1824,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
         showToast('Failed to delete message', 'error');
       }
     } catch (err) { showToast(err.message, 'error'); }
+    resetSubscriptionButtons();
   }
 
   // ==========================================
@@ -1814,6 +1841,7 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           loadUserProfile();
           loadMessages();
           loadSubscription();
+  resetSubscriptionButtons();
           loadReferralLink();
           checkPaymentStatus();
           initExchangeFilters();
