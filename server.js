@@ -20,8 +20,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 app.set('trust proxy', 1);
 
 // ==================== MongoDB ====================
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB error:", err.message));
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
 // Create indexes for faster admin queries
 User.createIndexes({ email: 1 });
 User.createIndexes({ username: 1 });
