@@ -504,6 +504,26 @@
     <!-- Currency Toggle -->
     <div class="flex justify-center items-center gap-4 my-4">
       <span class="text-sm text-slate-400">Display prices in:</span>
+    <div class="grid grid-cols-3 gap-4 mt-6">
+      <!-- 3‑Day Plan -->
+      <div class="glass p-5 text-center">
+        <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
+        <div class="mt-2 text-slate-400">3 Days</div>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
+      </div>
+      <!-- Weekly Plan -->
+      <div class="glass p-5 text-center">
+        <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
+        <div class="mt-2 text-slate-400">Weekly</div>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)">Subscribe Weekly</button>
+      </div>
+      <!-- Monthly Plan -->
+      <div class="glass p-5 text-center">
+        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
+        <div class="mt-2 text-slate-400">Monthly</div>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
+      </div>
+    </div>
       <div class="currency-toggle">
         <button id="btnKES" class="active" onclick="setCurrency('KES')">KES</button>
         <button id="btnUSD" onclick="setCurrency('USD')">USD</button>
@@ -516,10 +536,6 @@
       <p class="text-xs text-slate-500 mt-1">You'll be redirected to Paystack to complete payment.</p>
     </div>
 
-      <div class="grid grid-cols-3 gap-4 mt-6">
-        <!-- 3‑Day Plan -->
-        <div class="glass p-5 text-center">
-          <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
           <div class="mt-2 text-slate-400">3 Days</div>
           <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
         </div>

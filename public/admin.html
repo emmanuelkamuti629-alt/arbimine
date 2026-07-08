@@ -1039,3 +1039,28 @@ function sendBroadcast() {
 // Call loadPlanSettings on page load (if not already)
 document.addEventListener('DOMContentLoaded', loadPlanSettings);
 </script>
+<script>
+// Override savePlanSettings to include threeDay
+const originalSave = window.savePlanSettings;
+window.savePlanSettings = function() {
+  const payload = {
+    weeklyAmount: +document.getElementById('weeklyAmount').value,
+    weeklyDuration: +document.getElementById('weeklyDuration').value,
+    monthlyAmount: +document.getElementById('monthlyAmount').value,
+    monthlyDuration: +document.getElementById('monthlyDuration').value,
+    threeDayAmount: +document.getElementById('threeDayAmount').value,
+    threeDayDuration: +document.getElementById('threeDayDuration').value
+  };
+  fetch('/admin/settings/plans', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) alert('Plans updated!');
+    else alert('Error: ' + data.error);
+  })
+  .catch(err => alert('Error: ' + err.message));
+};
+</script>
