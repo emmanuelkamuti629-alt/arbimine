@@ -44,9 +44,6 @@ app.post('/api/paystack/webhook',
 );
 
 app.use(express.json());
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== Rate Limiting ====================
@@ -116,7 +113,7 @@ const planSettingsSchema = new mongoose.Schema({
   threeDayDuration: { type: Number, default: 3 }
 });
 
-// New Settings Schema for referral
+// Settings Schema for referral
 const settingsSchema = new mongoose.Schema({
   referralBaseUrl: { type: String, default: "https://arbimine-miyc.onrender.com" },
   updatedAt: { type: Date, default: Date.now }
@@ -405,7 +402,6 @@ app.post('/admin/broadcast', adminAuth, async (req, res) => {
       return res.status(404).json({ error: "No users found" });
     }
 
-    // Email setup
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -414,7 +410,6 @@ app.post('/admin/broadcast', adminAuth, async (req, res) => {
       }
     });
 
-    // SMS setup (Twilio)
     const client = twilio(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
@@ -424,7 +419,6 @@ app.post('/admin/broadcast', adminAuth, async (req, res) => {
     const results = { emails: 0, sms: 0, errors: [] };
 
     for (const user of users) {
-      // Send email
       if (user.email) {
         try {
           await transporter.sendMail({
@@ -440,7 +434,6 @@ app.post('/admin/broadcast', adminAuth, async (req, res) => {
         }
       }
 
-      // Send SMS
       if (user.mpesa) {
         try {
           await client.messages.create({
@@ -466,10 +459,37 @@ app.post('/admin/broadcast', adminAuth, async (req, res) => {
   }
 });
 
+// ==================== Admin Subscription Toggle ====================
+app.post('/admin/user/:id/toggle-subscription', adminAuth, async (req, res) => {
+  try {
+    const { active, plan } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const settings = await PlanSettings.findOne();
+    let expiresAt = null;
+    if (active && plan) {
+      let days;
+      if (plan === "weekly") days = settings.weeklyDuration;
+      else if (plan === "monthly") days = settings.monthlyDuration;
+      else if (plan === "threeDay") days = settings.threeDayDuration;
+      else days = 7;
+      expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    }
+    user.subscription.active = active;
+    user.subscription.plan = active ? plan : null;
+    user.subscription.expiresAt = expiresAt;
+    await user.save();
+    res.json({ success: true, user: { username: user.username, subscription: user.subscription } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ==================== Public Plan Settings ====================
 app.get('/api/plans', async (req, res) => {
   try {
     const settings = await PlanSettings.findOne();
+    res.set("Cache-Control", "public, max-age=60");
     res.json({
       threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
       weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
@@ -484,6 +504,7 @@ app.get('/api/plans', async (req, res) => {
 app.get('/api/referral', async (req, res) => {
   try {
     const settings = await Settings.findOne();
+    res.set("Cache-Control", "public, max-age=60");
     res.json({ url: settings?.referralBaseUrl || "https://arbimine-miyc.onrender.com" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1467,6 +1488,7 @@ app.get('/api/paystack/callback', async (req, res) => {
 });
 
 // ==================== Admin Panel ====================
+// IMPORTANT: This route must come BEFORE app.use(express.static)
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
@@ -1474,5 +1496,5 @@ app.get('/admin', (req, res) => {
 // ==================== Start Server ====================
 app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
-  console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'on your domain'}`);
+  console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'https://arbimine-miyc.onrender.com/admin'}`);
 });

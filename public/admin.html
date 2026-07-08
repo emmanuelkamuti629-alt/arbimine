@@ -33,111 +33,91 @@
   </style>
 </head>
 <body>
-  <div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-green-400">ArbiMine Admin</h1>
-      <div class="flex gap-3">
-        <button class="btn btn-secondary btn-sm" onclick="location.reload()">🔄 Refresh</button>
-        <button class="btn btn-sm" onclick="logout()">Logout</button>
+<div class="max-w-6xl mx-auto">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-green-400">ArbiMine Admin</h1>
+    <div class="flex gap-3">
+      <button class="btn btn-secondary btn-sm" onclick="location.reload()">🔄 Refresh</button>
+      <button class="btn btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="number" id="totalUsers">0</div><div class="label">Total Users</div></div>
+    <div class="stat-card"><div class="number" id="activeSubs">0</div><div class="label">Active Subs</div></div>
+    <div class="stat-card"><div class="number" id="totalRevenue">KES 0</div><div class="label">Total Revenue</div></div>
+    <div class="stat-card"><div class="number" id="failedPayments">0</div><div class="label">Failed Payments</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="active" data-tab="users">Users</button>
+    <button data-tab="transactions">Transactions</button>
+    <button data-tab="messages">Messages</button>
+    <button data-tab="plans">Plan Settings</button>
+    <button data-tab="broadcast">📢 Broadcast</button>
+    <button data-tab="general">⚙️ General</button>
+    <button data-tab="security">Security</button>
+  </div>
+
+  <!-- Users Tab -->
+  <div id="users" class="tab-content active">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">👥 Users</h2>
+      <div id="usersTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
+    </div>
+  </div>
+
+  <!-- Transactions Tab -->
+  <div id="transactions" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">💰 Transactions</h2>
+      <div id="transactionsTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
+    </div>
+  </div>
+
+  <!-- Messages Tab -->
+  <div id="messages" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">💬 Messages</h2>
+      <div id="messagesTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
+    </div>
+  </div>
+
+  <!-- Plan Settings -->
+  <div id="plans" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">📊 Subscription Plans</h2>
+      <p class="text-slate-400 text-sm mb-4">Update the prices and durations for subscription plans. Changes apply immediately.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-group"><label>Weekly Price (KES)</label><input type="number" id="weeklyAmount" /></div>
+        <div class="form-group"><label>Weekly Duration (days)</label><input type="number" id="weeklyDuration" /></div>
+        <div class="form-group"><label>Monthly Price (KES)</label><input type="number" id="monthlyAmount" /></div>
+        <div class="form-group"><label>Monthly Duration (days)</label><input type="number" id="monthlyDuration" /></div>
+        <div class="form-group"><label>3‑Day Price (KES)</label><input type="number" id="threeDayAmount" /></div>
+        <div class="form-group"><label>3‑Day Duration (days)</label><input type="number" id="threeDayDuration" /></div>
       </div>
+      <button class="btn" onclick="savePlanSettings()">💾 Save Plans</button>
     </div>
+  </div>
 
-    <!-- Stats -->
-    <div class="stats-grid" id="statsGrid">
-      <div class="stat-card"><div class="number" id="totalUsers">0</div><div class="label">Total Users</div></div>
-      <div class="stat-card"><div class="number" id="activeSubs">0</div><div class="label">Active Subs</div></div>
-      <div class="stat-card"><div class="number" id="totalRevenue">KES 0</div><div class="label">Total Revenue</div></div>
-      <div class="stat-card"><div class="number" id="failedPayments">0</div><div class="label">Failed Payments</div></div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-    <button class="tab-btn" data-tab="general">⚙️ General</button>
-      <button class="active" data-tab="users">Users</button>
-      <button data-tab="transactions">Transactions</button>
-      <button data-tab="messages">Messages</button>
-      <button data-tab="plans">Plan Settings</button>
-      <button data-tab="broadcast">📢 Broadcast</button>
-      <button data-tab="security">Security</button>
-    </div>
-
-    <!-- Users Tab -->
-    <div id="users" class="tab-content active">
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">👥 Users</h2>
-        <div id="usersTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
+  <!-- Broadcast Tab -->
+  <div id="broadcast" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">📢 Broadcast Message</h2>
+      <p class="text-slate-400 text-sm mb-4">Send a message to <strong>all registered users</strong> via email and SMS (if Twilio is configured).</p>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea id="broadcastMessage" rows="6" placeholder="Type your announcement here..." class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white"></textarea>
       </div>
+      <button class="btn" onclick="sendBroadcast()">📤 Send to All Users</button>
+      <div id="broadcastStatus" class="mt-4 text-sm"></div>
     </div>
+  </div>
 
-    <!-- Transactions Tab -->
-    <div id="transactions" class="tab-content">
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">💰 Transactions</h2>
-        <div id="transactionsTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
-      </div>
-    </div>
-
-    <!-- Messages Tab -->
-    <div id="messages" class="tab-content">
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">💬 Messages</h2>
-        <div id="messagesTable"><table><tr><td class="text-slate-400">Loading...</td></tr></table></div>
-      </div>
-    </div>
-
-    <!-- Plan Settings -->
-    <div id="plans" class="tab-content">
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">📊 Subscription Plans</h2>
-        <p class="text-slate-400 text-sm mb-4">Update the prices and durations for subscription plans. Changes apply immediately.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="form-group">
-            <label>Weekly Price (KES)</label>
-            <input type="number" id="weeklyAmount" />
-          </div>
-          <div class="form-group">
-            <label>Weekly Duration (days)</label>
-            <input type="number" id="weeklyDuration" />
-          </div>
-          <div class="form-group">
-            <label>Monthly Price (KES)</label>
-            <input type="number" id="monthlyAmount" />
-          </div>
-          <div class="form-group">
-            <label>Monthly Duration (days)</label>
-            <input type="number" id="monthlyDuration" />
-          </div>
-          <!-- 3-Day fields -->
-          <div class="form-group">
-            <label>3‑Day Price (KES)</label>
-            <input type="number" id="threeDayAmount" />
-          </div>
-          <div class="form-group">
-            <label>3‑Day Duration (days)</label>
-            <input type="number" id="threeDayDuration" />
-          </div>
-        </div>
-        <button class="btn" onclick="savePlanSettings()">💾 Save Plans</button>
-      </div>
-    </div>
-
-    <!-- Broadcast Tab -->
-    <div id="broadcast" class="tab-content">
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">📢 Broadcast Message</h2>
-        <p class="text-slate-400 text-sm mb-4">Send a message to <strong>all registered users</strong> via email and SMS (if Twilio is configured).</p>
-        <div class="form-group">
-          <label>Message</label>
-          <textarea id="broadcastMessage" rows="6" placeholder="Type your announcement here..." class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white"></textarea>
-        </div>
-        <button class="btn" onclick="sendBroadcast()">📤 Send to All Users</button>
-        <div id="broadcastStatus" class="mt-4 text-sm"></div>
-      </div>
-    </div>
-
-    <!-- Security Tab -->
-    <div id="security" class="tab-content">
+  <!-- General Settings Tab -->
   <div id="general" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">⚙️ General Settings</h2>
@@ -149,223 +129,61 @@
       <div id="generalStatus" class="mt-3 text-sm"></div>
     </div>
   </div>
-      <div class="glass">
-        <h2 class="text-xl font-bold mb-4">🔐 Security</h2>
-        <div class="flex items-center gap-4">
-          <span>Two-Factor Authentication:</span>
-          <span id="twofaStatus" class="text-yellow-400">Loading...</span>
-          <button class="btn btn-sm" onclick="toggle2FA()">Toggle 2FA</button>
-        </div>
-        <div id="twofaSetup" class="mt-4"></div>
+
+  <!-- Security Tab -->
+  <div id="security" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">🔐 Security</h2>
+      <div class="flex items-center gap-4">
+        <span>Two-Factor Authentication:</span>
+        <span id="twofaStatus" class="text-yellow-400">Loading...</span>
+        <button class="btn btn-sm" onclick="toggle2FA()">Toggle 2FA</button>
       </div>
+      <div id="twofaSetup" class="mt-4"></div>
     </div>
   </div>
+</div>
 
-  <script>
-    const adminToken = localStorage.getItem('adminToken');
-    if (!adminToken) { window.location.href = '/'; }
-
-    // ====== Helper ======
-    function api(method, url, body) {
-      return fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-        body: body ? JSON.stringify(body) : undefined
-      }).then(res => res.json());
-    }
-
-    // ====== Load stats ======
-    async function loadStats() {
-      try {
-        const users = await api('GET', '/admin/users');
-        document.getElementById('totalUsers').textContent = users.length;
-        const active = users.filter(u => u.subscription?.active).length;
-        document.getElementById('activeSubs').textContent = active;
-        // revenue from transactions
-        const tx = await api('GET', '/admin/transactions');
-        const total = tx.filter(t => t.status === 'success').reduce((s, t) => s + (t.amount || 0), 0);
-        document.getElementById('totalRevenue').textContent = 'KES ' + total;
-        const failed = tx.filter(t => t.status === 'failed').length;
-        document.getElementById('failedPayments').textContent = failed;
-      } catch(e) { console.error(e); }
-    }
-
-    // ====== Load tables ======
-    async function loadUsers() {
-      const users = await api('GET', '/admin/users');
-      let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th></tr>`;
-      users.forEach(u => {
-        html += `<tr>
-          <td>${u.username}</td>
-          <td>${u.email}</td>
-          <td>${u.mpesa}</td>
-          <td>${u.subscription?.plan || 'Free'}</td>
-          <td>${u.subscription?.expiresAt ? new Date(u.subscription.expiresAt).toLocaleDateString() : '—'}</td>
-        </tr>`;
-      });
-      html += '</table>';
-      document.getElementById('usersTable').innerHTML = html;
-    }
-
-    async function loadTransactions() {
-      const tx = await api('GET', '/admin/transactions');
-      let html = `<table><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
-      tx.forEach(t => {
-        html += `<tr>
-          <td>${t.user}</td>
-          <td>${t.plan || '—'}</td>
-          <td>KES ${t.amount || 0}</td>
-          <td>${t.status}</td>
-          <td>${new Date(t.createdAt).toLocaleDateString()}</td>
-        </tr>`;
-      });
-      html += '</table>';
-      document.getElementById('transactionsTable').innerHTML = html;
-    }
-
-    async function loadMessages() {
-      const msgs = await api('GET', '/admin/messages');
-      let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
-      msgs.forEach(m => {
-        html += `<tr>
-          <td>${m.user}</td>
-          <td>${m.content.substring(0, 50)}${m.content.length > 50 ? '...' : ''}</td>
-          <td>${m.status}</td>
-          <td>${new Date(m.createdAt).toLocaleDateString()}</td>
-        </tr>`;
-      });
-      html += '</table>';
-      document.getElementById('messagesTable').innerHTML = html;
-    }
-
-    // ====== Load plan settings ======
-    async function loadPlanSettings() {
-      const data = await api('GET', '/admin/settings/plans');
-      document.getElementById('weeklyAmount').value = data.weeklyAmount;
-      document.getElementById('weeklyDuration').value = data.weeklyDuration;
-      document.getElementById('monthlyAmount').value = data.monthlyAmount;
-      document.getElementById('monthlyDuration').value = data.monthlyDuration;
-      document.getElementById('threeDayAmount').value = data.threeDayAmount || 150;
-      document.getElementById('threeDayDuration').value = data.threeDayDuration || 3;
-    }
-
-    async function savePlanSettings() {
-      const payload = {
-        weeklyAmount: +document.getElementById('weeklyAmount').value,
-        weeklyDuration: +document.getElementById('weeklyDuration').value,
-        monthlyAmount: +document.getElementById('monthlyAmount').value,
-        monthlyDuration: +document.getElementById('monthlyDuration').value,
-        threeDayAmount: +document.getElementById('threeDayAmount').value,
-        threeDayDuration: +document.getElementById('threeDayDuration').value
-      };
-      try {
-        const data = await api('PUT', '/admin/settings/plans', payload);
-        if (data.success) alert('✅ Plans updated!');
-        else alert('❌ Error: ' + data.error);
-      } catch(e) { alert('Error: ' + e.message); }
-    }
-
-    // ====== Broadcast ======
-    async function sendBroadcast() {
-      const message = document.getElementById('broadcastMessage').value.trim();
-      if (!message) return alert('Please enter a message.');
-      if (!confirm('Send this to ALL users via email and SMS?')) return;
-      const status = document.getElementById('broadcastStatus');
-      status.textContent = 'Sending...';
-      try {
-        const data = await api('POST', '/admin/broadcast', { message });
-        if (data.success) {
-          status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
-        } else {
-          status.textContent = '❌ Error: ' + data.error;
-        }
-      } catch(e) {
-        status.textContent = '❌ ' + e.message;
-      }
-    }
-
-    // ====== Security (2FA) ======
-    async function load2FA() {
-      try {
-        const res = await fetch('/admin/settings/totp/status', { headers: { Authorization: adminToken } });
-        const data = await res.json();
-        document.getElementById('twofaStatus').textContent = data.enabled ? '✅ Enabled' : '❌ Disabled';
-      } catch(e) { console.error(e); }
-    }
-    async function toggle2FA() {
-      alert('2FA toggle: implement using the existing endpoints (see docs)');
-    }
-
-    // ====== Tabs ======
-    document.querySelectorAll('.tabs button').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById(this.dataset.tab).classList.add('active');
-      });
-    });
-
-    // ====== Logout ======
-    function logout() {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/';
-    }
-
-    // ====== Init ======
-    loadStats();
-    loadUsers();
-    loadTransactions();
-    loadMessages();
-    loadPlanSettings();
-    load2FA();
-  </script>
-</body>
-</html>
 <script>
-async function loadGeneralSettings() {
-  try {
-    const res = await fetch('/admin/settings', { headers: { Authorization: localStorage.getItem('adminToken') } });
-    const data = await res.json();
-    if (data && data.referralBaseUrl) {
-      document.getElementById('referralUrl').value = data.referralBaseUrl;
-    }
-  } catch(e) { console.error(e); }
-}
-
-async function saveGeneralSettings() {
-  const url = document.getElementById('referralUrl').value.trim();
-  if (!url) return alert('Please enter a valid URL');
-  try {
-    const res = await fetch('/admin/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
-      body: JSON.stringify({ referralBaseUrl: url })
-    });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('generalStatus').textContent = '✅ Saved!';
-      document.getElementById('generalStatus').className = 'text-green-400';
-    } else {
-      document.getElementById('generalStatus').textContent = '❌ ' + data.error;
-      document.getElementById('generalStatus').className = 'text-red-400';
-    }
-  } catch(e) {
-    document.getElementById('generalStatus').textContent = '❌ ' + e.message;
-    document.getElementById('generalStatus').className = 'text-red-400';
+  // Use sessionStorage for admin token
+  const adminToken = sessionStorage.getItem('adminToken');
+  if (!adminToken) {
+    // Redirect to login if not authenticated – but we keep it simple: show login form.
+    // However, the login is done via a separate page? Actually we handle login in the same page.
+    // We'll show a login overlay if no token.
+    // For simplicity, we'll just show login if no token.
+    // But since we have the login route /admin/login, we can implement a login form here.
+    // For now, we'll just show a login prompt.
+    // Better: we'll show a login modal.
+    // Let's add a login modal at the top.
   }
-}
 
-// Also add a toggle in users table (we'll add a button per user)
-// We'll modify the users table rendering to include a toggle button.
-// Since we already have loadUsers(), we'll override it with an enhanced version.
-// But we'll just patch the existing loadUsers function.
-// We'll replace the users table generation with one that includes a toggle.
+  // Helper
+  function api(method, url, body) {
+    return fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(res => res.json());
+  }
 
-// We'll use a global override.
-const originalLoadUsers = window.loadUsers;
-window.loadUsers = async function() {
-  try {
+  // Load stats
+  async function loadStats() {
+    try {
+      const users = await api('GET', '/admin/users');
+      document.getElementById('totalUsers').textContent = users.length;
+      const active = users.filter(u => u.subscription?.active).length;
+      document.getElementById('activeSubs').textContent = active;
+      const tx = await api('GET', '/admin/transactions');
+      const total = tx.filter(t => t.status === 'success').reduce((s, t) => s + (t.amount || 0), 0);
+      document.getElementById('totalRevenue').textContent = 'KES ' + total;
+      const failed = tx.filter(t => t.status === 'failed').length;
+      document.getElementById('failedPayments').textContent = failed;
+    } catch(e) { console.error(e); }
+  }
+
+  // Load tables
+  async function loadUsers() {
     const users = await api('GET', '/admin/users');
     let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th></tr>`;
     users.forEach(u => {
@@ -387,30 +205,223 @@ window.loadUsers = async function() {
     });
     html += '</table>';
     document.getElementById('usersTable').innerHTML = html;
-  } catch(e) { console.error(e); }
-};
+  }
 
-async function toggleUserSubscription(userId, active, plan) {
-  if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
-  try {
-    const res = await fetch(`/admin/user/${userId}/toggle-subscription`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
-      body: JSON.stringify({ active, plan: active ? plan : null })
+  async function toggleUserSubscription(userId, active, plan) {
+    if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
+    try {
+      const res = await fetch(`/admin/user/${userId}/toggle-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ active, plan: active ? plan : null })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Subscription updated');
+        loadUsers();
+      } else {
+        alert('❌ Error: ' + data.error);
+      }
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function loadTransactions() {
+    const tx = await api('GET', '/admin/transactions');
+    let html = `<table><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+    tx.forEach(t => {
+      html += `<tr>
+        <td>${t.user}</td>
+        <td>${t.plan || '—'}</td>
+        <td>KES ${t.amount || 0}</td>
+        <td>${t.status}</td>
+        <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+      </tr>`;
     });
-    const data = await res.json();
-    if (data.success) {
-      alert('✅ Subscription updated');
-      loadUsers();
-    } else {
-      alert('❌ Error: ' + data.error);
-    }
-  } catch(e) { alert('Error: ' + e.message); }
-}
+    html += '</table>';
+    document.getElementById('transactionsTable').innerHTML = html;
+  }
 
-// Override the tab click to load general settings when that tab is selected
-document.addEventListener('DOMContentLoaded', function() {
-  // After existing init, load general settings
-  loadGeneralSettings();
-});
+  async function loadMessages() {
+    const msgs = await api('GET', '/admin/messages');
+    let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
+    msgs.forEach(m => {
+      html += `<tr>
+        <td>${m.user}</td>
+        <td>${m.content.substring(0, 50)}${m.content.length > 50 ? '...' : ''}</td>
+        <td>${m.status}</td>
+        <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+      </tr>`;
+    });
+    html += '</table>';
+    document.getElementById('messagesTable').innerHTML = html;
+  }
+
+  // Plan settings
+  async function loadPlanSettings() {
+    const data = await api('GET', '/admin/settings/plans');
+    document.getElementById('weeklyAmount').value = data.weeklyAmount;
+    document.getElementById('weeklyDuration').value = data.weeklyDuration;
+    document.getElementById('monthlyAmount').value = data.monthlyAmount;
+    document.getElementById('monthlyDuration').value = data.monthlyDuration;
+    document.getElementById('threeDayAmount').value = data.threeDayAmount || 150;
+    document.getElementById('threeDayDuration').value = data.threeDayDuration || 3;
+  }
+
+  async function savePlanSettings() {
+    const payload = {
+      weeklyAmount: +document.getElementById('weeklyAmount').value,
+      weeklyDuration: +document.getElementById('weeklyDuration').value,
+      monthlyAmount: +document.getElementById('monthlyAmount').value,
+      monthlyDuration: +document.getElementById('monthlyDuration').value,
+      threeDayAmount: +document.getElementById('threeDayAmount').value,
+      threeDayDuration: +document.getElementById('threeDayDuration').value
+    };
+    try {
+      const data = await api('PUT', '/admin/settings/plans', payload);
+      if (data.success) alert('✅ Plans updated!');
+      else alert('❌ Error: ' + data.error);
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  // Broadcast
+  async function sendBroadcast() {
+    const message = document.getElementById('broadcastMessage').value.trim();
+    if (!message) return alert('Please enter a message.');
+    if (!confirm('Send this to ALL users via email and SMS?')) return;
+    const status = document.getElementById('broadcastStatus');
+    status.textContent = 'Sending...';
+    try {
+      const data = await api('POST', '/admin/broadcast', { message });
+      if (data.success) {
+        status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
+      } else {
+        status.textContent = '❌ Error: ' + data.error;
+      }
+    } catch(e) {
+      status.textContent = '❌ ' + e.message;
+    }
+  }
+
+  // General settings (referral URL)
+  async function loadGeneralSettings() {
+    try {
+      const res = await fetch('/admin/settings', { headers: { Authorization: adminToken } });
+      const data = await res.json();
+      if (data && data.referralBaseUrl) {
+        document.getElementById('referralUrl').value = data.referralBaseUrl;
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function saveGeneralSettings() {
+    const url = document.getElementById('referralUrl').value.trim();
+    if (!url) return alert('Please enter a valid URL');
+    try {
+      const res = await fetch('/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ referralBaseUrl: url })
+      });
+      const data = await res.json();
+      const status = document.getElementById('generalStatus');
+      if (data.success) {
+        status.textContent = '✅ Saved!';
+        status.className = 'text-green-400';
+      } else {
+        status.textContent = '❌ ' + data.error;
+        status.className = 'text-red-400';
+      }
+    } catch(e) {
+      document.getElementById('generalStatus').textContent = '❌ ' + e.message;
+      document.getElementById('generalStatus').className = 'text-red-400';
+    }
+  }
+
+  // Security (2FA)
+  async function load2FA() {
+    try {
+      const res = await fetch('/admin/settings/totp/status', { headers: { Authorization: adminToken } });
+      const data = await res.json();
+      document.getElementById('twofaStatus').textContent = data.enabled ? '✅ Enabled' : '❌ Disabled';
+    } catch(e) { console.error(e); }
+  }
+  async function toggle2FA() {
+    alert('2FA toggle: implement using the existing endpoints (see docs)');
+  }
+
+  // Tabs
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Logout
+  function logout() {
+    sessionStorage.removeItem('adminToken');
+    window.location.href = '/admin';
+  }
+
+  // Init
+  if (adminToken) {
+    loadStats();
+    loadUsers();
+    loadTransactions();
+    loadMessages();
+    loadPlanSettings();
+    loadGeneralSettings();
+    load2FA();
+  } else {
+    // Show login form (simple redirect to login page if not logged in)
+    // Since we don't have a separate login page, we can redirect to /admin/login?error=unauthorized
+    // But we'll just show a login overlay.
+    // Let's redirect to /admin/login?error=unauthorized – but we need to handle that.
+    // For simplicity, we'll just show a login form embedded.
+    // I'll add a simple login form at the top.
+    // Actually, we'll handle login in a modal.
+    // We'll just redirect to the login page if we want.
+    // Instead, let's just show login form:
+    document.body.innerHTML = `
+      <div class="max-w-md mx-auto mt-20 glass p-8">
+        <h1 class="text-2xl font-bold text-center text-green-400 mb-6">Admin Login</h1>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUsername" class="w-full" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" class="w-full" />
+        </div>
+        <button class="btn w-full" onclick="adminLogin()">Log In</button>
+        <div id="loginError" class="text-red-400 text-center mt-2 hidden"></div>
+      </div>
+    `;
+    window.adminLogin = async function() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      try {
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.token) {
+          sessionStorage.setItem('adminToken', data.token);
+          location.reload();
+        } else {
+          document.getElementById('loginError').textContent = data.error || 'Login failed';
+          document.getElementById('loginError').classList.remove('hidden');
+        }
+      } catch(e) {
+        document.getElementById('loginError').textContent = 'Server error';
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    };
+  }
 </script>
+</body>
+</html>
