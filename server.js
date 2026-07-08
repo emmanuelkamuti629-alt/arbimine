@@ -20,15 +20,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 app.set('trust proxy', 1);
 
 // ==================== MongoDB ====================
-mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ MongoDB error:", err.message));
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/arbimine';
-// Create indexes for faster admin queries
-User.createIndexes({ email: 1 });
-User.createIndexes({ username: 1 });
-Transaction.createIndexes({ user: 1, status: 1, createdAt: -1 });
-Message.createIndexes({ user: 1, createdAt: -1 });
+mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err.message));
 
@@ -195,27 +188,42 @@ async function ensureSettings() {
 }
 ensureSettings();
 
-// Step 1: Admin login
+// ====== Admin login (improved) ======
 app.post('/admin/login', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
 
-  const admin = await Admin.findOne({ username });
-  if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
+    // Ensure admin exists (create if missing)
+    let admin = await Admin.findOne({ username });
+    if (!admin) {
+      const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
+      admin = new Admin({ username: ADMIN_USERNAME, passwordHash: hashed, isTotpEnabled: false });
+      await admin.save();
+      console.log('🔐 Admin created with env credentials');
+    }
 
-  const match = await bcrypt.compare(password, admin.passwordHash);
-  if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+    const match = await bcrypt.compare(password, admin.passwordHash);
+    if (!match) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-  if (admin.isTotpEnabled) {
-    const tempToken = crypto.randomBytes(32).toString('hex');
-    tempAdminSessions.set(tempToken, {
-      username,
-      expires: Date.now() + 5 * 60 * 1000
-    });
-    return res.json({ success: true, tempToken, requiresOtp: true });
-  } else {
-    const token = generateAdminToken(username);
-    return res.json({ success: true, token });
+    if (admin.isTotpEnabled) {
+      const tempToken = crypto.randomBytes(32).toString('hex');
+      tempAdminSessions.set(tempToken, {
+        username,
+        expires: Date.now() + 5 * 60 * 1000
+      });
+      return res.json({ success: true, tempToken, requiresOtp: true });
+    } else {
+      const token = generateAdminToken(username);
+      return res.json({ success: true, token });
+    }
+  } catch (err) {
+    console.error('Admin login error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
@@ -492,6 +500,16 @@ app.post('/admin/user/:id/toggle-subscription', adminAuth, async (req, res) => {
   }
 });
 
+// ==================== Delete transaction ====================
+app.delete('/admin/transaction/:id', adminAuth, async (req, res) => {
+  try {
+    await Transaction.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ==================== Public Plan Settings ====================
 app.get('/api/plans', async (req, res) => {
   try {
@@ -541,6 +559,26 @@ app.get('/admin/messages', adminAuth, async (req, res) => {
   try {
     const messages = await Message.find().sort({ createdAt: -1 }).limit(100).lean();
     res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin/stats', adminAuth, async (req, res) => {
+  try {
+    const totalUsers = await User.estimatedDocumentCount();
+    const activeSubs = await User.countDocuments({ "subscription.active": true });
+    const totalRevenue = await Transaction.aggregate([
+      { $match: { status: "success" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const failedPayments = await Transaction.countDocuments({ status: "failed" });
+    res.json({
+      totalUsers,
+      activeSubs,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      failedPayments
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
