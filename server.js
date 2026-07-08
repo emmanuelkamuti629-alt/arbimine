@@ -360,6 +360,7 @@ app.get('/api/plans', async (req, res) => {
   try {
     const settings = await PlanSettings.findOne();
     res.json({
+      threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
       weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
       monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
     });
@@ -602,6 +603,7 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
       plan: user.subscription.plan,
       expiresAt: user.subscription.expiresAt,
       plans: {
+      threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
         weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
         monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
       }
