@@ -661,7 +661,7 @@
   // ==========================================
   // STATE
   // ==========================================
-  let token = localStorage.getItem('token');
+  let token = sessionStorage.getItem('token');
   let allOpportunities = [];
   let selectedExchanges = new Set(['all']);
   let watchlist = JSON.parse(localStorage.getItem('arbimine_watchlist') || '[]');
@@ -784,7 +784,7 @@
       const data = await res.json();
       if (data.success && data.token) {
         token = data.token;
-        localStorage.setItem('token', token);
+        sessionStorage.setItem('token', token);
         document.getElementById('loginModal').classList.remove('show');
         document.getElementById('registerModal').classList.remove('show');
         document.getElementById('appContent').style.display = 'block';
@@ -821,7 +821,7 @@
   }
 
   function logout() {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     token = null;
     document.getElementById('appContent').style.display = 'none';
     document.getElementById('loginModal').classList.add('show');
