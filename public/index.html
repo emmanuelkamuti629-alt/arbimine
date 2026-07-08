@@ -496,6 +496,7 @@
 <div id="page-pro" class="page">
   <div class="glass p-6">
     <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
+    <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
     <p class="text-slate-400 mt-2">Upgrade to access premium features.</p>
 
     <div id="paymentMessage" class="mt-4 text-center"></div>
@@ -525,6 +526,11 @@
         <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
         <div class="mt-2 text-slate-400">Monthly</div>
         <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)">Subscribe Monthly</button>
+      </div>
+      <div class="glass p-5 text-center">
+        <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
+        <div class="mt-2 text-slate-400">3 Days</div>
+        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)">Subscribe 3 Days</button>
       </div>
     </div>
 
@@ -822,6 +828,7 @@
         currentUser = { username: data.username };
         await loadUserProfile();
         await loadPlans();
+    await loadReferralLink();
         await loadOpportunities();
         await loadMessages();
         await loadSubscription();
@@ -882,6 +889,7 @@
       const res = await fetch('/api/plans');
       const data = await res.json();
       if (data.weekly && data.monthly) {
+    if (data.threeDay) planSettings.threeDay = data.threeDay;
         planSettings = data;
         updateProPrices();
       }
@@ -889,6 +897,21 @@
       console.warn('Failed to load plans', e);
     }
   }
+
+async function loadReferralLink() {
+  try {
+    const res = await fetch("/api/referral");
+    const data = await res.json();
+    document.getElementById("referralLink").value = data.url || "https://arbimine.onrender.com";
+  } catch (e) { console.warn("Could not load referral link", e); }
+}
+
+async function refreshSubscription() {
+  await loadSubscription();
+  await loadPlans();
+    await loadReferralLink();
+  showToast("Subscription status refreshed", "info");
+}
 
   function updateProPrices() {
     const weeklyEl = document.getElementById('weeklyPriceDisplay');

@@ -105,6 +105,7 @@ const adminSchema = new mongoose.Schema({
 const planSettingsSchema = new mongoose.Schema({
   weeklyAmount: { type: Number, default: 260 },
   weeklyDuration: { type: Number, default: 7 },
+  threeDayDuration: { type: Number, default: 3 },
   monthlyAmount: { type: Number, default: 900 },
   monthlyDuration: { type: Number, default: 30 }
 });
@@ -116,6 +117,13 @@ const Transaction = mongoose.model('Transaction', transactionSchema);
 const User = mongoose.model('User', userSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 const PlanSettings = mongoose.model('PlanSettings', planSettingsSchema);
+
+// --- New Settings Schema ---
+const settingsSchema = new mongoose.Schema({
+  referralBaseUrl: { type: String, default: "https://arbimine.onrender.com" },
+  updatedAt: { type: Date, default: Date.now }
+});
+const Settings = mongoose.model("Settings", settingsSchema);
 
 const generateToken = () => crypto.randomBytes(32).toString('hex');
 
@@ -165,6 +173,15 @@ async function ensurePlanSettings() {
   }
 }
 ensurePlanSettings();
+async function ensureSettings() {
+  let settings = await Settings.findOne();
+  if (!settings) {
+    settings = new Settings({ referralBaseUrl: "https://arbimine.onrender.com" });
+    await settings.save();
+    console.log("⚙️ Default settings created");
+  }
+}
+ensureSettings();
 
 // Step 1: Admin login
 app.post('/admin/login', async (req, res) => {
@@ -184,9 +201,11 @@ app.post('/admin/login', async (req, res) => {
       expires: Date.now() + 5 * 60 * 1000
     });
     return res.json({ success: true, tempToken, requiresOtp: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } else {
     const token = generateAdminToken(username);
     return res.json({ success: true, token });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   }
 });
 
@@ -213,6 +232,7 @@ app.post('/admin/verify-otp', async (req, res) => {
   tempAdminSessions.delete(tempToken);
   const token = generateAdminToken(session.username);
   res.json({ success: true, token });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
 });
 
 // Admin 2FA settings
@@ -220,6 +240,7 @@ app.get('/admin/settings/totp/status', adminAuth, async (req, res) => {
   try {
     const admin = await Admin.findOne({ username: ADMIN_USERNAME });
     res.json({ enabled: admin?.isTotpEnabled || false });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -237,6 +258,7 @@ app.post('/admin/settings/totp/generate', adminAuth, async (req, res) => {
     const qrImage = await QRCode.toDataURL(otpauth);
 
     res.json({ secret, qrImage, otpauth });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -265,6 +287,7 @@ app.post('/admin/settings/totp/verify', adminAuth, async (req, res) => {
 
     pendingTotpSecrets.delete(admin._id.toString());
     res.json({ success: true, message: '2FA enabled successfully' });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -289,6 +312,7 @@ app.post('/admin/settings/totp/disable', adminAuth, async (req, res) => {
     await admin.save();
 
     res.json({ success: true, message: '2FA disabled successfully' });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -332,6 +356,7 @@ app.put('/admin/settings/plans', adminAuth, async (req, res) => {
     settings.monthlyDuration = monthlyDuration;
     await settings.save();
     res.json({ success: true, settings });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -343,6 +368,7 @@ app.get('/api/plans', async (req, res) => {
   try {
     const settings = await PlanSettings.findOne();
     res.json({
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
       weekly: { amount: settings.weeklyAmount, duration: settings.weeklyDuration },
       monthly: { amount: settings.monthlyAmount, duration: settings.monthlyDuration }
     });
@@ -389,12 +415,14 @@ app.post('/admin/messages', adminAuth, async (req, res) => {
     await msg.save();
   }, 500);
   res.json({ success: true, message: msg });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
 });
 
 app.delete('/admin/message/:id', adminAuth, async (req, res) => {
   try {
     await Message.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -406,6 +434,7 @@ app.put('/admin/message/:id', adminAuth, async (req, res) => {
   try {
     const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
     res.json({ success: true, message: msg });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -418,6 +447,7 @@ app.post('/admin/block/:username', adminAuth, async (req, res) => {
     user.isBlocked = true;
     await user.save();
     res.json({ success: true, message: `User ${req.params.username} blocked` });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -431,6 +461,7 @@ app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
     user.isBlocked = false;
     await user.save();
     res.json({ success: true, message: `User ${req.params.username} unblocked` });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -451,6 +482,7 @@ app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
     }
     await User.findByIdAndUpdate(req.params.id, updates);
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -460,6 +492,7 @@ app.delete('/admin/user/:id', adminAuth, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -514,6 +547,7 @@ app.post('/api/register', async (req, res) => {
     const token = generateToken();
     await new Session({ token, username }).save();
     res.json({ success: true, token, username });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -547,6 +581,7 @@ app.post('/api/login', async (req, res) => {
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
     res.json({ success: true, token, username: user.username });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -557,6 +592,7 @@ app.post('/api/logout', authMiddleware, async (req, res) => {
   try {
     await Session.deleteOne({ token: req.headers.authorization });
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -567,6 +603,7 @@ app.get('/api/me', authMiddleware, async (req, res) => {
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(401).json({ error: 'User not found' });
     res.json({ username: user.username, email: user.email, mpesa: user.mpesa });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -581,6 +618,7 @@ app.get('/api/user/subscription', authMiddleware, async (req, res) => {
     const isActive = user.subscription.active && user.subscription.expiresAt && user.subscription.expiresAt > now;
     const settings = await PlanSettings.findOne();
     res.json({
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
       active: isActive,
       plan: user.subscription.plan,
       expiresAt: user.subscription.expiresAt,
@@ -611,6 +649,7 @@ app.post('/api/user/change-password', authMiddleware, async (req, res) => {
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     await user.save();
     res.json({ success: true, message: 'Password updated successfully' });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -641,6 +680,7 @@ app.post('/api/user/change-mpesa', authMiddleware, async (req, res) => {
     user.mpesa = newMpesa;
     await user.save();
     res.json({ success: true, message: 'M-Pesa number updated successfully' });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -666,6 +706,7 @@ app.post('/api/messages', authMiddleware, async (req, res) => {
       await msg.save();
     }, 1000);
     res.json({ success: true, message: msg });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -694,6 +735,7 @@ app.put('/api/messages/:id', authMiddleware, async (req, res) => {
     msg.edited = true;
     await msg.save();
     res.json({ success: true, message: msg });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -709,6 +751,7 @@ app.delete('/api/messages/:id', authMiddleware, async (req, res) => {
     msg.deleted = true;
     await msg.save();
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -724,6 +767,7 @@ app.post('/api/messages/:id/read', authMiddleware, async (req, res) => {
     msg.status = 'read';
     await msg.save();
     res.json({ success: true });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -1097,6 +1141,7 @@ app.get('/api/opportunities', authMiddleware, async (req, res) => {
     const shownCount = filteredOpps.length;
 
     res.json({
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
       count: filteredOpps.length,
       opportunities: filteredOpps,
       totalAvailable,
@@ -1175,6 +1220,7 @@ app.post('/api/ai/refresh/:id', authMiddleware, async (req, res) => {
       detailedCache.set(id, detail);
     }
     res.json({ success: true, ai });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
   } else {
     res.status(500).json({ error: 'AI analysis failed' });
   }
@@ -1183,6 +1229,7 @@ app.post('/api/ai/refresh/:id', authMiddleware, async (req, res) => {
 // ==================== Balance endpoint ====================
 app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
   res.json({ USDT: 1000, BTC: 0.01, ETH: 0.1 });
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
 });
 
 // ==================== Paystack ====================
@@ -1202,7 +1249,7 @@ function sanitizeReference(str) {
 app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
-    if (!plan || !['weekly', 'monthly'].includes(plan)) {
+    if (!plan || !['weekly', 'monthly', 'threeDay'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
@@ -1251,6 +1298,7 @@ app.post('/api/paystack/initialize', authMiddleware, async (req, res) => {
       });
 
       res.json({
+    threeDay: { amount: settings.threeDayAmount, duration: settings.threeDayDuration },
         success: true,
         authorization_url: response.data.data.authorization_url,
         reference: response.data.data.reference
