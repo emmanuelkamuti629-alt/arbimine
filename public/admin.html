@@ -53,6 +53,7 @@
 
     <!-- Tabs -->
     <div class="tabs">
+    <button class="tab-btn" data-tab="general">⚙️ General</button>
       <button class="active" data-tab="users">Users</button>
       <button data-tab="transactions">Transactions</button>
       <button data-tab="messages">Messages</button>
@@ -137,6 +138,17 @@
 
     <!-- Security Tab -->
     <div id="security" class="tab-content">
+  <div id="general" class="tab-content">
+    <div class="glass">
+      <h2 class="text-xl font-bold mb-4">⚙️ General Settings</h2>
+      <div class="form-group">
+        <label>Referral Base URL</label>
+        <input type="url" id="referralUrl" value="https://arbimine-miyc.onrender.com" />
+      </div>
+      <button class="btn" onclick="saveGeneralSettings()">💾 Save</button>
+      <div id="generalStatus" class="mt-3 text-sm"></div>
+    </div>
+  </div>
       <div class="glass">
         <h2 class="text-xl font-bold mb-4">🔐 Security</h2>
         <div class="flex items-center gap-4">
@@ -310,3 +322,95 @@
   </script>
 </body>
 </html>
+<script>
+async function loadGeneralSettings() {
+  try {
+    const res = await fetch('/admin/settings', { headers: { Authorization: localStorage.getItem('adminToken') } });
+    const data = await res.json();
+    if (data && data.referralBaseUrl) {
+      document.getElementById('referralUrl').value = data.referralBaseUrl;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function saveGeneralSettings() {
+  const url = document.getElementById('referralUrl').value.trim();
+  if (!url) return alert('Please enter a valid URL');
+  try {
+    const res = await fetch('/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
+      body: JSON.stringify({ referralBaseUrl: url })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('generalStatus').textContent = '✅ Saved!';
+      document.getElementById('generalStatus').className = 'text-green-400';
+    } else {
+      document.getElementById('generalStatus').textContent = '❌ ' + data.error;
+      document.getElementById('generalStatus').className = 'text-red-400';
+    }
+  } catch(e) {
+    document.getElementById('generalStatus').textContent = '❌ ' + e.message;
+    document.getElementById('generalStatus').className = 'text-red-400';
+  }
+}
+
+// Also add a toggle in users table (we'll add a button per user)
+// We'll modify the users table rendering to include a toggle button.
+// Since we already have loadUsers(), we'll override it with an enhanced version.
+// But we'll just patch the existing loadUsers function.
+// We'll replace the users table generation with one that includes a toggle.
+
+// We'll use a global override.
+const originalLoadUsers = window.loadUsers;
+window.loadUsers = async function() {
+  try {
+    const users = await api('GET', '/admin/users');
+    let html = `<table><tr><th>Username</th><th>Email</th><th>M-Pesa</th><th>Plan</th><th>Expires</th><th>Toggle</th></tr>`;
+    users.forEach(u => {
+      const isActive = u.subscription?.active ? true : false;
+      const plan = u.subscription?.plan || 'Free';
+      const expires = u.subscription?.expiresAt ? new Date(u.subscription.expiresAt).toLocaleDateString() : '—';
+      html += `<tr>
+        <td>${u.username}</td>
+        <td>${u.email}</td>
+        <td>${u.mpesa}</td>
+        <td>${plan}</td>
+        <td>${expires}</td>
+        <td>
+          <button class="btn btn-sm" onclick="toggleUserSubscription('${u._id}', ${!isActive}, '${plan === 'Free' ? 'weekly' : plan}')">
+            ${isActive ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>`;
+    });
+    html += '</table>';
+    document.getElementById('usersTable').innerHTML = html;
+  } catch(e) { console.error(e); }
+};
+
+async function toggleUserSubscription(userId, active, plan) {
+  if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
+  try {
+    const res = await fetch(`/admin/user/${userId}/toggle-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('adminToken') },
+      body: JSON.stringify({ active, plan: active ? plan : null })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ Subscription updated');
+      loadUsers();
+    } else {
+      alert('❌ Error: ' + data.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Override the tab click to load general settings when that tab is selected
+document.addEventListener('DOMContentLoaded', function() {
+  // After existing init, load general settings
+  loadGeneralSettings();
+});
+</script>

@@ -115,7 +115,7 @@ const planSettingsSchema = new mongoose.Schema({
 
 // New Settings Schema for referral
 const settingsSchema = new mongoose.Schema({
-  referralBaseUrl: { type: String, default: "https://arbimine.onrender.com" },
+  referralBaseUrl: { type: String, default: "https://arbimine-miyc.onrender.com" },
   updatedAt: { type: Date, default: Date.now }
 });
 const Settings = mongoose.model("Settings", settingsSchema);
@@ -181,7 +181,7 @@ ensurePlanSettings();
 async function ensureSettings() {
   let settings = await Settings.findOne();
   if (!settings) {
-    settings = new Settings({ referralBaseUrl: "https://arbimine.onrender.com" });
+    settings = new Settings({ referralBaseUrl: "https://arbimine-miyc.onrender.com" });
     await settings.save();
     console.log("⚙️ Default referral settings created");
   }
@@ -481,7 +481,7 @@ app.get('/api/plans', async (req, res) => {
 app.get('/api/referral', async (req, res) => {
   try {
     const settings = await Settings.findOne();
-    res.json({ url: settings?.referralBaseUrl || "https://arbimine.onrender.com" });
+    res.json({ url: settings?.referralBaseUrl || "https://arbimine-miyc.onrender.com" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1160,7 +1160,7 @@ async function getAIAnalysis(opportunity) {
       headers: {
         'Authorization': `Bearer ${AI_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.APP_URL || 'https://arbimine.onrender.com',
+        'HTTP-Referer': process.env.APP_URL || 'https://arbimine-miyc.onrender.com',
         'X-Title': 'ArbiMine Pro'
       },
       timeout: 10000
@@ -1328,7 +1328,7 @@ app.get('/api/balance/:exchange', authMiddleware, async (req, res) => {
 
 // ==================== Paystack ====================
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const APP_URL = process.env.APP_URL || 'https://arbimine.onrender.com';
+const APP_URL = process.env.APP_URL || 'https://arbimine-miyc.onrender.com';
 
 function getExpiryDate(plan, settings) {
   let days;
