@@ -1,0 +1,13 @@
+{
+  "appId": "com.arbimine.app",
+  "appName": "ArbiMine",
+  "webDir": "public",
+  "server": {
+    "url": "https://arbimine-miyc.onrender.com",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "bundledWebRuntime": false
+}
