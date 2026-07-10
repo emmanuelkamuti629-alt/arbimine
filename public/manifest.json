@@ -1,0 +1,23 @@
+{
+  "name": "ArbiMine Pro",
+  "short_name": "ArbiMine",
+  "description": "Real-time crypto arbitrage scanner across 13+ exchanges.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#070b1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://arbimine-miyc.onrender.com/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
