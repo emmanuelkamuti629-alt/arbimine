@@ -3,3 +3,7 @@ node_modules
 .DS_Store
 *.log
 *.bak
+android/
+*.bak*
+node_modules/
+build_trigger.txt
