@@ -1,7 +1,7 @@
 {
   "name": "ArbiMine - Crypto Arbitrage Scanner",
   "short_name": "ArbiMine",
-  "description": "Real-time crypto arbitrage scanner across 13+ exchanges. Find profitable spreads instantly.",
+  "description": "Real-time crypto arbitrage scanner across 13+ exchanges.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -9,7 +9,6 @@
   "theme_color": "#0f172a",
   "scope": "/",
   "lang": "en",
-  "categories": ["finance", "crypto"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -28,20 +27,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/icon-1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Scan Arbitrage",
-      "url": "/",
-      "description": "Start scanning for arbitrage opportunities"
     }
   ]
 }
