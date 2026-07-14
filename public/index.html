@@ -215,35 +215,35 @@
 
 <!-- ===== LOGIN MODAL ===== -->
 <div id="loginModal" class="modal show">
-  <div class="modal-content glass" style="max-width: 380px; padding: 40px 30px;">
+  <div class="modal-content glass" style="max-width: 400px; padding: 40px 32px;">
     <div class="text-center mb-8">
-      <div class="inline-block p-4 rounded-3xl bg-slate-800 mb-4 shadow-xl">
-        <span class="text-5xl">🤖</span>
+      <div class="inline-block p-2 rounded-2xl bg-slate-800 mb-4">
+        <span class="text-4xl font-bold text-white">ArbiMine</span>
       </div>
-      <h2 class="text-3xl font-bold text-white">Welcome Back</h2>
-      <p class="text-slate-400 mt-1">Sign in to ArbiMine Pro</p>
+      <h2 class="text-xl font-semibold text-white">Login</h2>
+      <p class="text-slate-400 text-sm mt-1">Enter your login and password to access your account.</p>
     </div>
 
     <div class="space-y-4">
       <input id="loginEmail" type="email" placeholder="Email Address" 
-             class="w-full bg-slate-950/50 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all">
+             class="w-full bg-slate-900 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all placeholder-slate-500">
       
       <div class="pwd-wrapper relative">
         <input id="loginPassword" type="password" placeholder="Password" 
-               class="w-full bg-slate-950/50 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all">
+               class="w-full bg-slate-900 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all placeholder-slate-500">
         <span class="pwd-toggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-white" 
               onclick="togglePwd('loginPassword', this)">👁️</span>
       </div>
     </div>
 
-    <button id="loginBtn" class="btn w-full mt-8 text-lg font-bold py-4 rounded-xl" onclick="loginUser()">
-      Log In
+    <button id="loginBtn" class="btn w-full mt-6 text-base font-semibold py-3 rounded-xl" onclick="loginUser()">
+      Login
     </button>
 
     <div id="loginError" class="text-red-400 text-center mt-4 hidden text-sm"></div>
 
     <div class="text-center text-slate-400 text-sm mt-6">
-      Don't have an account? <a href="#" onclick="showRegister()" class="text-green-400 font-semibold hover:underline">Create Account</a>
+      Don't have an account? <a href="#" onclick="showRegister()" class="text-green-400 font-medium hover:underline">Create Account</a>
     </div>
   </div>
 </div>
@@ -885,7 +885,7 @@
       errorEl.textContent = "Connection error";
       errorEl.classList.remove('hidden');
     } finally {
-      btn.textContent = "Log In";
+      btn.textContent = "Login";
       btn.disabled = false;
     }
   }
