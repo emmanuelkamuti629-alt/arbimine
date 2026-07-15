@@ -45,7 +45,7 @@
   <style>
     /* ====== RESET & BASE ====== */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { background: #0a0e1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
+    body { background: #070b1a; color: #eef2ff; min-height: 100vh; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
     .glass { background: rgba(255,255,255,.05); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08); border-radius: 28px; box-shadow: 0 15px 40px rgba(0,0,0,.35); }
@@ -207,281 +207,354 @@
     .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
     .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
     .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
-
-    /* ====== LOGIN PAGE - BLUE THEME ====== */
-    .login-wrapper {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1f3c 100%);
-      padding: 20px;
-    }
-    .login-card {
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 32px;
-      padding: 48px 40px;
-      max-width: 420px;
+    /* M-PESA Pro Page Styles */
+    .mpesa-container {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 520px;
       width: 100%;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e8edf2;
+      margin: 0 auto;
+    }
+    .mpesa-container .safaricom-topbar {
+      background: #00A650;
+      height: 6px;
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      margin-top: -32px;
+      margin-bottom: 20px;
+    }
+    .mpesa-container .logo-section {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .mpesa-container .logo-section .mpesa-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .mpesa-container .logo-section .mpesa-logo .icon { font-size: 28px; }
+    .mpesa-container .logo-section h1 {
+      color: #00A650;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .mpesa-container .logo-section h1 .light { color: #333; font-weight: 300; }
+    .mpesa-container .logo-section .subtitle { color: #666; font-size: 13px; }
+    .mpesa-container .logo-section .divider {
+      width: 60px;
+      height: 3px;
+      background: #00A650;
+      margin: 8px auto 0;
+      border-radius: 2px;
+    }
+    .mpesa-container .powered-by { font-size: 11px; color: #999; margin-top: 4px; }
+    .mpesa-container .powered-by strong { color: #00A650; }
+    .mpesa-container .welcome-box {
+      background: linear-gradient(135deg, #00A650 0%, #008C44 100%);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .mpesa-container .welcome-box h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .mpesa-container .welcome-box p { font-size: 13px; opacity: 0.95; }
+    .mpesa-container .welcome-box .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 2px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .mpesa-container .info-box {
+      background: #f8faf8;
+      border: 1px solid #e8edf2;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mpesa-container .info-box .icon { font-size: 18px; }
+    .mpesa-container .info-box .text { font-size: 12px; color: #555; }
+    .mpesa-container .info-box .text strong { color: #00A650; }
+    .mpesa-container .form-group { margin-bottom: 14px; }
+    .mpesa-container .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      color: #333;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .mpesa-container .form-group label .required { color: #00A650; }
+    .mpesa-container .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e8edf2;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: all 0.3s;
+      background: #fafbfc;
+      color: #333;
+    }
+    .mpesa-container .form-group input:focus {
+      outline: none;
+      border-color: #00A650;
+      box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
+    }
+    .mpesa-container .form-group input::placeholder { color: #999; }
+    .mpesa-container .form-group .hint { color: #888; font-size: 11px; display: block; margin-top: 3px; }
+    .mpesa-container .amount-prefix {
+      display: flex;
+      align-items: center;
+      border: 2px solid #e8edf2;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fafbfc;
+      transition: all 0.3s;
+    }
+    .mpesa-container .amount-prefix:focus-within {
+      border-color: #00A650;
+      box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
+    }
+    .mpesa-container .amount-prefix .currency {
+      padding: 10px 16px;
+      background: #00A650;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      min-width: 50px;
+      text-align: center;
+    }
+    .mpesa-container .amount-prefix input {
+      border: none;
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 14px;
+      background: transparent;
+    }
+    .mpesa-container .amount-prefix input:focus { outline: none; box-shadow: none; }
+    .mpesa-container .btn-pay {
+      width: 100%;
+      padding: 14px;
+      background: #00A650;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
       position: relative;
       overflow: hidden;
     }
-    .login-card::before {
-      content: '';
+    .mpesa-container .btn-pay:hover {
+      background: #008C44;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(0,166,80,0.3);
+    }
+    .mpesa-container .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .mpesa-container .btn-pay .btn-shine {
       position: absolute;
       top: -50%;
       left: -50%;
       width: 200%;
       height: 200%;
-      background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
-      pointer-events: none;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: rotate(45deg);
+      animation: shine 3s infinite;
     }
-    .login-card .logo-container {
-      text-align: center;
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
+    @keyframes shine {
+      0% { transform: translateX(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) rotate(45deg); }
     }
-    .login-card .logo-container .logo-icon {
-      display: inline-block;
-      font-size: 48px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #60a5fa, #3b82f6, #2563eb);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
-    }
-    .login-card .logo-container .logo-sub {
-      display: block;
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.4);
-      font-weight: 400;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .login-card h2 {
-      color: #fff;
-      font-size: 26px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 4px;
-      position: relative;
-      z-index: 1;
-    }
-    .login-card .subtitle {
-      color: rgba(255, 255, 255, 0.5);
-      text-align: center;
-      font-size: 14px;
-      margin-bottom: 28px;
-      position: relative;
-      z-index: 1;
-    }
-    .login-card .input-group {
-      position: relative;
-      margin-bottom: 16px;
-      z-index: 1;
-    }
-    .login-card .input-group .input-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 18px;
-      pointer-events: none;
-    }
-    .login-card .input-group input {
-      width: 100%;
-      padding: 14px 16px 14px 48px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      color: #fff;
-      font-size: 15px;
-      transition: all 0.3s ease;
-      outline: none;
-    }
-    .login-card .input-group input::placeholder {
-      color: rgba(255, 255, 255, 0.3);
-    }
-    .login-card .input-group input:focus {
-      border-color: #3b82f6;
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-    }
-    .login-card .input-group .pwd-toggle-login {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px;
-    }
-    .login-card .input-group .pwd-toggle-login:hover {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    .login-card .login-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      border: none;
-      border-radius: 14px;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-top: 8px;
-      position: relative;
-      z-index: 1;
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
-    }
-    .login-card .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
-    }
-    .login-card .login-btn:active {
-      transform: scale(0.98);
-    }
-    .login-card .login-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .login-card .error-message {
-      color: #f87171;
-      font-size: 13px;
-      text-align: center;
+    .mpesa-container .status {
       margin-top: 12px;
-      padding: 10px;
-      background: rgba(248, 113, 113, 0.08);
+      padding: 10px 14px;
       border-radius: 10px;
-      border: 1px solid rgba(248, 113, 113, 0.15);
       display: none;
-      position: relative;
-      z-index: 1;
-    }
-    .login-card .error-message.show {
-      display: block;
-    }
-    .login-card .signup-link {
-      text-align: center;
-      margin-top: 20px;
-      color: rgba(255, 255, 255, 0.4);
-      font-size: 14px;
-      position: relative;
-      z-index: 1;
-    }
-    .login-card .signup-link a {
-      color: #60a5fa;
-      text-decoration: none;
       font-weight: 500;
-      transition: color 0.2s;
+      font-size: 13px;
     }
-    .login-card .signup-link a:hover {
-      color: #93bbfc;
-      text-decoration: underline;
+    .mpesa-container .status.show { display: block; }
+    .mpesa-container .status.success { background: #e8f5e9; border: 2px solid #00A650; color: #006B3F; }
+    .mpesa-container .status.error { background: #fce4ec; border: 2px solid #e53935; color: #c62828; }
+    .mpesa-container .status.info { background: #e3f2fd; border: 2px solid #1e88e5; color: #0d47a1; }
+    .mpesa-container .loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
     }
-    .login-card .divider {
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mpesa-container .transaction-id {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #f8faf8;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+      display: none;
+      border-left: 4px solid #00A650;
+      color: #333;
+    }
+    .mpesa-container .transaction-id.show { display: block; }
+    .mpesa-container .result-card {
+      display: none;
+      margin-top: 16px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid;
+      animation: slideIn 0.5s ease;
+    }
+    .mpesa-container .result-card.show { display: block; }
+    .mpesa-container .result-card.success { border-color: #00A650; background: #f0fdf4; }
+    .mpesa-container .result-card.error { border-color: #e53935; background: #fdf0f0; }
+    .mpesa-container .result-card.pending { border-color: #ffc107; background: #fdfcf0; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .mpesa-container .result-icon { font-size: 40px; text-align: center; margin-bottom: 6px; }
+    .mpesa-container .result-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .mpesa-container .result-card.success .result-title { color: #006B3F; }
+    .mpesa-container .result-card.error .result-title { color: #c62828; }
+    .mpesa-container .result-card.pending .result-title { color: #f57f17; }
+    .mpesa-container .result-details { margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); }
+    .mpesa-container .result-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .mpesa-container .result-detail-row:last-child { border-bottom: none; }
+    .mpesa-container .result-detail-label { font-weight: 600; color: #666; font-size: 12px; }
+    .mpesa-container .result-detail-value { color: #333; word-break: break-all; text-align: right; max-width: 60%; font-weight: 500; }
+    .mpesa-container .result-detail-value.success-text { color: #00A650; font-weight: 700; }
+    .mpesa-container .result-detail-value.error-text { color: #c62828; font-weight: 700; }
+    .mpesa-container .result-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+    }
+    .mpesa-container .result-actions .btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .mpesa-container .btn-home { background: #f0f2f5; color: #333; }
+    .mpesa-container .btn-home:hover { background: #e4e7eb; }
+    .mpesa-container .btn-retry { background: #00A650; color: white; }
+    .mpesa-container .btn-retry:hover { background: #008C44; box-shadow: 0 4px 15px rgba(0,166,80,0.3); }
+    .mpesa-container .error-reason-box {
+      background: #fce4ec;
+      border: 2px solid #e53935;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .mpesa-container .error-reason-box .reason-title { font-weight: 700; color: #c62828; font-size: 14px; margin-bottom: 2px; }
+    .mpesa-container .error-reason-box .reason-detail { color: #c62828; font-size: 13px; }
+    .mpesa-container .error-reason-box .suggestion { color: #c62828; font-size: 12px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f5c6cb; font-style: italic; }
+    .mpesa-container .error-code {
+      display: inline-block;
+      background: #00A650;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: monospace;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+    .mpesa-container .footer {
+      margin-top: 20px;
+      text-align: center;
+      padding-top: 14px;
+      border-top: 1px solid #e8edf2;
+    }
+    .mpesa-container .footer .safaricom-brand {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin: 20px 0 16px;
-      position: relative;
-      z-index: 1;
-    }
-    .login-card .divider::before,
-    .login-card .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .login-card .divider span {
-      color: rgba(255, 255, 255, 0.2);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .login-card .status-dots {
-      display: flex;
       justify-content: center;
       gap: 6px;
-      margin-top: 20px;
-      position: relative;
-      z-index: 1;
+      flex-wrap: wrap;
     }
-    .login-card .status-dots .dot {
-      width: 6px;
-      height: 6px;
+    .mpesa-container .footer .safaricom-brand .dot {
+      width: 5px;
+      height: 5px;
+      background: #00A650;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      transition: background 0.3s;
+      display: inline-block;
     }
-    .login-card .status-dots .dot.active {
-      background: #3b82f6;
-    }
-    .login-card .status-dots .dot.green {
-      background: #22c55e;
-    }
+    .mpesa-container .footer .safaricom-brand .dot.dark { background: #006B3F; }
+    .mpesa-container .footer .brand-text { color: #666; font-size: 11px; font-weight: 500; }
+    .mpesa-container .footer .brand-text strong { color: #00A650; }
     @media (max-width: 480px) {
-      .login-card { padding: 32px 24px; }
-      .login-card .logo-container .logo-icon { font-size: 36px; }
-      .login-card h2 { font-size: 22px; }
+      .mpesa-container { padding: 20px; }
+      .mpesa-container .logo-section h1 { font-size: 20px; }
+      .mpesa-container .result-actions { flex-direction: column; }
+      .mpesa-container .result-detail-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+      .mpesa-container .result-detail-value { max-width: 100%; text-align: left; }
     }
-
     @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
   </style>
 </head>
 <body>
 
-<!-- ===== LOGIN MODAL - BLUE THEME ===== -->
+<!-- ===== LOGIN MODAL ===== -->
 <div id="loginModal" class="modal show">
-  <div class="login-wrapper" style="min-height:100vh;width:100%;">
-    <div class="login-card">
-      <div class="logo-container">
-        <span class="logo-icon">ArbiMine</span>
-        <span class="logo-sub">Pro</span>
+  <div class="modal-content glass" style="max-width: 400px; padding: 40px 32px;">
+    <div class="text-center mb-8">
+      <div class="inline-block p-2 rounded-2xl bg-slate-800 mb-4">
+        <span class="text-4xl font-bold text-white">ArbiMine</span>
       </div>
-      <h2>Login</h2>
-      <p class="subtitle">Enter your login and password to access your account.</p>
+      <h2 class="text-xl font-semibold text-white">Login</h2>
+      <p class="text-slate-400 text-sm mt-1">Enter your login and password to access your account.</p>
+    </div>
 
-      <div class="input-group">
-        <span class="input-icon">📧</span>
-        <input id="loginEmail" type="email" placeholder="Email Address" value="">
+    <div class="space-y-4">
+      <input id="loginEmail" type="email" placeholder="Email Address" 
+             class="w-full bg-slate-900 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all placeholder-slate-500">
+      
+      <div class="pwd-wrapper relative">
+        <input id="loginPassword" type="password" placeholder="Password" 
+               class="w-full bg-slate-900 rounded-xl p-4 outline-none border border-slate-700 text-white focus:border-green-500 transition-all placeholder-slate-500">
+        <span class="pwd-toggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-white" 
+              onclick="togglePwd('loginPassword', this)">👁️</span>
       </div>
+    </div>
 
-      <div class="input-group">
-        <span class="input-icon">🔒</span>
-        <input id="loginPassword" type="password" placeholder="Password">
-        <button class="pwd-toggle-login" onclick="togglePwd('loginPassword', this)" type="button">👁️</button>
-      </div>
+    <button id="loginBtn" class="btn w-full mt-6 text-base font-semibold py-3 rounded-xl" onclick="loginUser()">
+      Login
+    </button>
 
-      <button id="loginBtn" class="login-btn" onclick="loginUser()">Login</button>
+    <div id="loginError" class="text-red-400 text-center mt-4 hidden text-sm"></div>
 
-      <div id="loginError" class="error-message"></div>
-
-      <div class="signup-link">
-        Don't have an account? <a href="#" onclick="showRegister()">Create Account</a>
-      </div>
-
-      <div class="divider"><span>Secure</span></div>
-
-      <div class="status-dots">
-        <span class="dot active"></span>
-        <span class="dot green"></span>
-        <span class="dot green"></span>
-      </div>
+    <div class="text-center text-slate-400 text-sm mt-6">
+      Don't have an account? <a href="#" onclick="showRegister()" class="text-green-400 font-medium hover:underline">Create Account</a>
     </div>
   </div>
 </div>
@@ -761,51 +834,105 @@
 <!-- ===== PRO ===== -->
 <div id="page-pro" class="page">
   <div class="glass p-6">
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center mb-4">
       <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
       <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
     </div>
-    <p class="text-slate-400 mt-2">Upgrade to access premium features.</p>
+    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via M-PESA STK Push.</p>
 
-    <div id="paymentMessage" class="mt-4 text-center"></div>
+    <!-- M-PESA Payment Container -->
+    <div class="mpesa-container">
+      <div class="safaricom-topbar"></div>
 
-    <!-- Currency Toggle -->
-    <div class="flex justify-center items-center gap-4 my-4">
-      <span class="text-sm text-slate-400">Display prices in:</span>
-      <div class="currency-toggle">
-        <button id="btnKES" class="active" onclick="setCurrency('KES')">KES</button>
-        <button id="btnUSD" onclick="setCurrency('USD')">USD</button>
+      <div class="logo-section">
+        <div class="mpesa-logo">
+          <span class="icon">💳</span>
+          <h1>Lipa Na <span class="light">M</span>-PESA</h1>
+        </div>
+        <div class="subtitle">Secure Mobile Payments</div>
+        <div class="divider"></div>
+        <div class="powered-by">Powered by <strong>Paystack</strong></div>
       </div>
-    </div>
 
-    <div class="mt-4">
-      <label class="text-slate-400 text-sm">M-Pesa Phone Number (optional)</label>
-      <input type="tel" id="paymentPhone" placeholder="e.g., 254712345678" class="w-full bg-slate-900 rounded-2xl p-3 border border-slate-700 text-white outline-none mt-1">
-      <p class="text-xs text-slate-500 mt-1">You'll be redirected to Paystack to complete payment.</p>
-    </div>
+      <div class="welcome-box">
+        <h2>Welcome to Lipa Na M-PESA</h2>
+        <p>Pay directly using M-PESA STK Push</p>
+        <div class="badge">🔴 LIVE</div>
+      </div>
 
-    <!-- Plans: 3‑Day → Weekly → Monthly -->
-    <div class="grid grid-cols-3 gap-6 mt-6">
-      <!-- 3‑Day Plan -->
-      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-green-500/20 hover:border-green-400">
-        <div class="text-4xl mb-2">⚡</div>
-        <div class="text-3xl font-bold" id="threeDayPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400 text-sm">3 Days</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('threeDay', this)" data-plan="threeDay">Subscribe 3 Days</button>
+      <div id="paymentFormContainer">
+        <div class="info-box">
+          <span class="icon">📱</span>
+          <div class="text">
+            <strong>STK Push</strong> · Enter your phone number to receive payment request
+          </div>
+        </div>
+
+        <!-- Plan Selection -->
+        <div class="form-group">
+          <label>Select Subscription Plan <span class="required">*</span></label>
+          <select id="planSelect" class="w-full bg-[#fafbfc] border-2 border-[#e8edf2] rounded-xl p-3 text-[#333] focus:border-[#00A650] focus:outline-none transition-all" onchange="updatePlanAmount()">
+            <option value="threeDay">3-Day Plan - KES <span id="threeDayPlanAmount">150</span></option>
+            <option value="weekly" selected>Weekly Plan - KES <span id="weeklyPlanAmount">261</span></option>
+            <option value="monthly">Monthly Plan - KES <span id="monthlyPlanAmount">900</span></option>
+          </select>
+        </div>
+
+        <form id="paymentForm">
+          <div class="form-group">
+            <label>Email Address <span class="required">*</span></label>
+            <input type="email" id="email" placeholder="customer@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number <span class="required">*</span></label>
+            <input type="tel" id="phone" placeholder="254712345678" required>
+            <span class="hint">Format: 254XXXXXXXXX</span>
+          </div>
+
+          <div class="form-group">
+            <label>Amount (KES) <span class="required">*</span></label>
+            <div class="amount-prefix">
+              <span class="currency">KES</span>
+              <input type="number" id="amount" placeholder="Enter amount" min="1" step="1" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Transaction Reference</label>
+            <input type="text" id="reference" placeholder="Auto-generated" readonly>
+          </div>
+
+          <button type="submit" class="btn-pay" id="payBtn">
+            <span class="btn-shine"></span>
+            <span id="payBtnText">Send STK Push</span>
+          </button>
+        </form>
+
+        <div id="status" class="status"></div>
+        <div id="transactionId" class="transaction-id"></div>
       </div>
-      <!-- Weekly Plan -->
-      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-blue-500/20 hover:border-blue-400">
-        <div class="text-4xl mb-2">📅</div>
-        <div class="text-3xl font-bold" id="weeklyPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400 text-sm">Weekly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('weekly', this)" data-plan="weekly">Subscribe Weekly</button>
+
+      <div id="resultCard" class="result-card">
+        <div class="result-icon" id="resultIcon">✅</div>
+        <div class="result-title" id="resultTitle">Payment Successful!</div>
+        <div class="result-details" id="resultDetails"></div>
+        <div class="result-actions">
+          <button class="btn btn-home" onclick="goHome()">🏠 Home</button>
+          <button class="btn btn-retry" onclick="retryPayment()">🔄 Retry</button>
+        </div>
       </div>
-      <!-- Monthly Plan -->
-      <div class="glass p-6 text-center hover:scale-105 transition-transform duration-300 border border-purple-500/20 hover:border-purple-400">
-        <div class="text-4xl mb-2">🏆</div>
-        <div class="text-3xl font-bold" id="monthlyPriceDisplay">KES --</div>
-        <div class="mt-2 text-slate-400 text-sm">Monthly</div>
-        <button class="btn w-full mt-5" onclick="subscribeWithPaystack('monthly', this)" data-plan="monthly">Subscribe Monthly</button>
+
+      <div class="footer">
+        <div class="safaricom-brand">
+          <span class="dot"></span>
+          <span class="dot dark"></span>
+          <span class="dot"></span>
+          <span class="brand-text">Powered by <strong>Safaricom</strong></span>
+          <span class="dot"></span>
+          <span class="dot dark"></span>
+          <span class="dot"></span>
+        </div>
       </div>
     </div>
 
@@ -984,6 +1111,7 @@
   let currentCurrency = 'KES';
   const EXCHANGE_RATE = 130;
   let planSettings = { weekly: { amount: 261, duration: 7 }, monthly: { amount: 900, duration: 30 }, threeDay: { amount: 150, duration: 3 } };
+  let lastPaymentRef = null;
 
   // ==========================================
   // UI HELPERS
@@ -1077,12 +1205,12 @@
 
     if (!email || !password) {
       errorEl.textContent = "Email and password required";
-      errorEl.classList.add('show');
+      errorEl.classList.remove('hidden');
       return;
     }
 
     try {
-      btn.textContent = "Logging in...";
+      btn.textContent = "Logging...";
       btn.disabled = true;
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -1117,11 +1245,11 @@
         }, 30000);
       } else {
         errorEl.textContent = data.error || "Invalid credentials";
-        errorEl.classList.add('show');
+        errorEl.classList.remove('hidden');
       }
     } catch (err) {
       errorEl.textContent = "Connection error";
-      errorEl.classList.add('show');
+      errorEl.classList.remove('hidden');
     } finally {
       btn.textContent = "Login";
       btn.disabled = false;
@@ -1133,7 +1261,7 @@
     token = null;
     document.getElementById('appContent').style.display = 'none';
     document.getElementById('loginModal').classList.add('show');
-    document.getElementById('loginError').classList.remove('show');
+    document.getElementById('loginError').classList.add('hidden');
     showToast('Logged out', 'info');
     if (refreshTimer) clearInterval(refreshTimer);
     if (countdownInterval) clearInterval(countdownInterval);
@@ -1164,6 +1292,7 @@
         planSettings = data;
         if (data.threeDay) planSettings.threeDay = data.threeDay;
         updateProPrices();
+        updatePlanAmounts();
       }
     } catch (e) {
       console.warn('Failed to load plans', e);
@@ -1179,6 +1308,22 @@
     weeklyEl.textContent = price(planSettings.weekly.amount);
     monthlyEl.textContent = price(planSettings.monthly.amount);
     threeDayEl.textContent = price(planSettings.threeDay?.amount || 150);
+  }
+
+  function updatePlanAmounts() {
+    document.getElementById('threeDayPlanAmount').textContent = planSettings.threeDay?.amount || 150;
+    document.getElementById('weeklyPlanAmount').textContent = planSettings.weekly.amount;
+    document.getElementById('monthlyPlanAmount').textContent = planSettings.monthly.amount;
+    // Update amount field when plan changes
+    updatePlanAmount();
+  }
+
+  function updatePlanAmount() {
+    const plan = document.getElementById('planSelect').value;
+    const amountInput = document.getElementById('amount');
+    if (plan === 'threeDay') amountInput.value = planSettings.threeDay?.amount || 150;
+    else if (plan === 'weekly') amountInput.value = planSettings.weekly.amount;
+    else if (plan === 'monthly') amountInput.value = planSettings.monthly.amount;
   }
 
   function setCurrency(currency) {
@@ -1298,36 +1443,335 @@
   }
 
   // ==========================================
-  // PAYSTACK SUBSCRIPTION
+  // M-PESA PAYMENT
   // ==========================================
-  async function subscribeWithPaystack(plan, btn) {
-    btn.disabled = true;
-    btn.textContent = 'Redirecting...';
-    document.getElementById('subStatus').innerText = 'Preparing payment...';
-    document.getElementById('subStatus').className = 'text-yellow-400 text-center';
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('paymentForm');
+    const email = document.getElementById('email');
+    const phone = document.getElementById('phone');
+    const amount = document.getElementById('amount');
+    const reference = document.getElementById('reference');
+    const payBtn = document.getElementById('payBtn');
+    const payBtnText = document.getElementById('payBtnText');
+    const statusDiv = document.getElementById('status');
+    const transactionIdDiv = document.getElementById('transactionId');
 
-    try {
-      const res = await fetch('/api/paystack/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token
-        },
-        body: JSON.stringify({ plan })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Payment initialization failed');
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      showToast(err.message, 'error');
-      btn.disabled = false;
-      const labels = { weekly: "Subscribe Weekly", monthly: "Subscribe Monthly", threeDay: "Subscribe 3 Days" };
-      btn.textContent = labels[plan] || "Subscribe";
-      document.getElementById('subStatus').innerText = '❌ ' + err.message;
-      document.getElementById('subStatus').className = 'text-red-400 text-center';
-      resetSubscriptionButtons();
+    function generateReference() {
+      return `MPESA-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
     }
-  }
+    reference.value = generateReference();
+    
+    // Set initial amount based on selected plan
+    setTimeout(updatePlanAmount, 100);
+    
+    // Auto-fill email from user profile
+    if (currentUser && currentUser.email) {
+      document.getElementById('email').value = currentUser.email;
+    }
+
+    checkPaymentCallback();
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      statusDiv.className = 'status';
+      statusDiv.style.display = 'none';
+      transactionIdDiv.className = 'transaction-id';
+      document.getElementById('resultCard').className = 'result-card';
+
+      if (!email.value || !phone.value || !amount.value) {
+        showMpesaStatus('Please fill in all required fields', 'error');
+        return;
+      }
+
+      const phoneRegex = /^254\d{9}$/;
+      if (!phoneRegex.test(phone.value)) {
+        showMpesaStatus('Please enter a valid Kenyan phone number (254XXXXXXXXX)', 'error');
+        return;
+      }
+
+      if (parseFloat(amount.value) < 1) {
+        showMpesaStatus('Amount must be at least 1 KES', 'error');
+        return;
+      }
+
+      const plan = document.getElementById('planSelect').value;
+      if (!confirm(`⚠️ LIVE MODE\n\nYou are about to pay KES ${amount.value} for the ${plan} plan.\n\nContinue?`)) {
+        return;
+      }
+
+      payBtn.disabled = true;
+      payBtnText.innerHTML = '<span class="loading"></span> Sending STK Push...';
+
+      try {
+        const payload = {
+          email: email.value,
+          amount: parseFloat(amount.value),
+          phone: phone.value,
+          reference: reference.value,
+          currency: 'KES',
+          plan: plan
+        };
+
+        lastPaymentRef = reference.value;
+
+        const response = await fetch('/api/mpesa-charge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          sessionStorage.setItem('paymentEmail', email.value);
+          sessionStorage.setItem('paymentAmount', amount.value);
+          sessionStorage.setItem('paymentRef', data.data.reference);
+          
+          showMpesaStatus('📱 STK Push sent to your phone! Please check your M-PESA and enter PIN.', 'success');
+          transactionIdDiv.textContent = `Reference: ${data.data.reference}`;
+          transactionIdDiv.className = 'transaction-id show';
+          
+          // Start polling for payment status
+          pollPaymentStatus(data.data.reference);
+        } else {
+          showMpesaStatus('❌ ' + (data.message || 'STK Push failed'), 'error');
+          if (data.details) {
+            console.error('Details:', data.details);
+          }
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        showMpesaStatus('Network error. Please try again.', 'error');
+      } finally {
+        payBtn.disabled = false;
+        payBtnText.textContent = 'Send STK Push';
+        reference.value = generateReference();
+      }
+    });
+
+    function showMpesaStatus(message, type) {
+      statusDiv.textContent = message;
+      statusDiv.className = `status show ${type}`;
+      statusDiv.style.display = 'block';
+    }
+
+    async function pollPaymentStatus(reference) {
+      let attempts = 0;
+      const maxAttempts = 30;
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        console.log(`Polling attempt ${attempts} for ${reference}`);
+
+        try {
+          const response = await fetch(`/api/verify-payment/${reference}`);
+          const data = await response.json();
+
+          if (data.success) {
+            const status = data.data.status;
+            if (status === 'success' || status === 'failed' || status === 'error' || 
+                status === 'cancelled' || status === 'abandoned') {
+              clearInterval(pollInterval);
+              showPaymentResult(data.data);
+              // Refresh subscription after successful payment
+              if (status === 'success') {
+                loadSubscription();
+                loadOpportunities();
+                showToast('✅ Subscription activated!', 'success');
+              }
+              return;
+            }
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            showMpesaStatus('⏰ Payment verification timed out. Please check your M-PESA for confirmation.', 'info');
+          }
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
+      }, 5000);
+    }
+
+    function checkPaymentCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentRef = urlParams.get('payment_ref');
+      const paymentStatus = urlParams.get('payment_status');
+
+      if (paymentRef) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        if (paymentStatus === 'completed' || paymentStatus === 'success') {
+          verifyAndShowResult(paymentRef);
+        } else if (paymentStatus === 'error' || paymentStatus === 'failed' || paymentStatus === 'cancelled') {
+          showPaymentResult({
+            reference: paymentRef,
+            status: 'failed',
+            message: 'Payment was not completed'
+          });
+        } else {
+          verifyAndShowResult(paymentRef);
+        }
+      }
+    }
+
+    async function verifyAndShowResult(reference) {
+      try {
+        showMpesaStatus('Verifying payment...', 'info');
+        
+        const response = await fetch(`/api/verify-payment/${reference}`);
+        const data = await response.json();
+
+        if (data.success) {
+          showPaymentResult(data.data);
+          if (data.data.status === 'success') {
+            loadSubscription();
+            loadOpportunities();
+            showToast('✅ Subscription activated!', 'success');
+          }
+        } else {
+          showPaymentResult({
+            reference: reference,
+            status: 'failed',
+            message: data.message || 'Payment verification failed'
+          });
+        }
+
+      } catch (error) {
+        console.error('Verification error:', error);
+        showPaymentResult({
+          reference: reference,
+          status: 'error',
+          message: 'Failed to verify payment'
+        });
+      }
+    }
+
+    function showPaymentResult(data) {
+      const resultCard = document.getElementById('resultCard');
+      const resultIcon = document.getElementById('resultIcon');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultDetails = document.getElementById('resultDetails');
+
+      document.getElementById('paymentFormContainer').style.display = 'none';
+
+      const status = data.status || 'pending';
+      const isSuccess = status === 'success' || status === 'completed' || status === 'confirmed';
+      
+      let icon, title, className;
+
+      if (isSuccess) {
+        icon = '✅';
+        title = 'Payment Successful! 🎉';
+        className = 'success';
+      } else if (status === 'failed' || status === 'error' || status === 'cancelled' || status === 'abandoned') {
+        icon = '❌';
+        title = 'Payment Failed';
+        className = 'error';
+      } else {
+        icon = '⏳';
+        title = 'Payment Pending';
+        className = 'pending';
+      }
+
+      resultIcon.textContent = icon;
+      resultTitle.textContent = title;
+      resultCard.className = `result-card show ${className}`;
+
+      let detailsHTML = '';
+
+      if (!isSuccess && (status === 'failed' || status === 'error' || status === 'cancelled')) {
+        const error = data.error || {};
+        const reason = error.reason || data.gateway_response || data.failure_reason || 'Transaction failed';
+        const suggestion = error.suggested_action || 'Please try again or contact support.';
+        const errorCode = error.code || data.failure_code || 'N/A';
+
+        detailsHTML += `
+          <div class="error-reason-box">
+            <div class="reason-title">❌ ${reason}</div>
+            <div class="reason-detail">${data.gateway_response || data.failure_reason || 'Transaction failed'}</div>
+            <div class="suggestion">💡 ${suggestion}</div>
+            <div class="error-code">Code: ${errorCode}</div>
+          </div>
+        `;
+      }
+
+      detailsHTML += `
+        <div class="result-detail-row">
+          <span class="result-detail-label">Reference</span>
+          <span class="result-detail-value">${data.reference || 'N/A'}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Amount</span>
+          <span class="result-detail-value ${isSuccess ? 'success-text' : ''}">KES ${data.amount || '0'}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Email</span>
+          <span class="result-detail-value">${data.email || 'N/A'}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Phone</span>
+          <span class="result-detail-value">${data.phone || 'N/A'}</span>
+        </div>
+        <div class="result-detail-row">
+          <span class="result-detail-label">Plan</span>
+          <span class="result-detail-value ${isSuccess ? 'success-text' : ''}">${data.plan || 'N/A'}</span>
+        </div>
+      `;
+
+      if (data.paid_at && data.paid_at !== 'N/A' && isSuccess) {
+        detailsHTML += `
+          <div class="result-detail-row">
+            <span class="result-detail-label">Paid At</span>
+            <span class="result-detail-value">${new Date(data.paid_at).toLocaleString()}</span>
+          </div>
+        `;
+      }
+
+      if (!isSuccess && data.gateway_response && data.gateway_response !== 'N/A') {
+        detailsHTML += `
+          <div class="result-detail-row">
+            <span class="result-detail-label">Response</span>
+            <span class="result-detail-value error-text">${data.gateway_response}</span>
+          </div>
+        `;
+      }
+
+      resultDetails.innerHTML = detailsHTML;
+
+      const transactionIdDiv = document.getElementById('transactionId');
+      transactionIdDiv.textContent = `Transaction: ${data.reference}`;
+      transactionIdDiv.className = 'transaction-id show';
+
+      if (isSuccess) {
+        showMpesaStatus('✅ Payment completed successfully!', 'success');
+      } else if (status === 'failed' || status === 'error' || status === 'cancelled') {
+        const errorMsg = data.error?.reason || data.gateway_response || 'Payment failed';
+        showMpesaStatus('❌ ' + errorMsg, 'error');
+      }
+    }
+
+    window.goHome = function() {
+      document.getElementById('resultCard').className = 'result-card';
+      document.getElementById('paymentFormContainer').style.display = 'block';
+      document.getElementById('status').className = 'status';
+      document.getElementById('status').style.display = 'none';
+      document.getElementById('transactionId').className = 'transaction-id';
+      
+      document.getElementById('reference').value = generateReference();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.retryPayment = function() {
+      goHome();
+      document.getElementById('amount').focus();
+    };
+  });
 
   // ==========================================
   // PAGE NAVIGATION
@@ -1348,6 +1792,11 @@
       checkPaymentStatus();
       resetSubscriptionButtons();
       setTimeout(resetSubscriptionButtons, 100);
+      // Update plan amounts and auto-fill email
+      if (currentUser && currentUser.email) {
+        document.getElementById('email').value = currentUser.email;
+      }
+      updatePlanAmounts();
     }
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
@@ -2179,8 +2628,10 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.loadReferralLink = loadReferralLink;
   window.refreshSubscription = refreshSubscription;
   window.resetSubscriptionButtons = resetSubscriptionButtons;
+  window.updatePlanAmount = updatePlanAmount;
+  window.updatePlanAmounts = updatePlanAmounts;
 
   console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
 </script>
 </body>
-</html>
+  </html>
