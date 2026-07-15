@@ -1,3 +1,4 @@
+cat > server.js << 'EOF'
 require("dotenv").config();
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -1532,6 +1533,320 @@ app.get('/api/paystack/callback', async (req, res) => {
   }
 });
 
+// ==================== M‑PESA STK PUSH (Direct) ====================
+app.post('/api/mpesa-charge', authMiddleware, async (req, res) => {
+  try {
+    const { email, amount, phone, reference, plan, currency = 'KES' } = req.body;
+
+    console.log('='.repeat(60));
+    console.log('📱 M-PESA STK PUSH DIRECT');
+    console.log('='.repeat(60));
+    console.log('Email:', email);
+    console.log('Amount:', amount);
+    console.log('Phone:', phone);
+    console.log('Reference:', reference);
+    console.log('Plan:', plan);
+    console.log('Currency:', currency);
+    console.log('Environment:', process.env.NODE_ENV === 'production' ? '🔴 LIVE' : '🟡 TEST');
+    console.log('='.repeat(60));
+
+    if (!email || !amount || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, amount, and phone are required'
+      });
+    }
+
+    const phoneRegex = /^254\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Kenyan phone number. Format: 254XXXXXXXXX'
+      });
+    }
+
+    if (amount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be at least 1 KES'
+      });
+    }
+
+    const transactionRef = reference || `MPESA-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
+
+    // Paystack mobile money charge
+    const chargeData = {
+      email: email,
+      amount: Math.round(amount * 100),
+      reference: transactionRef,
+      currency: currency,
+      callback_url: `${req.protocol}://${req.get('host')}/payment-callback`,
+      metadata: {
+        phone: phone,
+        custom_fields: [
+          {
+            display_name: "Phone Number",
+            variable_name: "phone",
+            value: phone
+          }
+        ]
+      },
+      mobile_money: {
+        provider: 'mpesa',
+        phone: phone
+      }
+    };
+
+    console.log('📤 Initiating Paystack M-PESA charge...');
+    console.log('Payload:', JSON.stringify(chargeData, null, 2));
+
+    const response = await axios.post(
+      'https://api.paystack.co/charge/mobile_money',
+      chargeData,
+      {
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+
+    console.log('📥 Paystack Response:', JSON.stringify(response.data, null, 2));
+
+    if (response.data.status) {
+      // Save transaction record (pending)
+      await Transaction.create({
+        reference: transactionRef,
+        user: req.user,
+        plan: plan || 'unknown',
+        amount: amount,
+        status: 'pending',
+        paymentData: response.data
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          reference: transactionRef,
+          transaction_id: response.data.data?.reference || transactionRef,
+          status: response.data.data?.status || 'pending',
+          message: response.data.message || 'STK Push sent successfully'
+        },
+        message: '📱 STK Push sent to your phone! Please check your M-PESA and enter PIN.',
+        environment: process.env.NODE_ENV === 'production' ? 'LIVE' : 'TEST'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: response.data.message || 'M-PESA charge failed',
+        details: response.data
+      });
+    }
+  } catch (error) {
+    console.error('❌ M-PESA charge error:');
+    console.error('Status:', error.response?.status);
+    console.error('Data:', JSON.stringify(error.response?.data, null, 2));
+    console.error('Message:', error.message);
+
+    // Try alternative: transaction/initialize with mobile_money channel
+    try {
+      console.log('🔄 Trying alternative approach (transaction/initialize)...');
+      const { email, amount, phone, reference, plan, currency = 'KES' } = req.body;
+      const transactionRef = reference || `MPESA-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
+
+      const altData = {
+        email: email,
+        amount: Math.round(amount * 100),
+        reference: transactionRef,
+        currency: currency,
+        callback_url: `${req.protocol}://${req.get('host')}/payment-callback`,
+        metadata: {
+          phone: phone,
+          mobile_money: {
+            provider: 'mpesa',
+            phone: phone
+          }
+        },
+        channels: ['mobile_money']
+      };
+
+      const altResponse = await axios.post(
+        'https://api.paystack.co/transaction/initialize',
+        altData,
+        {
+          headers: {
+            'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (altResponse.data.status) {
+        await Transaction.create({
+          reference: transactionRef,
+          user: req.user,
+          plan: plan || 'unknown',
+          amount: amount,
+          status: 'pending',
+          paymentData: altResponse.data
+        });
+
+        return res.json({
+          success: true,
+          data: {
+            reference: transactionRef,
+            authorization_url: altResponse.data.data.authorization_url,
+            status: 'pending',
+            message: 'Payment initiated - Please complete on your phone'
+          },
+          message: '📱 Please check your phone for the M-PESA prompt.',
+          environment: process.env.NODE_ENV === 'production' ? 'LIVE' : 'TEST'
+        });
+      }
+    } catch (altError) {
+      console.error('❌ Alternative also failed:', altError.message);
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'M-PESA charge failed',
+      error: error.response?.data?.message || error.message,
+      details: error.response?.data || null,
+      environment: process.env.NODE_ENV === 'production' ? 'LIVE' : 'TEST'
+    });
+  }
+});
+
+// ==================== Verify M‑PESA Payment ====================
+app.get('/api/verify-payment/:reference', authMiddleware, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    console.log('🔍 Verifying transaction:', reference);
+
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
+      }
+    );
+
+    if (response.data.status) {
+      const transaction = response.data.data;
+      const isSuccess = transaction.status === 'success';
+
+      // Update transaction record
+      await Transaction.findOneAndUpdate(
+        { reference },
+        { status: isSuccess ? 'success' : 'failed', paymentData: transaction }
+      );
+
+      let errorReason = null;
+      let suggestion = null;
+
+      if (!isSuccess && transaction.gateway_response) {
+        const msg = transaction.gateway_response.toLowerCase();
+        if (msg.includes('insufficient') || msg.includes('balance')) {
+          errorReason = 'Insufficient Balance';
+          suggestion = 'Please ensure you have sufficient funds in your M-PESA account.';
+        } else if (msg.includes('declined')) {
+          errorReason = 'Transaction Declined';
+          suggestion = 'Your bank or M-PESA declined the transaction. Please try again.';
+        } else if (msg.includes('cancelled') || msg.includes('cancel')) {
+          errorReason = 'Transaction Cancelled';
+          suggestion = 'You cancelled the transaction. Please try again when ready.';
+        } else if (msg.includes('timeout')) {
+          errorReason = 'Transaction Timed Out';
+          suggestion = 'The transaction took too long. Please try again.';
+        } else {
+          errorReason = transaction.gateway_response;
+          suggestion = 'Please try again or contact support.';
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          reference: transaction.reference,
+          amount: transaction.amount / 100,
+          currency: transaction.currency || 'KES',
+          status: transaction.status,
+          is_successful: isSuccess,
+          email: transaction.customer?.email || 'N/A',
+          phone: transaction.metadata?.phone || 'N/A',
+          channel: transaction.channel || 'M-PESA',
+          gateway_response: transaction.gateway_response || 'N/A',
+          paid_at: transaction.paid_at || null,
+          error: {
+            reason: errorReason,
+            suggested_action: suggestion,
+            code: transaction.gateway_response_code || null
+          },
+          failure_reason: transaction.gateway_response || null
+        },
+        message: isSuccess ? 'Transaction successful' : 'Transaction failed or pending'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: response.data.message || 'Transaction verification failed'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Verification error:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Transaction verification failed',
+      error: error.response?.data?.message || error.message
+    });
+  }
+});
+
+// ==================== Subscribe (Activate Subscription) ====================
+app.post('/api/subscribe', authMiddleware, async (req, res) => {
+  try {
+    const { plan, reference } = req.body;
+    if (!plan || !['weekly', 'monthly', 'threeDay'].includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+
+    const user = await User.findOne({ username: req.user });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Verify that the transaction exists and is successful
+    const transaction = await Transaction.findOne({ reference, user: req.user });
+    if (!transaction || transaction.status !== 'success') {
+      return res.status(400).json({ error: 'Transaction not found or not successful' });
+    }
+
+    const settings = await PlanSettings.findOne();
+    const expiresAt = getExpiryDate(plan, settings);
+    if (!expiresAt) return res.status(400).json({ error: 'Invalid plan duration' });
+
+    user.subscription.active = true;
+    user.subscription.plan = plan;
+    user.subscription.expiresAt = expiresAt;
+    await user.save();
+
+    res.json({ success: true, message: 'Subscription activated', expiresAt });
+  } catch (err) {
+    console.error('Subscription activation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Payment Callback (for M‑PESA redirect) ====================
+app.get('/payment-callback', (req, res) => {
+  const { reference, trxref, status } = req.query;
+  console.log('📞 Payment callback:', { reference, trxref, status });
+  const ref = reference || trxref;
+  if (ref) {
+    res.redirect(`/?payment_ref=${ref}&payment_status=${status || 'pending'}`);
+  } else {
+    res.redirect('/?payment_status=error');
+  }
+});
+
 // ==================== Admin Panel ====================
 // IMPORTANT: This route must come BEFORE app.use(express.static)
 app.get('/admin', (req, res) => {
@@ -1543,3 +1858,4 @@ app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
   console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'https://arbimine-miyc.onrender.com/admin'}`);
 });
+EOF
