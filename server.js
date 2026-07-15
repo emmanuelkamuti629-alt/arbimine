@@ -1,4 +1,3 @@
-cat > server.js << 'EOF'
 require("dotenv").config();
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -1574,7 +1573,6 @@ app.post('/api/mpesa-charge', authMiddleware, async (req, res) => {
 
     const transactionRef = reference || `MPESA-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
-    // Paystack mobile money charge
     const chargeData = {
       email: email,
       amount: Math.round(amount * 100),
@@ -1615,7 +1613,6 @@ app.post('/api/mpesa-charge', authMiddleware, async (req, res) => {
     console.log('📥 Paystack Response:', JSON.stringify(response.data, null, 2));
 
     if (response.data.status) {
-      // Save transaction record (pending)
       await Transaction.create({
         reference: transactionRef,
         user: req.user,
@@ -1735,7 +1732,6 @@ app.get('/api/verify-payment/:reference', authMiddleware, async (req, res) => {
       const transaction = response.data.data;
       const isSuccess = transaction.status === 'success';
 
-      // Update transaction record
       await Transaction.findOneAndUpdate(
         { reference },
         { status: isSuccess ? 'success' : 'failed', paymentData: transaction }
@@ -1813,7 +1809,6 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
     const user = await User.findOne({ username: req.user });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Verify that the transaction exists and is successful
     const transaction = await Transaction.findOne({ reference, user: req.user });
     if (!transaction || transaction.status !== 'success') {
       return res.status(400).json({ error: 'Transaction not found or not successful' });
@@ -1858,4 +1853,3 @@ app.listen(PORT, () => {
   console.log(`🚀 ArbiMine running on ${PORT}`);
   console.log(`📊 Admin panel: ${PORT === 3000 ? 'http://localhost:3000/admin' : 'https://arbimine-miyc.onrender.com/admin'}`);
 });
-EOF
