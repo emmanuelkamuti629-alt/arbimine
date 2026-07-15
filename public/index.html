@@ -343,9 +343,31 @@
       color: #333;
     }
     .mpesa-card .transaction-id.show { display: block; }
+    /* Result Card inside Pro */
+    .result-card {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      border: 2px solid;
+      animation: slideIn 0.4s ease;
+    }
+    .result-card.show { display: block; }
+    .result-card.success { border-color: #00A650; background: #f0fdf4; }
+    .result-card.error { border-color: #e53935; background: #fdf0f0; }
+    .result-card .result-icon { font-size: 32px; text-align: center; }
+    .result-card .result-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .result-card .result-details { font-size: 14px; color: #333; }
+    .result-card .result-details div { padding: 4px 0; border-bottom: 1px solid #e5e7eb; }
+    .result-card .result-details div:last-child { border-bottom: none; }
+    .result-card .result-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .result-card .btn-home { flex:1; background:#f0f2f5; color:#333; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
+    .result-card .btn-retry { flex:1; background:#00A650; color:white; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
     @media (max-width: 480px) {
       .mpesa-card { padding: 20px 16px; }
       .mpesa-card .logo-row h1 { font-size: 18px; }
+      .result-card .result-actions { flex-direction: column; }
     }
     @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
@@ -667,15 +689,15 @@
       <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
       <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
     </div>
-    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via Paystack.</p>
+    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via M‑PESA STK Push.</p>
 
-    <!-- Paystack Payment Form -->
+    <!-- M-PESA Payment Card -->
     <div class="mpesa-card">
       <div class="safaricom-topbar"></div>
 
       <div class="logo-row">
-        <span class="icon">💳</span>
-        <h1>Pay with <span class="light">Paystack</span></h1>
+        <span class="icon">📱</span>
+        <h1>Lipa Na <span class="light">M‑PESA</span></h1>
       </div>
       <div class="powered-by">Secured by <strong>Paystack</strong></div>
 
@@ -693,13 +715,13 @@
         <form id="paymentForm">
           <div class="form-group">
             <label>Email Address <span class="required">*</span></label>
-            <input type="email" id="email" placeholder="your@email.com" required value="">
+            <input type="email" id="email" placeholder="your@email.com" required>
           </div>
 
           <div class="form-group">
-            <label>Phone Number (optional)</label>
-            <input type="tel" id="phone" placeholder="254712345678">
-            <span class="hint">Format: 254XXXXXXXXX (for M-PESA)</span>
+            <label>Phone Number <span class="required">*</span></label>
+            <input type="tel" id="phone" placeholder="254712345678" required>
+            <span class="hint">Format: 254XXXXXXXXX</span>
           </div>
 
           <div class="form-group">
@@ -712,11 +734,23 @@
 
           <button type="submit" class="btn-pay" id="payBtn">
             <span class="btn-shine"></span>
-            <span id="payBtnText">Proceed to Paystack</span>
+            <span id="payBtnText">Send STK Push</span>
           </button>
         </form>
 
         <div id="status" class="status"></div>
+        <div id="transactionId" class="transaction-id"></div>
+      </div>
+
+      <!-- Result Card (shown after payment) -->
+      <div id="resultCard" class="result-card" style="display: none;">
+        <div class="result-icon" id="resultIcon">✅</div>
+        <div class="result-title" id="resultTitle">Payment Successful!</div>
+        <div class="result-details" id="resultDetails"></div>
+        <div class="result-actions">
+          <button class="btn-home" onclick="goHome()">🏠 Home</button>
+          <button class="btn-retry" onclick="retryPayment()">🔄 Retry</button>
+        </div>
       </div>
 
       <div class="footer" style="margin-top: 16px;">
@@ -1193,25 +1227,6 @@
     showToast("Subscription status refreshed", "info");
   }
 
-  function checkPaymentStatus() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('payment');
-    const msgEl = document.getElementById('paymentMessage');
-    if (status === 'success') {
-      msgEl.innerHTML = '✅ Payment successful! Your Pro plan is now active.';
-      msgEl.className = 'text-green-400 text-center';
-      loadSubscription();
-      loadOpportunities();
-      resetSubscriptionButtons();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (status === 'failed') {
-      msgEl.innerHTML = '❌ Payment failed. Please try again.';
-      msgEl.className = 'text-red-400 text-center';
-      resetSubscriptionButtons();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
   // ==========================================
   // REFERRAL
   // ==========================================
@@ -1239,83 +1254,195 @@
   }
 
   // ==========================================
-  // PAYSTACK PAYMENT (via redirect)
+  // M‑PESA PAYMENT (Pro)
   // ==========================================
+  let lastPaymentRef = null;
+
+  function fillPaymentForm() {
+    const user = currentUser || {};
+    if (user.email) document.getElementById('email').value = user.email;
+    if (user.mpesa) document.getElementById('phone').value = user.mpesa;
+  }
+
+  // Attach event listener to payment form
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('paymentForm');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMpesaPayment();
+      });
+    }
+    setTimeout(() => {
+      fillPaymentForm();
+      updatePlanAmount();
+    }, 300);
+  });
+
+  async function sendMpesaPayment() {
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const plan = document.getElementById('planSelect').value;
     const payBtn = document.getElementById('payBtn');
     const payBtnText = document.getElementById('payBtnText');
     const statusDiv = document.getElementById('status');
 
-    // Set initial amount based on selected plan
-    setTimeout(updatePlanAmount, 100);
-    
-    // Auto-fill email from user profile (after login)
-    if (currentUser && currentUser.email) {
-      document.getElementById('email').value = currentUser.email;
+    if (!email || !phone || !amount || amount < 1) {
+      showStatus('Please fill all fields correctly.', 'error');
+      return;
+    }
+    if (!/^254\d{9}$/.test(phone)) {
+      showStatus('Enter a valid Kenyan phone (254XXXXXXXXX).', 'error');
+      return;
+    }
+    if (!email.includes('@')) {
+      showStatus('Enter a valid email address.', 'error');
+      return;
     }
 
-    // Check for payment callback status
-    checkPaymentStatus();
+    if (!confirm(`Pay KES ${amount} for the ${plan} plan?`)) return;
 
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      statusDiv.className = 'status';
-      statusDiv.style.display = 'none';
+    payBtn.disabled = true;
+    payBtnText.innerHTML = '<span class="loading"></span> Sending STK Push...';
+    statusDiv.className = 'status';
+    statusDiv.style.display = 'none';
+    document.getElementById('resultCard').style.display = 'none';
 
-      const email = document.getElementById('email').value.trim();
-      const plan = document.getElementById('planSelect').value;
+    try {
+      const response = await fetch('/api/mpesa-charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ email, phone, amount, plan, reference: `MPESA-${Date.now()}` })
+      });
 
-      if (!email) {
-        showStatus('Please enter your email address', 'error');
-        return;
+      const data = await response.json();
+      if (data.success) {
+        const ref = data.data.reference;
+        lastPaymentRef = ref;
+        showStatus('📱 STK Push sent! Check your phone and enter PIN.', 'success');
+        document.getElementById('transactionId').textContent = `Reference: ${ref}`;
+        document.getElementById('transactionId').className = 'transaction-id show';
+        // Start polling
+        pollPaymentStatus(ref, plan);
+      } else {
+        showStatus('❌ ' + (data.message || 'STK Push failed'), 'error');
       }
+    } catch (error) {
+      showStatus('❌ Network error: ' + error.message, 'error');
+    } finally {
+      payBtn.disabled = false;
+      payBtnText.textContent = 'Send STK Push';
+    }
+  }
 
-      // Validate email format
-      if (!/^\S+@\S+\.\S+$/.test(email)) {
-        showStatus('Please enter a valid email address', 'error');
-        return;
-      }
+  async function pollPaymentStatus(reference, plan) {
+    let attempts = 0;
+    const maxAttempts = 30;
 
-      payBtn.disabled = true;
-      payBtnText.innerHTML = '<span class="loading"></span> Redirecting...';
-
+    const pollInterval = setInterval(async () => {
+      attempts++;
       try {
-        const response = await fetch('/api/paystack/initialize', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: token
-          },
-          body: JSON.stringify({ plan })
+        const res = await fetch(`/api/verify-payment/${reference}`, {
+          headers: { Authorization: token }
         });
-
-        const data = await response.json();
-
-        if (data.success && data.authorization_url) {
-          // Redirect to Paystack
-          window.location.href = data.authorization_url;
-        } else {
-          showStatus('❌ ' + (data.error || 'Payment initialization failed'), 'error');
-          payBtn.disabled = false;
-          payBtnText.textContent = 'Proceed to Paystack';
+        const data = await res.json();
+        if (data.success) {
+          const status = data.data.status;
+          if (status === 'success' || status === 'completed') {
+            clearInterval(pollInterval);
+            await activateSubscription(reference, plan);
+            showPaymentResult(data.data, true);
+            return;
+          } else if (status === 'failed' || status === 'error' || status === 'cancelled') {
+            clearInterval(pollInterval);
+            showPaymentResult(data.data, false);
+            return;
+          }
         }
-
-      } catch (error) {
-        console.error('Error:', error);
-        showStatus('Network error. Please try again.', 'error');
-        payBtn.disabled = false;
-        payBtnText.textContent = 'Proceed to Paystack';
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          showStatus('⏰ Payment verification timed out. Check your M‑PESA.', 'info');
+        }
+      } catch (e) {
+        console.warn('Poll error:', e);
       }
-    });
+    }, 5000);
+  }
 
-    function showStatus(message, type) {
-      statusDiv.textContent = message;
-      statusDiv.className = `status show ${type}`;
-      statusDiv.style.display = 'block';
+  async function activateSubscription(reference, plan) {
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ plan, reference })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('✅ Subscription activated!', 'success');
+        await loadSubscription();
+        await loadOpportunities();
+        resetSubscriptionButtons();
+      } else {
+        showToast('⚠️ Payment verified but subscription activation failed. Contact support.', 'error');
+      }
+    } catch (e) {
+      console.error('Activation error:', e);
     }
-  });
+  }
+
+  function showPaymentResult(data, success) {
+    const card = document.getElementById('resultCard');
+    const icon = document.getElementById('resultIcon');
+    const title = document.getElementById('resultTitle');
+    const details = document.getElementById('resultDetails');
+
+    card.style.display = 'block';
+    if (success) {
+      icon.textContent = '✅';
+      title.textContent = 'Payment Successful! 🎉';
+      card.className = 'result-card success';
+      details.innerHTML = `
+        <div>Reference: ${data.reference}</div>
+        <div>Amount: KES ${data.amount}</div>
+        <div>Plan: ${data.plan || '—'}</div>
+      `;
+      showStatus('✅ Payment confirmed! Your Pro plan is active.', 'success');
+    } else {
+      icon.textContent = '❌';
+      title.textContent = 'Payment Failed';
+      card.className = 'result-card error';
+      details.innerHTML = `
+        <div>Reference: ${data.reference}</div>
+        <div>Reason: ${data.gateway_response || data.failure_reason || 'Unknown'}</div>
+      `;
+      showStatus('❌ Payment failed. Please try again.', 'error');
+    }
+    // Hide payment form
+    document.getElementById('paymentFormContainer').style.display = 'none';
+  }
+
+  function showStatus(message, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = `status show ${type}`;
+    statusDiv.style.display = 'block';
+  }
+
+  function goHome() {
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('paymentFormContainer').style.display = 'block';
+    document.getElementById('status').className = 'status';
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('transactionId').className = 'transaction-id';
+    updatePlanAmount();
+    fillPaymentForm();
+  }
+
+  function retryPayment() {
+    goHome();
+    document.getElementById('phone').focus();
+  }
 
   // ==========================================
   // PAGE NAVIGATION
@@ -1333,12 +1460,8 @@
     if (btns[map[page]]) btns[map[page]].classList.add('active');
 
     if (page === 'pro') {
-      checkPaymentStatus();
       resetSubscriptionButtons();
-      // Update plan amounts and auto-fill email
-      if (currentUser && currentUser.email) {
-        document.getElementById('email').value = currentUser.email;
-      }
+      fillPaymentForm();
       updatePlanAmounts();
     }
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
@@ -2122,7 +2245,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           loadMessages();
           loadSubscription();
           loadReferralLink();
-          checkPaymentStatus();
           initExchangeFilters();
           setCurrency('KES');
           resetSubscriptionButtons();
@@ -2172,8 +2294,15 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.resetSubscriptionButtons = resetSubscriptionButtons;
   window.updatePlanAmount = updatePlanAmount;
   window.updatePlanAmounts = updatePlanAmounts;
+  window.fillPaymentForm = fillPaymentForm;
+  window.sendMpesaPayment = sendMpesaPayment;
+  window.pollPaymentStatus = pollPaymentStatus;
+  window.activateSubscription = activateSubscription;
+  window.showPaymentResult = showPaymentResult;
+  window.goHome = goHome;
+  window.retryPayment = retryPayment;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set');
+  console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set with M‑PESA STK Push');
 </script>
 </body>
-  </html>
+        </html>
