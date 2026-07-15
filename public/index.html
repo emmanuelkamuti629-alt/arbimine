@@ -236,7 +236,7 @@
       margin-bottom: 4px;
     }
     .mpesa-card .form-group label .required { color: #00A650; }
-    .mpesa-card .form-group input {
+    .mpesa-card .form-group input, .mpesa-card .form-group select {
       width: 100%;
       padding: 10px 14px;
       border: 2px solid #e8edf2;
@@ -246,7 +246,7 @@
       color: #333;
       transition: border 0.3s;
     }
-    .mpesa-card .form-group input:focus {
+    .mpesa-card .form-group input:focus, .mpesa-card .form-group select:focus {
       border-color: #00A650;
       box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
       outline: none;
@@ -343,111 +343,9 @@
       color: #333;
     }
     .mpesa-card .transaction-id.show { display: block; }
-    .mpesa-card .result-card {
-      display: none;
-      margin-top: 16px;
-      padding: 20px;
-      border-radius: 12px;
-      border: 2px solid;
-      animation: slideIn 0.5s ease;
-    }
-    .mpesa-card .result-card.show { display: block; }
-    .mpesa-card .result-card.success { border-color: #00A650; background: #f0fdf4; }
-    .mpesa-card .result-card.error { border-color: #e53935; background: #fdf0f0; }
-    .mpesa-card .result-card.pending { border-color: #ffc107; background: #fdfcf0; }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-15px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .mpesa-card .result-icon { font-size: 40px; text-align: center; margin-bottom: 6px; }
-    .mpesa-card .result-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-    .mpesa-card .result-card.success .result-title { color: #006B3F; }
-    .mpesa-card .result-card.error .result-title { color: #c62828; }
-    .mpesa-card .result-card.pending .result-title { color: #f57f17; }
-    .mpesa-card .result-details { margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); }
-    .mpesa-card .result-detail-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 13px;
-    }
-    .mpesa-card .result-detail-row:last-child { border-bottom: none; }
-    .mpesa-card .result-detail-label { font-weight: 600; color: #666; font-size: 12px; }
-    .mpesa-card .result-detail-value { color: #333; word-break: break-all; text-align: right; max-width: 60%; font-weight: 500; }
-    .mpesa-card .result-detail-value.success-text { color: #00A650; font-weight: 700; }
-    .mpesa-card .result-detail-value.error-text { color: #c62828; font-weight: 700; }
-    .mpesa-card .result-actions {
-      margin-top: 12px;
-      display: flex;
-      gap: 10px;
-    }
-    .mpesa-card .result-actions .btn {
-      flex: 1;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      text-align: center;
-    }
-    .mpesa-card .btn-home { background: #f0f2f5; color: #333; }
-    .mpesa-card .btn-home:hover { background: #e4e7eb; }
-    .mpesa-card .btn-retry { background: #00A650; color: white; }
-    .mpesa-card .btn-retry:hover { background: #008C44; box-shadow: 0 4px 15px rgba(0,166,80,0.3); }
-    .mpesa-card .error-reason-box {
-      background: #fce4ec;
-      border: 2px solid #e53935;
-      border-radius: 10px;
-      padding: 12px;
-      margin: 10px 0;
-    }
-    .mpesa-card .error-reason-box .reason-title { font-weight: 700; color: #c62828; font-size: 14px; margin-bottom: 2px; }
-    .mpesa-card .error-reason-box .reason-detail { color: #c62828; font-size: 13px; }
-    .mpesa-card .error-reason-box .suggestion { color: #c62828; font-size: 12px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f5c6cb; font-style: italic; }
-    .mpesa-card .error-code {
-      display: inline-block;
-      background: #00A650;
-      color: white;
-      padding: 2px 10px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-family: monospace;
-      margin-top: 4px;
-      font-weight: 700;
-    }
-    .mpesa-card .footer {
-      margin-top: 20px;
-      text-align: center;
-      padding-top: 14px;
-      border-top: 1px solid #e8edf2;
-    }
-    .mpesa-card .footer .safaricom-brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .mpesa-card .footer .safaricom-brand .dot {
-      width: 5px;
-      height: 5px;
-      background: #00A650;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .mpesa-card .footer .safaricom-brand .dot.dark { background: #006B3F; }
-    .mpesa-card .footer .brand-text { color: #666; font-size: 11px; font-weight: 500; }
-    .mpesa-card .footer .brand-text strong { color: #00A650; }
-
     @media (max-width: 480px) {
       .mpesa-card { padding: 20px 16px; }
       .mpesa-card .logo-row h1 { font-size: 18px; }
-      .mpesa-card .result-actions { flex-direction: column; }
-      .mpesa-card .result-detail-row { flex-direction: column; align-items: flex-start; gap: 2px; }
-      .mpesa-card .result-detail-value { max-width: 100%; text-align: left; }
     }
     @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
@@ -769,21 +667,21 @@
       <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
       <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
     </div>
-    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via M-PESA STK Push.</p>
+    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via Paystack.</p>
 
-    <!-- M-PESA Payment Form -->
+    <!-- Paystack Payment Form -->
     <div class="mpesa-card">
       <div class="safaricom-topbar"></div>
 
       <div class="logo-row">
         <span class="icon">💳</span>
-        <h1>Lipa Na <span class="light">M</span>-PESA</h1>
+        <h1>Pay with <span class="light">Paystack</span></h1>
       </div>
-      <div class="powered-by">Powered by <strong>Paystack</strong></div>
+      <div class="powered-by">Secured by <strong>Paystack</strong></div>
 
-      <!-- Plan Selection (hidden in screenshot but kept for functionality) -->
+      <!-- Plan Selection -->
       <div class="form-group" style="margin-bottom: 10px;">
-        <label>Select Plan</label>
+        <label>Select Subscription Plan <span class="required">*</span></label>
         <select id="planSelect" class="w-full bg-[#fafbfc] border-2 border-[#e8edf2] rounded-xl p-3 text-[#333] focus:border-[#00A650] focus:outline-none transition-all" onchange="updatePlanAmount()">
           <option value="threeDay">3-Day Plan - KES <span id="threeDayPlanAmount">150</span></option>
           <option value="weekly" selected>Weekly Plan - KES <span id="weeklyPlanAmount">261</span></option>
@@ -795,54 +693,38 @@
         <form id="paymentForm">
           <div class="form-group">
             <label>Email Address <span class="required">*</span></label>
-            <input type="email" id="email" placeholder="customer@example.com" required>
+            <input type="email" id="email" placeholder="your@email.com" required value="">
           </div>
 
           <div class="form-group">
-            <label>Phone Number <span class="required">*</span></label>
-            <input type="tel" id="phone" placeholder="254712345678" required>
-            <span class="hint">Format: 254XXXXXXXXX</span>
+            <label>Phone Number (optional)</label>
+            <input type="tel" id="phone" placeholder="254712345678">
+            <span class="hint">Format: 254XXXXXXXXX (for M-PESA)</span>
           </div>
 
           <div class="form-group">
             <label>Amount (KES) <span class="required">*</span></label>
             <div class="amount-prefix">
               <span class="currency">KES</span>
-              <input type="number" id="amount" placeholder="Enter amount" min="1" step="1" required>
+              <input type="number" id="amount" placeholder="Enter amount" min="1" step="1" required readonly>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label>Transaction Reference</label>
-            <input type="text" id="reference" placeholder="Auto-generated" readonly>
           </div>
 
           <button type="submit" class="btn-pay" id="payBtn">
             <span class="btn-shine"></span>
-            <span id="payBtnText">Send STK Push</span>
+            <span id="payBtnText">Proceed to Paystack</span>
           </button>
         </form>
 
         <div id="status" class="status"></div>
-        <div id="transactionId" class="transaction-id"></div>
       </div>
 
-      <div id="resultCard" class="result-card">
-        <div class="result-icon" id="resultIcon">✅</div>
-        <div class="result-title" id="resultTitle">Payment Successful!</div>
-        <div class="result-details" id="resultDetails"></div>
-        <div class="result-actions">
-          <button class="btn btn-home" onclick="goHome()">🏠 Home</button>
-          <button class="btn btn-retry" onclick="retryPayment()">🔄 Retry</button>
-        </div>
-      </div>
-
-      <div class="footer">
+      <div class="footer" style="margin-top: 16px;">
         <div class="safaricom-brand">
           <span class="dot"></span>
           <span class="dot dark"></span>
           <span class="dot"></span>
-          <span class="brand-text">Powered by <strong>Safaricom</strong></span>
+          <span class="brand-text">Powered by <strong>Paystack</strong></span>
           <span class="dot"></span>
           <span class="dot dark"></span>
           <span class="dot"></span>
@@ -1025,7 +907,6 @@
   let currentCurrency = 'KES';
   const EXCHANGE_RATE = 130;
   let planSettings = { weekly: { amount: 261, duration: 7 }, monthly: { amount: 900, duration: 30 }, threeDay: { amount: 150, duration: 3 } };
-  let lastPaymentRef = null;
 
   // ==========================================
   // UI HELPERS
@@ -1192,6 +1073,9 @@
       document.getElementById('profileUsername').textContent = data.username || '—';
       document.getElementById('profileEmail').textContent = data.email || '—';
       document.getElementById('profileMpesa').textContent = data.mpesa || '—';
+      // Auto-fill email in payment form
+      const emailField = document.getElementById('email');
+      if (emailField && data.email) emailField.value = data.email;
     } catch (e) { console.error('Profile load error', e); }
   }
 
@@ -1311,8 +1195,7 @@
 
   function checkPaymentStatus() {
     const urlParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const status = urlParams.get('payment') || hashParams.get('payment');
+    const status = urlParams.get('payment');
     const msgEl = document.getElementById('paymentMessage');
     if (status === 'success') {
       msgEl.innerHTML = '✅ Payment successful! Your Pro plan is now active.';
@@ -1320,12 +1203,12 @@
       loadSubscription();
       loadOpportunities();
       resetSubscriptionButtons();
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (status === 'failed') {
       msgEl.innerHTML = '❌ Payment failed. Please try again.';
       msgEl.className = 'text-red-400 text-center';
       resetSubscriptionButtons();
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }
 
@@ -1356,334 +1239,82 @@
   }
 
   // ==========================================
-  // M-PESA PAYMENT
+  // PAYSTACK PAYMENT (via redirect)
   // ==========================================
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('paymentForm');
-    const email = document.getElementById('email');
-    const phone = document.getElementById('phone');
-    const amount = document.getElementById('amount');
-    const reference = document.getElementById('reference');
     const payBtn = document.getElementById('payBtn');
     const payBtnText = document.getElementById('payBtnText');
     const statusDiv = document.getElementById('status');
-    const transactionIdDiv = document.getElementById('transactionId');
 
-    function generateReference() {
-      return `MPESA-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
-    }
-    reference.value = generateReference();
-    
     // Set initial amount based on selected plan
     setTimeout(updatePlanAmount, 100);
     
-    // Auto-fill email from user profile
+    // Auto-fill email from user profile (after login)
     if (currentUser && currentUser.email) {
       document.getElementById('email').value = currentUser.email;
     }
 
-    checkPaymentCallback();
+    // Check for payment callback status
+    checkPaymentStatus();
 
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       
       statusDiv.className = 'status';
       statusDiv.style.display = 'none';
-      transactionIdDiv.className = 'transaction-id';
-      document.getElementById('resultCard').className = 'result-card';
 
-      if (!email.value || !phone.value || !amount.value) {
-        showMpesaStatus('Please fill in all required fields', 'error');
-        return;
-      }
-
-      const phoneRegex = /^254\d{9}$/;
-      if (!phoneRegex.test(phone.value)) {
-        showMpesaStatus('Please enter a valid Kenyan phone number (254XXXXXXXXX)', 'error');
-        return;
-      }
-
-      if (parseFloat(amount.value) < 1) {
-        showMpesaStatus('Amount must be at least 1 KES', 'error');
-        return;
-      }
-
+      const email = document.getElementById('email').value.trim();
       const plan = document.getElementById('planSelect').value;
-      if (!confirm(`⚠️ LIVE MODE\n\nYou are about to pay KES ${amount.value} for the ${plan} plan.\n\nContinue?`)) {
+
+      if (!email) {
+        showStatus('Please enter your email address', 'error');
+        return;
+      }
+
+      // Validate email format
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        showStatus('Please enter a valid email address', 'error');
         return;
       }
 
       payBtn.disabled = true;
-      payBtnText.innerHTML = '<span class="loading"></span> Sending STK Push...';
+      payBtnText.innerHTML = '<span class="loading"></span> Redirecting...';
 
       try {
-        const payload = {
-          email: email.value,
-          amount: parseFloat(amount.value),
-          phone: phone.value,
-          reference: reference.value,
-          currency: 'KES',
-          plan: plan
-        };
-
-        lastPaymentRef = reference.value;
-
-        const response = await fetch('/api/mpesa-charge', {
+        const response = await fetch('/api/paystack/initialize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: token
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ plan })
         });
 
         const data = await response.json();
 
-        if (data.success) {
-          sessionStorage.setItem('paymentEmail', email.value);
-          sessionStorage.setItem('paymentAmount', amount.value);
-          sessionStorage.setItem('paymentRef', data.data.reference);
-          
-          showMpesaStatus('📱 STK Push sent to your phone! Please check your M-PESA and enter PIN.', 'success');
-          transactionIdDiv.textContent = `Reference: ${data.data.reference}`;
-          transactionIdDiv.className = 'transaction-id show';
-          
-          // Start polling for payment status
-          pollPaymentStatus(data.data.reference);
+        if (data.success && data.authorization_url) {
+          // Redirect to Paystack
+          window.location.href = data.authorization_url;
         } else {
-          showMpesaStatus('❌ ' + (data.message || 'STK Push failed'), 'error');
-          if (data.details) {
-            console.error('Details:', data.details);
-          }
+          showStatus('❌ ' + (data.error || 'Payment initialization failed'), 'error');
+          payBtn.disabled = false;
+          payBtnText.textContent = 'Proceed to Paystack';
         }
 
       } catch (error) {
         console.error('Error:', error);
-        showMpesaStatus('Network error. Please try again.', 'error');
-      } finally {
+        showStatus('Network error. Please try again.', 'error');
         payBtn.disabled = false;
-        payBtnText.textContent = 'Send STK Push';
-        reference.value = generateReference();
+        payBtnText.textContent = 'Proceed to Paystack';
       }
     });
 
-    function showMpesaStatus(message, type) {
+    function showStatus(message, type) {
       statusDiv.textContent = message;
       statusDiv.className = `status show ${type}`;
       statusDiv.style.display = 'block';
     }
-
-    async function pollPaymentStatus(reference) {
-      let attempts = 0;
-      const maxAttempts = 30;
-
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        console.log(`Polling attempt ${attempts} for ${reference}`);
-
-        try {
-          const response = await fetch(`/api/verify-payment/${reference}`);
-          const data = await response.json();
-
-          if (data.success) {
-            const status = data.data.status;
-            if (status === 'success' || status === 'failed' || status === 'error' || 
-                status === 'cancelled' || status === 'abandoned') {
-              clearInterval(pollInterval);
-              showPaymentResult(data.data);
-              // Refresh subscription after successful payment
-              if (status === 'success') {
-                loadSubscription();
-                loadOpportunities();
-                showToast('✅ Subscription activated!', 'success');
-              }
-              return;
-            }
-          }
-
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            showMpesaStatus('⏰ Payment verification timed out. Please check your M-PESA for confirmation.', 'info');
-          }
-        } catch (error) {
-          console.error('Polling error:', error);
-        }
-      }, 5000);
-    }
-
-    function checkPaymentCallback() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const paymentRef = urlParams.get('payment_ref');
-      const paymentStatus = urlParams.get('payment_status');
-
-      if (paymentRef) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        if (paymentStatus === 'completed' || paymentStatus === 'success') {
-          verifyAndShowResult(paymentRef);
-        } else if (paymentStatus === 'error' || paymentStatus === 'failed' || paymentStatus === 'cancelled') {
-          showPaymentResult({
-            reference: paymentRef,
-            status: 'failed',
-            message: 'Payment was not completed'
-          });
-        } else {
-          verifyAndShowResult(paymentRef);
-        }
-      }
-    }
-
-    async function verifyAndShowResult(reference) {
-      try {
-        showMpesaStatus('Verifying payment...', 'info');
-        
-        const response = await fetch(`/api/verify-payment/${reference}`);
-        const data = await response.json();
-
-        if (data.success) {
-          showPaymentResult(data.data);
-          if (data.data.status === 'success') {
-            loadSubscription();
-            loadOpportunities();
-            showToast('✅ Subscription activated!', 'success');
-          }
-        } else {
-          showPaymentResult({
-            reference: reference,
-            status: 'failed',
-            message: data.message || 'Payment verification failed'
-          });
-        }
-
-      } catch (error) {
-        console.error('Verification error:', error);
-        showPaymentResult({
-          reference: reference,
-          status: 'error',
-          message: 'Failed to verify payment'
-        });
-      }
-    }
-
-    function showPaymentResult(data) {
-      const resultCard = document.getElementById('resultCard');
-      const resultIcon = document.getElementById('resultIcon');
-      const resultTitle = document.getElementById('resultTitle');
-      const resultDetails = document.getElementById('resultDetails');
-
-      document.getElementById('paymentFormContainer').style.display = 'none';
-
-      const status = data.status || 'pending';
-      const isSuccess = status === 'success' || status === 'completed' || status === 'confirmed';
-      
-      let icon, title, className;
-
-      if (isSuccess) {
-        icon = '✅';
-        title = 'Payment Successful! 🎉';
-        className = 'success';
-      } else if (status === 'failed' || status === 'error' || status === 'cancelled' || status === 'abandoned') {
-        icon = '❌';
-        title = 'Payment Failed';
-        className = 'error';
-      } else {
-        icon = '⏳';
-        title = 'Payment Pending';
-        className = 'pending';
-      }
-
-      resultIcon.textContent = icon;
-      resultTitle.textContent = title;
-      resultCard.className = `result-card show ${className}`;
-
-      let detailsHTML = '';
-
-      if (!isSuccess && (status === 'failed' || status === 'error' || status === 'cancelled')) {
-        const error = data.error || {};
-        const reason = error.reason || data.gateway_response || data.failure_reason || 'Transaction failed';
-        const suggestion = error.suggested_action || 'Please try again or contact support.';
-        const errorCode = error.code || data.failure_code || 'N/A';
-
-        detailsHTML += `
-          <div class="error-reason-box">
-            <div class="reason-title">❌ ${reason}</div>
-            <div class="reason-detail">${data.gateway_response || data.failure_reason || 'Transaction failed'}</div>
-            <div class="suggestion">💡 ${suggestion}</div>
-            <div class="error-code">Code: ${errorCode}</div>
-          </div>
-        `;
-      }
-
-      detailsHTML += `
-        <div class="result-detail-row">
-          <span class="result-detail-label">Reference</span>
-          <span class="result-detail-value">${data.reference || 'N/A'}</span>
-        </div>
-        <div class="result-detail-row">
-          <span class="result-detail-label">Amount</span>
-          <span class="result-detail-value ${isSuccess ? 'success-text' : ''}">KES ${data.amount || '0'}</span>
-        </div>
-        <div class="result-detail-row">
-          <span class="result-detail-label">Email</span>
-          <span class="result-detail-value">${data.email || 'N/A'}</span>
-        </div>
-        <div class="result-detail-row">
-          <span class="result-detail-label">Phone</span>
-          <span class="result-detail-value">${data.phone || 'N/A'}</span>
-        </div>
-        <div class="result-detail-row">
-          <span class="result-detail-label">Plan</span>
-          <span class="result-detail-value ${isSuccess ? 'success-text' : ''}">${data.plan || 'N/A'}</span>
-        </div>
-      `;
-
-      if (data.paid_at && data.paid_at !== 'N/A' && isSuccess) {
-        detailsHTML += `
-          <div class="result-detail-row">
-            <span class="result-detail-label">Paid At</span>
-            <span class="result-detail-value">${new Date(data.paid_at).toLocaleString()}</span>
-          </div>
-        `;
-      }
-
-      if (!isSuccess && data.gateway_response && data.gateway_response !== 'N/A') {
-        detailsHTML += `
-          <div class="result-detail-row">
-            <span class="result-detail-label">Response</span>
-            <span class="result-detail-value error-text">${data.gateway_response}</span>
-          </div>
-        `;
-      }
-
-      resultDetails.innerHTML = detailsHTML;
-
-      const transactionIdDiv = document.getElementById('transactionId');
-      transactionIdDiv.textContent = `Transaction: ${data.reference}`;
-      transactionIdDiv.className = 'transaction-id show';
-
-      if (isSuccess) {
-        showMpesaStatus('✅ Payment completed successfully!', 'success');
-      } else if (status === 'failed' || status === 'error' || status === 'cancelled') {
-        const errorMsg = data.error?.reason || data.gateway_response || 'Payment failed';
-        showMpesaStatus('❌ ' + errorMsg, 'error');
-      }
-    }
-
-    window.goHome = function() {
-      document.getElementById('resultCard').className = 'result-card';
-      document.getElementById('paymentFormContainer').style.display = 'block';
-      document.getElementById('status').className = 'status';
-      document.getElementById('status').style.display = 'none';
-      document.getElementById('transactionId').className = 'transaction-id';
-      
-      document.getElementById('reference').value = generateReference();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    window.retryPayment = function() {
-      goHome();
-      document.getElementById('amount').focus();
-    };
   });
 
   // ==========================================
@@ -1704,7 +1335,6 @@
     if (page === 'pro') {
       checkPaymentStatus();
       resetSubscriptionButtons();
-      setTimeout(resetSubscriptionButtons, 100);
       // Update plan amounts and auto-fill email
       if (currentUser && currentUser.email) {
         document.getElementById('email').value = currentUser.email;
@@ -2519,7 +2149,6 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.refreshTopCoins = refreshTopCoins;
   window.toggleExchangeFilter = toggleExchangeFilter;
   window.applyFilters = applyFilters;
-  window.subscribeWithPaystack = subscribeWithPaystack;
   window.sendMessage = sendMessage;
   window.editMessage = editMessage;
   window.deleteMessage = deleteMessage;
