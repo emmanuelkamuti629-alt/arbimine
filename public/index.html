@@ -187,8 +187,8 @@
     .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
     .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
     .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
-    /* ===== PRO PAGE – M-PESA Form ===== */
-    .mpesa-card {
+    /* ===== PRO PAGE – Paystack Redirect ===== */
+    .paystack-card {
       background: #ffffff;
       border-radius: 16px;
       padding: 28px 24px;
@@ -198,7 +198,7 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       border: 1px solid #e8edf2;
     }
-    .mpesa-card .safaricom-topbar {
+    .paystack-card .safaricom-topbar {
       background: #00A650;
       height: 5px;
       width: 100%;
@@ -206,37 +206,37 @@
       margin: -28px -24px 20px -24px;
       width: calc(100% + 48px);
     }
-    .mpesa-card .logo-row {
+    .paystack-card .logo-row {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
       margin-bottom: 18px;
     }
-    .mpesa-card .logo-row .icon { font-size: 28px; }
-    .mpesa-card .logo-row h1 {
+    .paystack-card .logo-row .icon { font-size: 28px; }
+    .paystack-card .logo-row h1 {
       font-size: 22px;
       font-weight: 700;
       color: #00A650;
     }
-    .mpesa-card .logo-row h1 .light { color: #333; font-weight: 300; }
-    .mpesa-card .powered-by {
+    .paystack-card .logo-row h1 .light { color: #333; font-weight: 300; }
+    .paystack-card .powered-by {
       text-align: center;
       font-size: 11px;
       color: #999;
       margin: -10px 0 16px 0;
     }
-    .mpesa-card .powered-by strong { color: #00A650; }
-    .mpesa-card .form-group { margin-bottom: 14px; }
-    .mpesa-card .form-group label {
+    .paystack-card .powered-by strong { color: #00A650; }
+    .paystack-card .form-group { margin-bottom: 14px; }
+    .paystack-card .form-group label {
       display: block;
       font-size: 13px;
       font-weight: 600;
       color: #333;
       margin-bottom: 4px;
     }
-    .mpesa-card .form-group label .required { color: #00A650; }
-    .mpesa-card .form-group input, .mpesa-card .form-group select {
+    .paystack-card .form-group label .required { color: #00A650; }
+    .paystack-card .form-group select {
       width: 100%;
       padding: 10px 14px;
       border: 2px solid #e8edf2;
@@ -246,49 +246,12 @@
       color: #333;
       transition: border 0.3s;
     }
-    .mpesa-card .form-group input:focus, .mpesa-card .form-group select:focus {
+    .paystack-card .form-group select:focus {
       border-color: #00A650;
       box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
       outline: none;
     }
-    .mpesa-card .form-group input::placeholder { color: #aaa; }
-    .mpesa-card .form-group .hint {
-      display: block;
-      font-size: 11px;
-      color: #888;
-      margin-top: 3px;
-    }
-    .mpesa-card .amount-prefix {
-      display: flex;
-      align-items: center;
-      border: 2px solid #e8edf2;
-      border-radius: 10px;
-      background: #fafbfc;
-      transition: border 0.3s;
-    }
-    .mpesa-card .amount-prefix:focus-within {
-      border-color: #00A650;
-      box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
-    }
-    .mpesa-card .amount-prefix .currency {
-      padding: 10px 16px;
-      background: #00A650;
-      color: white;
-      font-weight: 700;
-      font-size: 14px;
-      min-width: 50px;
-      text-align: center;
-      border-radius: 8px 0 0 8px;
-    }
-    .mpesa-card .amount-prefix input {
-      border: none;
-      flex: 1;
-      padding: 10px 14px;
-      font-size: 14px;
-      background: transparent;
-    }
-    .mpesa-card .amount-prefix input:focus { outline: none; box-shadow: none; }
-    .mpesa-card .btn-pay {
+    .paystack-card .btn-pay {
       width: 100%;
       padding: 14px;
       background: #00A650;
@@ -302,9 +265,9 @@
       position: relative;
       overflow: hidden;
     }
-    .mpesa-card .btn-pay:hover { background: #008C44; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,166,80,0.3); }
-    .mpesa-card .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .mpesa-card .btn-pay .btn-shine {
+    .paystack-card .btn-pay:hover { background: #008C44; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,166,80,0.3); }
+    .paystack-card .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .paystack-card .btn-pay .btn-shine {
       position: absolute;
       top: -50%;
       left: -50%;
@@ -318,7 +281,7 @@
       0% { transform: translateX(-100%) rotate(45deg); }
       100% { transform: translateX(100%) rotate(45deg); }
     }
-    .mpesa-card .status {
+    .paystack-card .status {
       margin-top: 12px;
       padding: 10px 14px;
       border-radius: 10px;
@@ -326,11 +289,11 @@
       font-weight: 500;
       font-size: 13px;
     }
-    .mpesa-card .status.show { display: block; }
-    .mpesa-card .status.success { background: #e8f5e9; border: 2px solid #00A650; color: #006B3F; }
-    .mpesa-card .status.error { background: #fce4ec; border: 2px solid #e53935; color: #c62828; }
-    .mpesa-card .status.info { background: #e3f2fd; border: 2px solid #1e88e5; color: #0d47a1; }
-    .mpesa-card .transaction-id {
+    .paystack-card .status.show { display: block; }
+    .paystack-card .status.success { background: #e8f5e9; border: 2px solid #00A650; color: #006B3F; }
+    .paystack-card .status.error { background: #fce4ec; border: 2px solid #e53935; color: #c62828; }
+    .paystack-card .status.info { background: #e3f2fd; border: 2px solid #1e88e5; color: #0d47a1; }
+    .paystack-card .transaction-id {
       margin-top: 10px;
       padding: 10px 14px;
       background: #f8faf8;
@@ -342,32 +305,20 @@
       border-left: 4px solid #00A650;
       color: #333;
     }
-    .mpesa-card .transaction-id.show { display: block; }
-    /* Result Card inside Pro */
-    .result-card {
-      display: none;
-      margin-top: 16px;
-      padding: 16px;
-      border-radius: 12px;
-      border: 2px solid;
-      animation: slideIn 0.4s ease;
+    .paystack-card .transaction-id.show { display: block; }
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s infinite;
     }
-    .result-card.show { display: block; }
-    .result-card.success { border-color: #00A650; background: #f0fdf4; }
-    .result-card.error { border-color: #e53935; background: #fdf0f0; }
-    .result-card .result-icon { font-size: 32px; text-align: center; }
-    .result-card .result-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
-    .result-card .result-details { font-size: 14px; color: #333; }
-    .result-card .result-details div { padding: 4px 0; border-bottom: 1px solid #e5e7eb; }
-    .result-card .result-details div:last-child { border-bottom: none; }
-    .result-card .result-actions { display: flex; gap: 10px; margin-top: 12px; }
-    .result-card .btn-home { flex:1; background:#f0f2f5; color:#333; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
-    .result-card .btn-retry { flex:1; background:#00A650; color:white; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
-    @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes dots {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
+    }
     @media (max-width: 480px) {
-      .mpesa-card { padding: 20px 16px; }
-      .mpesa-card .logo-row h1 { font-size: 18px; }
-      .result-card .result-actions { flex-direction: column; }
+      .paystack-card { padding: 20px 16px; }
+      .paystack-card .logo-row h1 { font-size: 18px; }
     }
     @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
@@ -689,20 +640,20 @@
       <h2 class="text-3xl font-bold">💎 ArbiMine Pro</h2>
       <button class="btn btn-sm" onclick="refreshSubscription()">🔄 Refresh</button>
     </div>
-    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via M‑PESA STK Push.</p>
+    <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via Paystack.</p>
 
-    <!-- M-PESA Payment Card -->
-    <div class="mpesa-card">
+    <!-- Paystack Redirect Card -->
+    <div class="paystack-card">
       <div class="safaricom-topbar"></div>
 
       <div class="logo-row">
-        <span class="icon">📱</span>
-        <h1>Lipa Na <span class="light">M‑PESA</span></h1>
+        <span class="icon">💳</span>
+        <h1>Pay with <span class="light">Paystack</span></h1>
       </div>
       <div class="powered-by">Secured by <strong>Paystack</strong></div>
 
       <!-- Plan Selection -->
-      <div class="form-group" style="margin-bottom: 10px;">
+      <div class="form-group">
         <label>Select Subscription Plan <span class="required">*</span></label>
         <select id="planSelect" class="w-full bg-[#fafbfc] border-2 border-[#e8edf2] rounded-xl p-3 text-[#333] focus:border-[#00A650] focus:outline-none transition-all" onchange="updatePlanAmount()">
           <option value="threeDay">3-Day Plan - KES <span id="threeDayPlanAmount">150</span></option>
@@ -712,45 +663,28 @@
       </div>
 
       <div id="paymentFormContainer">
-        <form id="paymentForm">
+        <form id="paymentForm" onsubmit="event.preventDefault(); initiatePaystackPayment();">
           <div class="form-group">
             <label>Email Address <span class="required">*</span></label>
             <input type="email" id="email" placeholder="your@email.com" required>
           </div>
 
           <div class="form-group">
-            <label>Phone Number <span class="required">*</span></label>
-            <input type="tel" id="phone" placeholder="254712345678" required>
-            <span class="hint">Format: 254XXXXXXXXX</span>
-          </div>
-
-          <div class="form-group">
             <label>Amount (KES) <span class="required">*</span></label>
-            <div class="amount-prefix">
-              <span class="currency">KES</span>
-              <input type="number" id="amount" placeholder="Enter amount" min="1" step="1" required readonly>
+            <div class="amount-prefix" style="border:2px solid #e8edf2; border-radius:10px; background:#fafbfc; display:flex; align-items:center;">
+              <span class="currency" style="padding:10px 16px; background:#00A650; color:white; font-weight:700; font-size:14px; min-width:50px; text-align:center; border-radius:8px 0 0 8px;">KES</span>
+              <input type="number" id="amount" style="border:none; flex:1; padding:10px 14px; font-size:14px; background:transparent;" readonly>
             </div>
           </div>
 
           <button type="submit" class="btn-pay" id="payBtn">
             <span class="btn-shine"></span>
-            <span id="payBtnText">Send STK Push</span>
+            <span id="payBtnText">Proceed to Paystack</span>
           </button>
         </form>
 
         <div id="status" class="status"></div>
         <div id="transactionId" class="transaction-id"></div>
-      </div>
-
-      <!-- Result Card (shown after payment) -->
-      <div id="resultCard" class="result-card" style="display: none;">
-        <div class="result-icon" id="resultIcon">✅</div>
-        <div class="result-title" id="resultTitle">Payment Successful!</div>
-        <div class="result-details" id="resultDetails"></div>
-        <div class="result-actions">
-          <button class="btn-home" onclick="goHome()">🏠 Home</button>
-          <button class="btn-retry" onclick="retryPayment()">🔄 Retry</button>
-        </div>
       </div>
 
       <div class="footer" style="margin-top: 16px;">
@@ -1137,9 +1071,9 @@
     const threeDayEl = document.getElementById('threeDayPriceDisplay');
     if (!planSettings.weekly) return;
     const price = (amt) => currentCurrency === 'USD' ? `$${(amt / EXCHANGE_RATE).toFixed(2)}` : `KES ${amt}`;
-    weeklyEl.textContent = price(planSettings.weekly.amount);
-    monthlyEl.textContent = price(planSettings.monthly.amount);
-    threeDayEl.textContent = price(planSettings.threeDay?.amount || 150);
+    if (weeklyEl) weeklyEl.textContent = price(planSettings.weekly.amount);
+    if (monthlyEl) monthlyEl.textContent = price(planSettings.monthly.amount);
+    if (threeDayEl) threeDayEl.textContent = price(planSettings.threeDay?.amount || 150);
   }
 
   function updatePlanAmounts() {
@@ -1254,172 +1188,54 @@
   }
 
   // ==========================================
-  // M‑PESA PAYMENT (Pro)
+  // PAYSTACK REDIRECT (Pro)
   // ==========================================
-  let lastPaymentRef = null;
-
-  function fillPaymentForm() {
-    const user = currentUser || {};
-    if (user.email) document.getElementById('email').value = user.email;
-    if (user.mpesa) document.getElementById('phone').value = user.mpesa;
-  }
-
-  // Attach event listener to payment form
-  document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('paymentForm');
-    if (form) {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        sendMpesaPayment();
-      });
-    }
-    setTimeout(() => {
-      fillPaymentForm();
-      updatePlanAmount();
-    }, 300);
-  });
-
-  async function sendMpesaPayment() {
+  function initiatePaystackPayment() {
     const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const amount = parseFloat(document.getElementById('amount').value);
     const plan = document.getElementById('planSelect').value;
     const payBtn = document.getElementById('payBtn');
     const payBtnText = document.getElementById('payBtnText');
     const statusDiv = document.getElementById('status');
 
-    if (!email || !phone || !amount || amount < 1) {
-      showStatus('Please fill all fields correctly.', 'error');
-      return;
-    }
-    if (!/^254\d{9}$/.test(phone)) {
-      showStatus('Enter a valid Kenyan phone (254XXXXXXXXX).', 'error');
+    if (!email) {
+      showStatus('Please enter your email address.', 'error');
       return;
     }
     if (!email.includes('@')) {
-      showStatus('Enter a valid email address.', 'error');
+      showStatus('Please enter a valid email address.', 'error');
       return;
     }
 
-    if (!confirm(`Pay KES ${amount} for the ${plan} plan?`)) return;
-
     payBtn.disabled = true;
-    payBtnText.innerHTML = '<span class="loading"></span> Sending STK Push...';
+    payBtnText.innerHTML = '⏳ Processing<span class="loading-dots"></span>';
     statusDiv.className = 'status';
     statusDiv.style.display = 'none';
-    document.getElementById('resultCard').style.display = 'none';
 
-    try {
-      const response = await fetch('/api/mpesa-charge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: token },
-        body: JSON.stringify({ email, phone, amount, plan, reference: `MPESA-${Date.now()}` })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        const ref = data.data.reference;
-        lastPaymentRef = ref;
-        showStatus('📱 STK Push sent! Check your phone and enter PIN.', 'success');
-        document.getElementById('transactionId').textContent = `Reference: ${ref}`;
-        document.getElementById('transactionId').className = 'transaction-id show';
-        // Start polling
-        pollPaymentStatus(ref, plan);
-      } else {
-        showStatus('❌ ' + (data.message || 'STK Push failed'), 'error');
-      }
-    } catch (error) {
-      showStatus('❌ Network error: ' + error.message, 'error');
-    } finally {
-      payBtn.disabled = false;
-      payBtnText.textContent = 'Send STK Push';
-    }
-  }
-
-  async function pollPaymentStatus(reference, plan) {
-    let attempts = 0;
-    const maxAttempts = 30;
-
-    const pollInterval = setInterval(async () => {
-      attempts++;
-      try {
-        const res = await fetch(`/api/verify-payment/${reference}`, {
-          headers: { Authorization: token }
-        });
-        const data = await res.json();
-        if (data.success) {
-          const status = data.data.status;
-          if (status === 'success' || status === 'completed') {
-            clearInterval(pollInterval);
-            await activateSubscription(reference, plan);
-            showPaymentResult(data.data, true);
-            return;
-          } else if (status === 'failed' || status === 'error' || status === 'cancelled') {
-            clearInterval(pollInterval);
-            showPaymentResult(data.data, false);
-            return;
-          }
+    fetch('/api/paystack/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token
+      },
+      body: JSON.stringify({ plan })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.authorization_url) {
+          // Redirect to Paystack payment page
+          window.location.href = data.authorization_url;
+        } else {
+          showStatus('❌ ' + (data.error || 'Payment initialization failed'), 'error');
+          payBtn.disabled = false;
+          payBtnText.textContent = 'Proceed to Paystack';
         }
-        if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          showStatus('⏰ Payment verification timed out. Check your M‑PESA.', 'info');
-        }
-      } catch (e) {
-        console.warn('Poll error:', e);
-      }
-    }, 5000);
-  }
-
-  async function activateSubscription(reference, plan) {
-    try {
-      const res = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: token },
-        body: JSON.stringify({ plan, reference })
+      })
+      .catch(err => {
+        console.error('Paystack init error:', err);
+        showStatus('❌ Network error. Please try again.', 'error');
+        payBtn.disabled = false;
+        payBtnText.textContent = 'Proceed to Paystack';
       });
-      const data = await res.json();
-      if (res.ok) {
-        showToast('✅ Subscription activated!', 'success');
-        await loadSubscription();
-        await loadOpportunities();
-        resetSubscriptionButtons();
-      } else {
-        showToast('⚠️ Payment verified but subscription activation failed. Contact support.', 'error');
-      }
-    } catch (e) {
-      console.error('Activation error:', e);
-    }
-  }
-
-  function showPaymentResult(data, success) {
-    const card = document.getElementById('resultCard');
-    const icon = document.getElementById('resultIcon');
-    const title = document.getElementById('resultTitle');
-    const details = document.getElementById('resultDetails');
-
-    card.style.display = 'block';
-    if (success) {
-      icon.textContent = '✅';
-      title.textContent = 'Payment Successful! 🎉';
-      card.className = 'result-card success';
-      details.innerHTML = `
-        <div>Reference: ${data.reference}</div>
-        <div>Amount: KES ${data.amount}</div>
-        <div>Plan: ${data.plan || '—'}</div>
-      `;
-      showStatus('✅ Payment confirmed! Your Pro plan is active.', 'success');
-    } else {
-      icon.textContent = '❌';
-      title.textContent = 'Payment Failed';
-      card.className = 'result-card error';
-      details.innerHTML = `
-        <div>Reference: ${data.reference}</div>
-        <div>Reason: ${data.gateway_response || data.failure_reason || 'Unknown'}</div>
-      `;
-      showStatus('❌ Payment failed. Please try again.', 'error');
-    }
-    // Hide payment form
-    document.getElementById('paymentFormContainer').style.display = 'none';
   }
 
   function showStatus(message, type) {
@@ -1427,21 +1243,6 @@
     statusDiv.textContent = message;
     statusDiv.className = `status show ${type}`;
     statusDiv.style.display = 'block';
-  }
-
-  function goHome() {
-    document.getElementById('resultCard').style.display = 'none';
-    document.getElementById('paymentFormContainer').style.display = 'block';
-    document.getElementById('status').className = 'status';
-    document.getElementById('status').style.display = 'none';
-    document.getElementById('transactionId').className = 'transaction-id';
-    updatePlanAmount();
-    fillPaymentForm();
-  }
-
-  function retryPayment() {
-    goHome();
-    document.getElementById('phone').focus();
   }
 
   // ==========================================
@@ -1461,8 +1262,12 @@
 
     if (page === 'pro') {
       resetSubscriptionButtons();
-      fillPaymentForm();
+      // Auto-fill email
+      const emailField = document.getElementById('email');
+      if (currentUser && currentUser.email) emailField.value = currentUser.email;
       updatePlanAmounts();
+      // Check for payment callback status
+      checkPaymentStatus();
     }
     if (page === 'dashboard' || page === 'arbitrage' || page === 'topcoins' || page === 'watchlist') {
       loadOpportunities();
@@ -1473,6 +1278,27 @@
     if (page === 'profile') loadUserProfile();
     if (page === 'settings') loadUserProfile();
     closeSidebar();
+  }
+
+  // ==========================================
+  // CHECK PAYMENT STATUS (from callback)
+  // ==========================================
+  function checkPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const reference = urlParams.get('reference');
+    if (payment === 'success') {
+      showToast('✅ Payment successful! Your Pro plan is now active.', 'success');
+      loadSubscription();
+      loadOpportunities();
+      resetSubscriptionButtons();
+      // Remove query params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (payment === 'failed') {
+      showToast('❌ Payment failed. Please try again.', 'error');
+      resetSubscriptionButtons();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
   // ==========================================
@@ -2248,6 +2074,8 @@ Risk: ${risk}. Recommendation: ${rec}.`;
           initExchangeFilters();
           setCurrency('KES');
           resetSubscriptionButtons();
+          // Check for payment callback on page load
+          checkPaymentStatus();
         } else {
           logout();
         }
@@ -2294,15 +2122,10 @@ Risk: ${risk}. Recommendation: ${rec}.`;
   window.resetSubscriptionButtons = resetSubscriptionButtons;
   window.updatePlanAmount = updatePlanAmount;
   window.updatePlanAmounts = updatePlanAmounts;
-  window.fillPaymentForm = fillPaymentForm;
-  window.sendMpesaPayment = sendMpesaPayment;
-  window.pollPaymentStatus = pollPaymentStatus;
-  window.activateSubscription = activateSubscription;
-  window.showPaymentResult = showPaymentResult;
-  window.goHome = goHome;
-  window.retryPayment = retryPayment;
+  window.initiatePaystackPayment = initiatePaystackPayment;
+  window.checkPaymentStatus = checkPaymentStatus;
 
-  console.log('🚀 ArbiMine Pro v3.0 – Full Feature Set with M‑PESA STK Push');
+  console.log('🚀 ArbiMine Pro v3.0 – Paystack Redirect');
 </script>
 </body>
-        </html>
+            </html>
