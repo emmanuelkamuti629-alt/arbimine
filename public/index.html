@@ -3,35 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-  <!-- Google Search Console verification -->
-  <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE" />
-
-  <!-- SEO: Title -->
   <title>ArbiMine Pro – Crypto Arbitrage Scanner &amp; Trading Bot</title>
-
-  <!-- SEO: Meta Description -->
   <meta name="description" content="ArbiMine Pro is a real-time crypto arbitrage scanner that monitors 13+ exchanges to find profitable trading opportunities with AI risk analysis, liquidity checks, spreads, and profit estimates.">
-
-  <!-- SEO: Keywords (optional) -->
   <meta name="keywords" content="crypto arbitrage, arbitrage scanner, crypto trading bot, bitcoin arbitrage, crypto bot, trading tool, crypto analysis">
-
-  <!-- Open Graph for social sharing -->
   <meta property="og:title" content="ArbiMine Pro – Crypto Arbitrage Scanner">
   <meta property="og:description" content="Real-time crypto arbitrage across 13+ exchanges. Find and execute profitable trades with AI analysis.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://arbimine-miyc.onrender.com/">
-
-  <!-- Canonical URL -->
   <link rel="canonical" href="https://arbimine-miyc.onrender.com/">
-
-  <!-- Favicon (SVG) -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-
-  <!-- PWA: Web App Manifest -->
   <link rel="manifest" href="/manifest.json">
-
-  <!-- PWA: Service Worker registration -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -39,7 +20,6 @@
         .catch(err => console.warn('⚠️ Service Worker registration failed:', err));
     }
   </script>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -207,125 +187,90 @@
     .currency-toggle { display: flex; gap: 6px; background: #1f2937; padding: 4px; border-radius: 30px; border: 1px solid #374151; margin: 8px 0; }
     .currency-toggle button { background: none; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .2s; color: #94a3b8; }
     .currency-toggle button.active { background: #22c55e; color: #0a0c15; box-shadow: 0 0 12px rgba(34,197,94,.3); }
-    /* M-PESA Pro Page Styles */
-    .mpesa-container {
+    /* ===== PRO PAGE – M-PESA Form ===== */
+    .mpesa-card {
       background: #ffffff;
       border-radius: 16px;
-      padding: 32px;
-      max-width: 520px;
+      padding: 28px 24px;
+      max-width: 480px;
       width: 100%;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e8edf2;
       margin: 0 auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e8edf2;
     }
-    .mpesa-container .safaricom-topbar {
+    .mpesa-card .safaricom-topbar {
       background: #00A650;
-      height: 6px;
+      height: 5px;
       width: 100%;
       border-radius: 16px 16px 0 0;
-      margin-top: -32px;
-      margin-bottom: 20px;
+      margin: -28px -24px 20px -24px;
+      width: calc(100% + 48px);
     }
-    .mpesa-container .logo-section {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    .mpesa-container .logo-section .mpesa-logo {
+    .mpesa-card .logo-row {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 4px;
+      margin-bottom: 18px;
     }
-    .mpesa-container .logo-section .mpesa-logo .icon { font-size: 28px; }
-    .mpesa-container .logo-section h1 {
-      color: #00A650;
-      font-size: 24px;
+    .mpesa-card .logo-row .icon { font-size: 28px; }
+    .mpesa-card .logo-row h1 {
+      font-size: 22px;
       font-weight: 700;
+      color: #00A650;
     }
-    .mpesa-container .logo-section h1 .light { color: #333; font-weight: 300; }
-    .mpesa-container .logo-section .subtitle { color: #666; font-size: 13px; }
-    .mpesa-container .logo-section .divider {
-      width: 60px;
-      height: 3px;
-      background: #00A650;
-      margin: 8px auto 0;
-      border-radius: 2px;
-    }
-    .mpesa-container .powered-by { font-size: 11px; color: #999; margin-top: 4px; }
-    .mpesa-container .powered-by strong { color: #00A650; }
-    .mpesa-container .welcome-box {
-      background: linear-gradient(135deg, #00A650 0%, #008C44 100%);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
+    .mpesa-card .logo-row h1 .light { color: #333; font-weight: 300; }
+    .mpesa-card .powered-by {
       text-align: center;
+      font-size: 11px;
+      color: #999;
+      margin: -10px 0 16px 0;
     }
-    .mpesa-container .welcome-box h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-    .mpesa-container .welcome-box p { font-size: 13px; opacity: 0.95; }
-    .mpesa-container .welcome-box .badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.2);
-      padding: 2px 12px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 600;
-      margin-top: 6px;
-    }
-    .mpesa-container .info-box {
-      background: #f8faf8;
-      border: 1px solid #e8edf2;
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .mpesa-container .info-box .icon { font-size: 18px; }
-    .mpesa-container .info-box .text { font-size: 12px; color: #555; }
-    .mpesa-container .info-box .text strong { color: #00A650; }
-    .mpesa-container .form-group { margin-bottom: 14px; }
-    .mpesa-container .form-group label {
+    .mpesa-card .powered-by strong { color: #00A650; }
+    .mpesa-card .form-group { margin-bottom: 14px; }
+    .mpesa-card .form-group label {
       display: block;
-      margin-bottom: 4px;
-      color: #333;
+      font-size: 13px;
       font-weight: 600;
-      font-size: 12px;
+      color: #333;
+      margin-bottom: 4px;
     }
-    .mpesa-container .form-group label .required { color: #00A650; }
-    .mpesa-container .form-group input {
+    .mpesa-card .form-group label .required { color: #00A650; }
+    .mpesa-card .form-group input {
       width: 100%;
       padding: 10px 14px;
       border: 2px solid #e8edf2;
       border-radius: 10px;
       font-size: 14px;
-      transition: all 0.3s;
       background: #fafbfc;
       color: #333;
+      transition: border 0.3s;
     }
-    .mpesa-container .form-group input:focus {
-      outline: none;
+    .mpesa-card .form-group input:focus {
       border-color: #00A650;
       box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
+      outline: none;
     }
-    .mpesa-container .form-group input::placeholder { color: #999; }
-    .mpesa-container .form-group .hint { color: #888; font-size: 11px; display: block; margin-top: 3px; }
-    .mpesa-container .amount-prefix {
+    .mpesa-card .form-group input::placeholder { color: #aaa; }
+    .mpesa-card .form-group .hint {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-top: 3px;
+    }
+    .mpesa-card .amount-prefix {
       display: flex;
       align-items: center;
       border: 2px solid #e8edf2;
       border-radius: 10px;
-      overflow: hidden;
       background: #fafbfc;
-      transition: all 0.3s;
+      transition: border 0.3s;
     }
-    .mpesa-container .amount-prefix:focus-within {
+    .mpesa-card .amount-prefix:focus-within {
       border-color: #00A650;
       box-shadow: 0 0 0 4px rgba(0,166,80,0.08);
     }
-    .mpesa-container .amount-prefix .currency {
+    .mpesa-card .amount-prefix .currency {
       padding: 10px 16px;
       background: #00A650;
       color: white;
@@ -333,16 +278,17 @@
       font-size: 14px;
       min-width: 50px;
       text-align: center;
+      border-radius: 8px 0 0 8px;
     }
-    .mpesa-container .amount-prefix input {
+    .mpesa-card .amount-prefix input {
       border: none;
       flex: 1;
       padding: 10px 14px;
       font-size: 14px;
       background: transparent;
     }
-    .mpesa-container .amount-prefix input:focus { outline: none; box-shadow: none; }
-    .mpesa-container .btn-pay {
+    .mpesa-card .amount-prefix input:focus { outline: none; box-shadow: none; }
+    .mpesa-card .btn-pay {
       width: 100%;
       padding: 14px;
       background: #00A650;
@@ -356,13 +302,9 @@
       position: relative;
       overflow: hidden;
     }
-    .mpesa-container .btn-pay:hover {
-      background: #008C44;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 25px rgba(0,166,80,0.3);
-    }
-    .mpesa-container .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .mpesa-container .btn-pay .btn-shine {
+    .mpesa-card .btn-pay:hover { background: #008C44; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,166,80,0.3); }
+    .mpesa-card .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .mpesa-card .btn-pay .btn-shine {
       position: absolute;
       top: -50%;
       left: -50%;
@@ -376,7 +318,7 @@
       0% { transform: translateX(-100%) rotate(45deg); }
       100% { transform: translateX(100%) rotate(45deg); }
     }
-    .mpesa-container .status {
+    .mpesa-card .status {
       margin-top: 12px;
       padding: 10px 14px;
       border-radius: 10px;
@@ -384,23 +326,11 @@
       font-weight: 500;
       font-size: 13px;
     }
-    .mpesa-container .status.show { display: block; }
-    .mpesa-container .status.success { background: #e8f5e9; border: 2px solid #00A650; color: #006B3F; }
-    .mpesa-container .status.error { background: #fce4ec; border: 2px solid #e53935; color: #c62828; }
-    .mpesa-container .status.info { background: #e3f2fd; border: 2px solid #1e88e5; color: #0d47a1; }
-    .mpesa-container .loading {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: #ffffff;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .mpesa-container .transaction-id {
+    .mpesa-card .status.show { display: block; }
+    .mpesa-card .status.success { background: #e8f5e9; border: 2px solid #00A650; color: #006B3F; }
+    .mpesa-card .status.error { background: #fce4ec; border: 2px solid #e53935; color: #c62828; }
+    .mpesa-card .status.info { background: #e3f2fd; border: 2px solid #1e88e5; color: #0d47a1; }
+    .mpesa-card .transaction-id {
       margin-top: 10px;
       padding: 10px 14px;
       background: #f8faf8;
@@ -412,8 +342,8 @@
       border-left: 4px solid #00A650;
       color: #333;
     }
-    .mpesa-container .transaction-id.show { display: block; }
-    .mpesa-container .result-card {
+    .mpesa-card .transaction-id.show { display: block; }
+    .mpesa-card .result-card {
       display: none;
       margin-top: 16px;
       padding: 20px;
@@ -421,38 +351,38 @@
       border: 2px solid;
       animation: slideIn 0.5s ease;
     }
-    .mpesa-container .result-card.show { display: block; }
-    .mpesa-container .result-card.success { border-color: #00A650; background: #f0fdf4; }
-    .mpesa-container .result-card.error { border-color: #e53935; background: #fdf0f0; }
-    .mpesa-container .result-card.pending { border-color: #ffc107; background: #fdfcf0; }
+    .mpesa-card .result-card.show { display: block; }
+    .mpesa-card .result-card.success { border-color: #00A650; background: #f0fdf4; }
+    .mpesa-card .result-card.error { border-color: #e53935; background: #fdf0f0; }
+    .mpesa-card .result-card.pending { border-color: #ffc107; background: #fdfcf0; }
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(-15px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .mpesa-container .result-icon { font-size: 40px; text-align: center; margin-bottom: 6px; }
-    .mpesa-container .result-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-    .mpesa-container .result-card.success .result-title { color: #006B3F; }
-    .mpesa-container .result-card.error .result-title { color: #c62828; }
-    .mpesa-container .result-card.pending .result-title { color: #f57f17; }
-    .mpesa-container .result-details { margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); }
-    .mpesa-container .result-detail-row {
+    .mpesa-card .result-icon { font-size: 40px; text-align: center; margin-bottom: 6px; }
+    .mpesa-card .result-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .mpesa-card .result-card.success .result-title { color: #006B3F; }
+    .mpesa-card .result-card.error .result-title { color: #c62828; }
+    .mpesa-card .result-card.pending .result-title { color: #f57f17; }
+    .mpesa-card .result-details { margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); }
+    .mpesa-card .result-detail-row {
       display: flex;
       justify-content: space-between;
       padding: 6px 0;
       border-bottom: 1px solid #f0f0f0;
       font-size: 13px;
     }
-    .mpesa-container .result-detail-row:last-child { border-bottom: none; }
-    .mpesa-container .result-detail-label { font-weight: 600; color: #666; font-size: 12px; }
-    .mpesa-container .result-detail-value { color: #333; word-break: break-all; text-align: right; max-width: 60%; font-weight: 500; }
-    .mpesa-container .result-detail-value.success-text { color: #00A650; font-weight: 700; }
-    .mpesa-container .result-detail-value.error-text { color: #c62828; font-weight: 700; }
-    .mpesa-container .result-actions {
+    .mpesa-card .result-detail-row:last-child { border-bottom: none; }
+    .mpesa-card .result-detail-label { font-weight: 600; color: #666; font-size: 12px; }
+    .mpesa-card .result-detail-value { color: #333; word-break: break-all; text-align: right; max-width: 60%; font-weight: 500; }
+    .mpesa-card .result-detail-value.success-text { color: #00A650; font-weight: 700; }
+    .mpesa-card .result-detail-value.error-text { color: #c62828; font-weight: 700; }
+    .mpesa-card .result-actions {
       margin-top: 12px;
       display: flex;
       gap: 10px;
     }
-    .mpesa-container .result-actions .btn {
+    .mpesa-card .result-actions .btn {
       flex: 1;
       padding: 10px;
       font-size: 13px;
@@ -463,21 +393,21 @@
       transition: all 0.3s;
       text-align: center;
     }
-    .mpesa-container .btn-home { background: #f0f2f5; color: #333; }
-    .mpesa-container .btn-home:hover { background: #e4e7eb; }
-    .mpesa-container .btn-retry { background: #00A650; color: white; }
-    .mpesa-container .btn-retry:hover { background: #008C44; box-shadow: 0 4px 15px rgba(0,166,80,0.3); }
-    .mpesa-container .error-reason-box {
+    .mpesa-card .btn-home { background: #f0f2f5; color: #333; }
+    .mpesa-card .btn-home:hover { background: #e4e7eb; }
+    .mpesa-card .btn-retry { background: #00A650; color: white; }
+    .mpesa-card .btn-retry:hover { background: #008C44; box-shadow: 0 4px 15px rgba(0,166,80,0.3); }
+    .mpesa-card .error-reason-box {
       background: #fce4ec;
       border: 2px solid #e53935;
       border-radius: 10px;
       padding: 12px;
       margin: 10px 0;
     }
-    .mpesa-container .error-reason-box .reason-title { font-weight: 700; color: #c62828; font-size: 14px; margin-bottom: 2px; }
-    .mpesa-container .error-reason-box .reason-detail { color: #c62828; font-size: 13px; }
-    .mpesa-container .error-reason-box .suggestion { color: #c62828; font-size: 12px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f5c6cb; font-style: italic; }
-    .mpesa-container .error-code {
+    .mpesa-card .error-reason-box .reason-title { font-weight: 700; color: #c62828; font-size: 14px; margin-bottom: 2px; }
+    .mpesa-card .error-reason-box .reason-detail { color: #c62828; font-size: 13px; }
+    .mpesa-card .error-reason-box .suggestion { color: #c62828; font-size: 12px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f5c6cb; font-style: italic; }
+    .mpesa-card .error-code {
       display: inline-block;
       background: #00A650;
       color: white;
@@ -488,35 +418,36 @@
       margin-top: 4px;
       font-weight: 700;
     }
-    .mpesa-container .footer {
+    .mpesa-card .footer {
       margin-top: 20px;
       text-align: center;
       padding-top: 14px;
       border-top: 1px solid #e8edf2;
     }
-    .mpesa-container .footer .safaricom-brand {
+    .mpesa-card .footer .safaricom-brand {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       flex-wrap: wrap;
     }
-    .mpesa-container .footer .safaricom-brand .dot {
+    .mpesa-card .footer .safaricom-brand .dot {
       width: 5px;
       height: 5px;
       background: #00A650;
       border-radius: 50%;
       display: inline-block;
     }
-    .mpesa-container .footer .safaricom-brand .dot.dark { background: #006B3F; }
-    .mpesa-container .footer .brand-text { color: #666; font-size: 11px; font-weight: 500; }
-    .mpesa-container .footer .brand-text strong { color: #00A650; }
+    .mpesa-card .footer .safaricom-brand .dot.dark { background: #006B3F; }
+    .mpesa-card .footer .brand-text { color: #666; font-size: 11px; font-weight: 500; }
+    .mpesa-card .footer .brand-text strong { color: #00A650; }
+
     @media (max-width: 480px) {
-      .mpesa-container { padding: 20px; }
-      .mpesa-container .logo-section h1 { font-size: 20px; }
-      .mpesa-container .result-actions { flex-direction: column; }
-      .mpesa-container .result-detail-row { flex-direction: column; align-items: flex-start; gap: 2px; }
-      .mpesa-container .result-detail-value { max-width: 100%; text-align: left; }
+      .mpesa-card { padding: 20px 16px; }
+      .mpesa-card .logo-row h1 { font-size: 18px; }
+      .mpesa-card .result-actions { flex-direction: column; }
+      .mpesa-card .result-detail-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+      .mpesa-card .result-detail-value { max-width: 100%; text-align: left; }
     }
     @media (max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } .calc-result-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .calc-result-grid { grid-template-columns: 1fr; } .calc-actions button { min-width: 100%; } }
@@ -840,44 +771,27 @@
     </div>
     <p class="text-slate-400 mb-4">Upgrade to access premium features. Pay securely via M-PESA STK Push.</p>
 
-    <!-- M-PESA Payment Container -->
-    <div class="mpesa-container">
+    <!-- M-PESA Payment Form -->
+    <div class="mpesa-card">
       <div class="safaricom-topbar"></div>
 
-      <div class="logo-section">
-        <div class="mpesa-logo">
-          <span class="icon">💳</span>
-          <h1>Lipa Na <span class="light">M</span>-PESA</h1>
-        </div>
-        <div class="subtitle">Secure Mobile Payments</div>
-        <div class="divider"></div>
-        <div class="powered-by">Powered by <strong>Paystack</strong></div>
+      <div class="logo-row">
+        <span class="icon">💳</span>
+        <h1>Lipa Na <span class="light">M</span>-PESA</h1>
       </div>
+      <div class="powered-by">Powered by <strong>Paystack</strong></div>
 
-      <div class="welcome-box">
-        <h2>Welcome to Lipa Na M-PESA</h2>
-        <p>Pay directly using M-PESA STK Push</p>
-        <div class="badge">🔴 LIVE</div>
+      <!-- Plan Selection (hidden in screenshot but kept for functionality) -->
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label>Select Plan</label>
+        <select id="planSelect" class="w-full bg-[#fafbfc] border-2 border-[#e8edf2] rounded-xl p-3 text-[#333] focus:border-[#00A650] focus:outline-none transition-all" onchange="updatePlanAmount()">
+          <option value="threeDay">3-Day Plan - KES <span id="threeDayPlanAmount">150</span></option>
+          <option value="weekly" selected>Weekly Plan - KES <span id="weeklyPlanAmount">261</span></option>
+          <option value="monthly">Monthly Plan - KES <span id="monthlyPlanAmount">900</span></option>
+        </select>
       </div>
 
       <div id="paymentFormContainer">
-        <div class="info-box">
-          <span class="icon">📱</span>
-          <div class="text">
-            <strong>STK Push</strong> · Enter your phone number to receive payment request
-          </div>
-        </div>
-
-        <!-- Plan Selection -->
-        <div class="form-group">
-          <label>Select Subscription Plan <span class="required">*</span></label>
-          <select id="planSelect" class="w-full bg-[#fafbfc] border-2 border-[#e8edf2] rounded-xl p-3 text-[#333] focus:border-[#00A650] focus:outline-none transition-all" onchange="updatePlanAmount()">
-            <option value="threeDay">3-Day Plan - KES <span id="threeDayPlanAmount">150</span></option>
-            <option value="weekly" selected>Weekly Plan - KES <span id="weeklyPlanAmount">261</span></option>
-            <option value="monthly">Monthly Plan - KES <span id="monthlyPlanAmount">900</span></option>
-          </select>
-        </div>
-
         <form id="paymentForm">
           <div class="form-group">
             <label>Email Address <span class="required">*</span></label>
@@ -1314,7 +1228,6 @@
     document.getElementById('threeDayPlanAmount').textContent = planSettings.threeDay?.amount || 150;
     document.getElementById('weeklyPlanAmount').textContent = planSettings.weekly.amount;
     document.getElementById('monthlyPlanAmount').textContent = planSettings.monthly.amount;
-    // Update amount field when plan changes
     updatePlanAmount();
   }
 
