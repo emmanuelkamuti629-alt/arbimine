@@ -33,6 +33,11 @@
     td { color: #eef2ff; }
     .load-more-btn { margin-top: 16px; text-align: center; }
     .loader { text-align: center; color: #94a3b8; padding: 20px; }
+    .msg-row { background:#0f172a;border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #22c55e; }
+    .msg-row .meta { font-size:12px;color:#94a3b8;margin-top:4px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap; }
+    .msg-row .badge { background:#22c55e;color:#070b1a;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase; }
+    .msg-row .badge.read { background:#334155;color:#94a3b8; }
+    .msg-row .user-tag { color:#22c55e;font-weight:700;font-size:13px; }
   </style>
 </head>
 <body>
@@ -67,7 +72,7 @@
     <button data-tab="security">Security</button>
   </div>
 
-  <!-- Users Tab -->
+  <!-- Users -->
   <div id="users" class="tab-content active">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">👥 Users</h2>
@@ -75,11 +80,11 @@
       <div id="usersLoadMore" class="load-more-btn" style="display:none;">
         <button class="btn btn-sm" onclick="loadMoreUsers()">Load More (4)</button>
       </div>
-      <div id="usersAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All users loaded</div>
+      <div id="usersAllLoaded" class="text-slate-400 text-sm mt-2 text-center" style="display:none;">✅ All users loaded</div>
     </div>
   </div>
 
-  <!-- Transactions Tab -->
+  <!-- Transactions -->
   <div id="transactions" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">💰 Transactions</h2>
@@ -87,11 +92,11 @@
       <div id="transactionsLoadMore" class="load-more-btn" style="display:none;">
         <button class="btn btn-sm" onclick="loadMoreTransactions()">Load More (4)</button>
       </div>
-      <div id="transactionsAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All transactions loaded</div>
+      <div id="transactionsAllLoaded" class="text-slate-400 text-sm mt-2 text-center" style="display:none;">✅ All transactions loaded</div>
     </div>
   </div>
 
-  <!-- Messages Tab -->
+  <!-- Messages -->
   <div id="messages" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">💬 Messages</h2>
@@ -99,11 +104,11 @@
       <div id="messagesLoadMore" class="load-more-btn" style="display:none;">
         <button class="btn btn-sm" onclick="loadMoreMessages()">Load More (4)</button>
       </div>
-      <div id="messagesAllLoaded" class="text-slate-400 text-sm mt-2" style="display:none;">✅ All messages loaded</div>
+      <div id="messagesAllLoaded" class="text-slate-400 text-sm mt-2 text-center" style="display:none;">✅ All messages loaded</div>
     </div>
   </div>
 
-  <!-- Plan Settings -->
+  <!-- Plans -->
   <div id="plans" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">📊 Subscription Plans</h2>
@@ -120,7 +125,7 @@
     </div>
   </div>
 
-  <!-- Broadcast Tab -->
+  <!-- Broadcast -->
   <div id="broadcast" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">📢 Broadcast Message</h2>
@@ -134,7 +139,7 @@
     </div>
   </div>
 
-  <!-- General Settings Tab -->
+  <!-- General -->
   <div id="general" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">⚙️ General Settings</h2>
@@ -147,7 +152,7 @@
     </div>
   </div>
 
-  <!-- Security Tab -->
+  <!-- Security -->
   <div id="security" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">🔐 Security</h2>
@@ -162,21 +167,14 @@
 </div>
 
 <script>
-  // Use sessionStorage for admin token
+  // ============ AUTH ============
   const adminToken = sessionStorage.getItem('adminToken');
   if (!adminToken) {
-    // Show login form
     document.body.innerHTML = `
       <div class="max-w-md mx-auto mt-20 glass p-8">
         <h1 class="text-2xl font-bold text-center text-green-400 mb-6">Admin Login</h1>
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="loginUsername" class="w-full" />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="loginPassword" class="w-full" />
-        </div>
+        <div class="form-group"><label>Username</label><input type="text" id="loginUsername" class="w-full" /></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" class="w-full" /></div>
         <button class="btn w-full" onclick="adminLogin()">Log In</button>
         <div id="loginError" class="text-red-400 text-center mt-2 hidden"></div>
       </div>
@@ -203,11 +201,10 @@
         document.getElementById('loginError').classList.remove('hidden');
       }
     };
-    // Exit early
     throw new Error('Not authenticated');
   }
 
-  // Helper
+  // ============ API helper ============
   function api(method, url, body) {
     return fetch(url, {
       method,
@@ -216,7 +213,7 @@
     }).then(res => res.json());
   }
 
-  // ---------- Stats ----------
+  // ============ Stats ============
   async function loadStats() {
     try {
       const data = await api('GET', '/admin/stats');
@@ -227,18 +224,24 @@
     } catch(e) { console.error(e); }
   }
 
-  // ---------- Pagination state ----------
-  let allUsers = [];
-  let usersVisible = 0;
+  // ============ Pagination state ============
   const PAGE_SIZE = 4;
 
+  // Users
+  let allUsers = [];
+  let usersVisible = 0;
+
+  // Transactions
   let allTransactions = [];
   let transactionsVisible = 0;
 
-  let allMessages = [];
-  let messagesVisible = 0;
+  // Messages — SERVER-SIDE PAGINATION
+  let loadedMessages = [];   // messages already fetched from server
+  let messagesTotal = 0;     // total messages on server
+  let messagesHasMore = false;
+  let messagesLoading = false;
 
-  // ---------- Render helper ----------
+  // ============ USERS render ============
   function renderUsers() {
     const container = document.getElementById('usersTable');
     const slice = allUsers.slice(0, usersVisible);
@@ -257,31 +260,21 @@
         <td>${u.mpesa}</td>
         <td>${plan}</td>
         <td>${expires}</td>
-        <td>
-          <button class="btn btn-sm" onclick="toggleUserSubscription('${u._id}', ${!isActive}, '${plan === 'Free' ? 'weekly' : plan}')">
-            ${isActive ? 'Deactivate' : 'Activate'}
-          </button>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-secondary" onclick="deleteUser('${u._id}', '${u.username}')">🗑️</button>
-        </td>
+        <td><button class="btn btn-sm" onclick="toggleUserSubscription('${u._id}', ${!isActive}, '${plan === 'Free' ? 'weekly' : plan}')">${isActive ? 'Deactivate' : 'Activate'}</button></td>
+        <td><button class="btn btn-sm btn-secondary" onclick="deleteUser('${u._id}', '${u.username}')">🗑️</button></td>
       </tr>`;
     });
     html += '</table>';
     container.innerHTML = html;
-
-    // Update "Load More" button visibility
-    const loadMoreBtn = document.getElementById('usersLoadMore');
-    const allLoadedMsg = document.getElementById('usersAllLoaded');
-    if (usersVisible < allUsers.length) {
-      loadMoreBtn.style.display = 'block';
-      allLoadedMsg.style.display = 'none';
-    } else {
-      loadMoreBtn.style.display = 'none';
-      allLoadedMsg.style.display = 'block';
-    }
+    document.getElementById('usersLoadMore').style.display = usersVisible < allUsers.length ? 'block' : 'none';
+    document.getElementById('usersAllLoaded').style.display = usersVisible < allUsers.length ? 'none' : 'block';
+  }
+  function loadMoreUsers() {
+    usersVisible = Math.min(usersVisible + PAGE_SIZE, allUsers.length);
+    renderUsers();
   }
 
+  // ============ TRANSACTIONS render ============
   function renderTransactions() {
     const container = document.getElementById('transactionsTable');
     const slice = allTransactions.slice(0, transactionsVisible);
@@ -297,73 +290,88 @@
         <td>KES ${t.amount || 0}</td>
         <td>${t.status}</td>
         <td>${new Date(t.createdAt).toLocaleDateString()}</td>
-        <td>
-          <button class="btn btn-sm btn-secondary" onclick="deleteTransaction('${t._id}')">🗑️</button>
-        </td>
+        <td><button class="btn btn-sm btn-secondary" onclick="deleteTransaction('${t._id}')">🗑️</button></td>
       </tr>`;
     });
     html += '</table>';
     container.innerHTML = html;
-
-    const loadMoreBtn = document.getElementById('transactionsLoadMore');
-    const allLoadedMsg = document.getElementById('transactionsAllLoaded');
-    if (transactionsVisible < allTransactions.length) {
-      loadMoreBtn.style.display = 'block';
-      allLoadedMsg.style.display = 'none';
-    } else {
-      loadMoreBtn.style.display = 'none';
-      allLoadedMsg.style.display = 'block';
-    }
+    document.getElementById('transactionsLoadMore').style.display = transactionsVisible < allTransactions.length ? 'block' : 'none';
+    document.getElementById('transactionsAllLoaded').style.display = transactionsVisible < allTransactions.length ? 'none' : 'block';
   }
-
-  function renderMessages() {
-    const container = document.getElementById('messagesTable');
-    const slice = allMessages.slice(0, messagesVisible);
-    if (!slice.length) {
-      container.innerHTML = '<div class="text-slate-400 text-center py-4">No messages found.</div>';
-      return;
-    }
-    let html = `<table><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th></tr>`;
-    slice.forEach(m => {
-      const short = m.content.length > 50 ? m.content.substring(0, 50) + '...' : m.content;
-      html += `<tr>
-        <td>${m.user}</td>
-        <td>${short}</td>
-        <td>${m.status}</td>
-        <td>${new Date(m.createdAt).toLocaleDateString()}</td>
-      </tr>`;
-    });
-    html += '</table>';
-    container.innerHTML = html;
-
-    const loadMoreBtn = document.getElementById('messagesLoadMore');
-    const allLoadedMsg = document.getElementById('messagesAllLoaded');
-    if (messagesVisible < allMessages.length) {
-      loadMoreBtn.style.display = 'block';
-      allLoadedMsg.style.display = 'none';
-    } else {
-      loadMoreBtn.style.display = 'none';
-      allLoadedMsg.style.display = 'block';
-    }
-  }
-
-  // ---------- Load More functions ----------
-  function loadMoreUsers() {
-    usersVisible = Math.min(usersVisible + PAGE_SIZE, allUsers.length);
-    renderUsers();
-  }
-
   function loadMoreTransactions() {
     transactionsVisible = Math.min(transactionsVisible + PAGE_SIZE, allTransactions.length);
     renderTransactions();
   }
 
-  function loadMoreMessages() {
-    messagesVisible = Math.min(messagesVisible + PAGE_SIZE, allMessages.length);
-    renderMessages();
+  // ============ MESSAGES — server-side paginated ============
+  function renderMessages() {
+    const container = document.getElementById('messagesTable');
+    if (!loadedMessages.length) {
+      container.innerHTML = '<div class="text-slate-400 text-center py-4">No messages found.</div>';
+      return;
+    }
+    container.innerHTML = loadedMessages.map(m => {
+      const badge = m.isAdmin ? '<span class="badge">Admin</span>' : '<span class="badge read">User</span>';
+      return `<div class="msg-row">
+        <div><span class="user-tag">${escapeHtml(m.user)}</span> &nbsp; ${escapeHtml(m.content)}</div>
+        <div class="meta">
+          <span>${badge}</span>
+          <span>Status: ${escapeHtml(m.status)}</span>
+          <span>${new Date(m.createdAt).toLocaleString()}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    const showMore = loadedMessages.length < messagesTotal;
+    document.getElementById('messagesLoadMore').style.display = showMore ? 'block' : 'none';
+    document.getElementById('messagesAllLoaded').style.display = showMore ? 'none' : 'block';
   }
 
-  // ---------- Load data ----------
+  async function loadMessages() {
+    loadedMessages = [];
+    messagesTotal = 0;
+    messagesHasMore = false;
+    document.getElementById('messagesTable').innerHTML = '<div class="loader">Loading messages...</div>';
+    await fetchMoreMessages();
+  }
+
+  async function loadMoreMessages() {
+    if (messagesLoading) return;
+    await fetchMoreMessages();
+  }
+
+  async function fetchMoreMessages() {
+    messagesLoading = true;
+    try {
+      const skip = loadedMessages.length;
+      const res = await fetch(`/admin/messages?skip=${skip}&limit=${PAGE_SIZE}`, {
+        headers: { Authorization: adminToken }
+      });
+      const data = await res.json();
+
+      // Support both old array response and new object response
+      const newMsgs = Array.isArray(data) ? data : (data.messages || []);
+      const totalFromServer = Array.isArray(data) ? data.length : (data.total ?? loadedMessages.length + newMsgs.length);
+
+      loadedMessages = loadedMessages.concat(newMsgs);
+      messagesTotal = totalFromServer;
+      messagesHasMore = Array.isArray(data) ? loadedMessages.length < totalFromServer : !!data.hasMore;
+
+      renderMessages();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('messagesTable').innerHTML = '<div class="text-red-400 text-center py-4">Failed to load messages.</div>';
+    } finally {
+      messagesLoading = false;
+    }
+  }
+
+  // ============ Helpers ============
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  // ============ Load users / transactions ============
   async function loadUsers() {
     try {
       const data = await api('GET', '/admin/users');
@@ -382,54 +390,28 @@
     } catch(e) { console.error(e); }
   }
 
-  async function loadMessages() {
-    try {
-      const data = await api('GET', '/admin/messages');
-      allMessages = data || [];
-      messagesVisible = Math.min(PAGE_SIZE, allMessages.length);
-      renderMessages();
-    } catch(e) { console.error(e); }
-  }
-
-  // ---------- Delete functions ----------
+  // ============ Delete ============
   async function deleteUser(userId, username) {
     if (!confirm(`Delete user "${username}" and all their data?`)) return;
     try {
-      const res = await fetch(`/admin/user/${userId}`, {
-        method: 'DELETE',
-        headers: { Authorization: adminToken }
-      });
+      const res = await fetch(`/admin/user/${userId}`, { method: 'DELETE', headers: { Authorization: adminToken } });
       const data = await res.json();
-      if (data.success) {
-        alert('✅ User deleted');
-        // Reload data
-        await loadUsers();
-        await loadStats();
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
+      if (data.success) { alert('✅ User deleted'); await loadUsers(); await loadStats(); }
+      else alert('❌ Error: ' + data.error);
     } catch(e) { alert('Error: ' + e.message); }
   }
 
   async function deleteTransaction(transactionId) {
     if (!confirm('Delete this transaction record?')) return;
     try {
-      const res = await fetch(`/admin/transaction/${transactionId}`, {
-        method: 'DELETE',
-        headers: { Authorization: adminToken }
-      });
+      const res = await fetch(`/admin/transaction/${transactionId}`, { method: 'DELETE', headers: { Authorization: adminToken } });
       const data = await res.json();
-      if (data.success) {
-        alert('✅ Transaction deleted');
-        await loadTransactions();
-        await loadStats();
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
+      if (data.success) { alert('✅ Transaction deleted'); await loadTransactions(); await loadStats(); }
+      else alert('❌ Error: ' + data.error);
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ---------- Toggle subscription ----------
+  // ============ Toggle subscription ============
   async function toggleUserSubscription(userId, active, plan) {
     if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
     try {
@@ -439,17 +421,12 @@
         body: JSON.stringify({ active, plan: active ? plan : null })
       });
       const data = await res.json();
-      if (data.success) {
-        alert('✅ Subscription updated');
-        await loadUsers();
-        await loadStats();
-      } else {
-        alert('❌ Error: ' + data.error);
-      }
+      if (data.success) { alert('✅ Subscription updated'); await loadUsers(); await loadStats(); }
+      else alert('❌ Error: ' + data.error);
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ---------- Plan settings ----------
+  // ============ Plan settings ============
   async function loadPlanSettings() {
     const data = await api('GET', '/admin/settings/plans');
     document.getElementById('weeklyAmount').value = data.weeklyAmount;
@@ -476,7 +453,7 @@
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ---------- Broadcast ----------
+  // ============ Broadcast ============
   async function sendBroadcast() {
     const message = document.getElementById('broadcastMessage').value.trim();
     if (!message) return alert('Please enter a message.');
@@ -485,24 +462,17 @@
     status.textContent = 'Sending...';
     try {
       const data = await api('POST', '/admin/broadcast', { message });
-      if (data.success) {
-        status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS. ${data.errors.length ? 'Errors: ' + JSON.stringify(data.errors) : ''}`;
-      } else {
-        status.textContent = '❌ Error: ' + data.error;
-      }
-    } catch(e) {
-      status.textContent = '❌ ' + e.message;
-    }
+      if (data.success) status.innerHTML = `✅ Sent to ${data.sent.emails} emails and ${data.sent.sms} SMS.`;
+      else status.textContent = '❌ Error: ' + data.error;
+    } catch(e) { status.textContent = '❌ ' + e.message; }
   }
 
-  // ---------- General settings ----------
+  // ============ General ============
   async function loadGeneralSettings() {
     try {
       const res = await fetch('/admin/settings', { headers: { Authorization: adminToken } });
       const data = await res.json();
-      if (data && data.referralBaseUrl) {
-        document.getElementById('referralUrl').value = data.referralBaseUrl;
-      }
+      if (data && data.referralBaseUrl) document.getElementById('referralUrl').value = data.referralBaseUrl;
     } catch(e) { console.error(e); }
   }
 
@@ -517,20 +487,12 @@
       });
       const data = await res.json();
       const status = document.getElementById('generalStatus');
-      if (data.success) {
-        status.textContent = '✅ Saved!';
-        status.className = 'text-green-400';
-      } else {
-        status.textContent = '❌ ' + data.error;
-        status.className = 'text-red-400';
-      }
-    } catch(e) {
-      document.getElementById('generalStatus').textContent = '❌ ' + e.message;
-      document.getElementById('generalStatus').className = 'text-red-400';
-    }
+      if (data.success) { status.textContent = '✅ Saved!'; status.className = 'text-green-400'; }
+      else { status.textContent = '❌ ' + data.error; status.className = 'text-red-400'; }
+    } catch(e) { document.getElementById('generalStatus').textContent = '❌ ' + e.message; }
   }
 
-  // ---------- Security (2FA) ----------
+  // ============ 2FA ============
   async function load2FA() {
     try {
       const res = await fetch('/admin/settings/totp/status', { headers: { Authorization: adminToken } });
@@ -538,11 +500,9 @@
       document.getElementById('twofaStatus').textContent = data.enabled ? '✅ Enabled' : '❌ Disabled';
     } catch(e) { console.error(e); }
   }
-  async function toggle2FA() {
-    alert('2FA toggle: implement using the existing endpoints (see docs)');
-  }
+  async function toggle2FA() { alert('2FA toggle: implement using the existing endpoints (see docs)'); }
 
-  // ---------- Tab switching with lazy loading ----------
+  // ============ Tab switching ============
   document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -550,7 +510,7 @@
       this.classList.add('active');
       const tab = this.dataset.tab;
       document.getElementById(tab).classList.add('active');
-      // Lazy load content
+
       if (tab === 'users' && !window._usersLoaded) {
         document.getElementById('usersTable').innerHTML = '<div class="loader">Loading users...</div>';
         loadUsers().then(() => { window._usersLoaded = true; });
@@ -558,34 +518,31 @@
         document.getElementById('transactionsTable').innerHTML = '<div class="loader">Loading transactions...</div>';
         loadTransactions().then(() => { window._transactionsLoaded = true; });
       } else if (tab === 'messages' && !window._messagesLoaded) {
-        document.getElementById('messagesTable').innerHTML = '<div class="loader">Loading messages...</div>';
         loadMessages().then(() => { window._messagesLoaded = true; });
       }
     });
   });
 
-  // ---------- Logout ----------
+  // ============ Logout ============
   function logout() {
     sessionStorage.removeItem('adminToken');
     window.location.href = '/admin';
   }
 
-  // ---------- Init ----------
+  // ============ Init ============
   window._usersLoaded = false;
   window._transactionsLoaded = false;
   window._messagesLoaded = false;
 
-  // Load initial tab (Users)
   loadStats();
   loadPlanSettings();
   loadGeneralSettings();
   load2FA();
 
-  // Load users initially (active tab)
   document.getElementById('usersTable').innerHTML = '<div class="loader">Loading users...</div>';
   loadUsers().then(() => { window._usersLoaded = true; });
 
-  // Expose functions globally
+  // Expose
   window.loadMoreUsers = loadMoreUsers;
   window.loadMoreTransactions = loadMoreTransactions;
   window.loadMoreMessages = loadMoreMessages;
