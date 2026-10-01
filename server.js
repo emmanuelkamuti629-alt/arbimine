@@ -205,38 +205,91 @@ async function authMiddleware(req, res, next) {
   } catch (err) { res.status(500).json({ error: 'Auth error' }); }
 }
 
+// ===== REGISTER (auto-login) =====
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, email, mpesa, password } = req.body;
-    if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
+    const email = (req.body.email || '').trim().toLowerCase();
+    const password = req.body.password;
+    let username = (req.body.username || '').trim();
+    let mpesa = (req.body.mpesa || '').trim().replace(/\D/g, '');
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Auto-derive missing fields
+    if (!username) username = email.split('@')[0] + '_' + Math.floor(Math.random() * 9999);
+    if (!mpesa) mpesa = '254' + Math.floor(100000000 + Math.random() * 900000000);
+
     const existing = await User.findOne({ $or: [{ username }, { email }, { mpesa }] });
     if (existing) {
       let error = 'Account already exists';
-      if (existing.username === username) error = 'Username already taken';
-      else if (existing.email === email) error = 'Email already registered';
+      if (existing.email === email) error = 'Email already registered';
+      else if (existing.username === username) error = 'Username already taken';
       else if (existing.mpesa === mpesa) error = 'M-Pesa already in use';
       return res.status(409).json({ error });
     }
-    const passwordHash = await bcrypt.hash(password, 10);
-    await new User({ username, email, mpesa, passwordHash }).save();
-    const token = generateToken();
-    await new Session({ token, username }).save();
-    res.json({ success: true, token, username });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
 
-app.post('/api/login', async (req, res) => {
-  try {
-    const { identifier, password } = req.body;
-    if (!identifier || !password) return res.status(400).json({ error: 'Missing credentials' });
-    const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }, { mpesa: identifier }] });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    if (user.isBlocked) return res.status(403).json({ error: 'Account blocked' });
-    if (!(await bcrypt.compare(password, user.passwordHash))) return res.status(401).json({ error: 'Invalid credentials' });
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await new User({ username, email, mpesa, passwordHash }).save();
+
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
+
+    res.json({
+      success: true,
+      token,
+      username: user.username,
+      email: user.email,
+      mpesa: user.mpesa
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== LOGIN (flexible field names) =====
+app.post('/api/login', async (req, res) => {
+  try {
+    const identifier =
+      req.body.identifier ||
+      req.body.username ||
+      req.body.email ||
+      req.body.mpesa ||
+      req.body.phone ||
+      req.body.login;
+
+    const password = req.body.password;
+
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Missing credentials' });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { username: identifier },
+        { email: String(identifier).toLowerCase() },
+        { mpesa: String(identifier).replace(/\D/g, '') }
+      ]
+    });
+
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (user.isBlocked) return res.status(403).json({ error: 'Account blocked' });
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = generateToken();
+    await new Session({ token, username: user.username }).save();
+
     res.json({ success: true, token, username: user.username });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/logout', authMiddleware, async (req, res) => {
@@ -288,6 +341,22 @@ app.post('/api/user/change-mpesa', authMiddleware, async (req, res) => {
   user.mpesa = newMpesa;
   await user.save();
   res.json({ success: true });
+});
+
+// ==================== Messaging ====================
+app.post('/api/messages', authMiddleware, async (req, res) => {
+  const user = await User.findOne({ username: req.user });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: 'Message required' });
+  const msg = new Message({ user: req.user, isAdmin: false, content: content.trim(), status: 'sent' });
+  await msg.save();
+  res.json({ success: true, message: msg });
+});
+
+app.get('/api/messages', authMiddleware, async (req, res) => {
+  const messages = await Message.find({ user: req.user, deleted: false }).sort({ createdAt: -1 });
+  res.json(messages);
 });
 
 // ==================== Exchange instances ====================
@@ -392,7 +461,6 @@ async function detailScan() {
     }
   }
   lastDetailScan = Date.now();
-  console.log(`✅ Detail scan done`);
 }
 
 async function startScanning() {
@@ -450,7 +518,6 @@ async function getAI(o) {
   } catch { return fallbackAI(o); }
 }
 
-// ==================== Opportunities ====================
 app.get('/api/opportunities', authMiddleware, async (req, res) => {
   const user = await User.findOne({ username: req.user });
   if (!user) return res.status(401).json({ error: 'User not found' });
@@ -491,7 +558,7 @@ function normalizeMsisdn(v) {
 
 app.post('/api/payhero/initialize', authMiddleware, async (req, res) => {
   try {
-    const { plan } = req.body;
+    const { plan, phone } = req.body;
     if (!['weekly','monthly','threeDay'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
     if (!PAYHERO_BASIC_AUTH_TOKEN || !PAYHERO_CHANNEL_ID) return res.status(500).json({ error: 'PayHero not configured on server' });
 
@@ -500,8 +567,8 @@ app.post('/api/payhero/initialize', authMiddleware, async (req, res) => {
 
     const s = await PlanSettings.findOne();
     const amount = plan === 'weekly' ? s.weeklyAmount : plan === 'monthly' ? s.monthlyAmount : s.threeDayAmount;
-    const msisdn = normalizeMsisdn(user.mpesa);
-    if (!msisdn.startsWith('254') || msisdn.length !== 12) return res.status(400).json({ error: 'Invalid M-Pesa number on file' });
+    const msisdn = normalizeMsisdn(phone || user.mpesa);
+    if (!msisdn.startsWith('254') || msisdn.length !== 12) return res.status(400).json({ error: 'Invalid M-Pesa number' });
 
     const reference = `ARBIMINE_${user.username}_${Date.now()}`;
     const payload = {
@@ -595,12 +662,12 @@ app.get('/api/transactions', authMiddleware, async (req, res) => {
   res.json({ success: true, transactions: txs });
 });
 
-// ==================== Admin Panel Route ====================
+// ==================== Admin Panel ====================
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 ArbiMine on port ${PORT}`);
-  console.log(`🔍 Scan mode: MANUAL — waiting for /api/scan/start`);
+  console.log(`🔍 Scan mode: MANUAL`);
 });
