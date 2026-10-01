@@ -220,7 +220,6 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // Auto-derive missing fields
     if (!username) username = email.split('@')[0] + '_' + Math.floor(Math.random() * 9999);
     if (!mpesa) mpesa = '254' + Math.floor(100000000 + Math.random() * 900000000);
 
@@ -387,7 +386,7 @@ const DETAIL_SCAN_INTERVAL = 120000;
 const DETAIL_OPP_LIMIT = 200;
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100;
-const FREE_TIER_MAX_SPREAD = 2.0;
+const FREE_TIER_MAX_SPREAD = 0.5;
 
 const SYMBOL_BLACKLIST = new Set(['US','USD','MEA','SCA','AVAIL','HOME','GUA','ESPORTS','KRL','SIREN','STG','VANRY','PRCL','DGB','SWEAT','NAVX','TAIKO','DEXE','IOTX','VELODROME','SAND','MANA','CHZ','GALA']);
 
@@ -604,6 +603,7 @@ app.post('/api/payhero/initialize', authMiddleware, async (req, res) => {
   }
 });
 
+// ===== PayHero callback with DETAILED M-Pesa reason mapping =====
 app.post('/api/payhero/callback', async (req, res) => {
   try {
     console.log('📬 PayHero callback:', JSON.stringify(req.body, null, 2));
@@ -616,12 +616,31 @@ app.post('/api/payhero/callback', async (req, res) => {
     let status = 'failed';
     let reason = resultDesc || 'Transaction failed';
 
+    // ===== Detailed M-Pesa result code mapping =====
     if (resultCode === 0 || resultCode === '0' || String(statusRaw).toLowerCase() === 'success') {
-      status = 'success'; reason = 'Payment successful';
-    } else if (resultCode === 1032) reason = 'Request cancelled by user';
-    else if (resultCode === 1037) reason = 'Request timed out';
-    else if (resultCode === 1) reason = 'Insufficient funds';
-    else if (resultCode === 2001) reason = 'Wrong PIN entered';
+      status = 'success';
+      reason = 'Payment successful';
+    } else if (resultCode === 1 || resultCode === '1') {
+      reason = 'Insufficient funds in your M-Pesa account';
+    } else if (resultCode === 1001 || resultCode === '1001') {
+      reason = 'You have another M-Pesa transaction in progress. Please wait and try again';
+    } else if (resultCode === 1019 || resultCode === '1019') {
+      reason = 'Transaction expired — no PIN entered in time';
+    } else if (resultCode === 1032 || resultCode === '1032') {
+      reason = 'You cancelled the payment prompt on your phone';
+    } else if (resultCode === 1037 || resultCode === '1037') {
+      reason = 'No response from your phone. Please keep your phone on and try again';
+    } else if (resultCode === 1050 || resultCode === '1050') {
+      reason = 'Not enough money in your M-Pesa account';
+    } else if (resultCode === 2001 || resultCode === '2001') {
+      reason = 'You entered the wrong M-Pesa PIN';
+    } else if (resultCode === 2002 || resultCode === '2002') {
+      reason = 'M-Pesa PIN could not be verified. Please try again';
+    } else if (resultCode === 9999 || resultCode === '9999') {
+      reason = 'M-Pesa service is temporarily unavailable. Please try again later';
+    } else if (resultCode) {
+      reason = `${resultDesc || 'Transaction failed'} (code ${resultCode})`;
+    }
 
     if (!reference) return res.status(200).json({ status: 'received' });
 
@@ -667,7 +686,10 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// ==================== Start Server ====================
 app.listen(PORT, () => {
   console.log(`🚀 ArbiMine on port ${PORT}`);
   console.log(`🔍 Scan mode: MANUAL`);
+  console.log(`💰 Free tier max spread: ${FREE_TIER_MAX_SPREAD}%`);
+  console.log(`📞 PayHero callback: ${PAYHERO_CALLBACK_URL}`);
 });
