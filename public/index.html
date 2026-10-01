@@ -19,7 +19,7 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--cream);color:var(--text);min-height:100vh;line-height:1.5}
 
-  /* AUTH */
+  /* ========== AUTH ========== */
   .auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;
     background:linear-gradient(135deg,#00A651 0%,#007A3D 100%)}
   .auth-card{width:100%;max-width:400px;background:#fff;border-radius:20px;padding:32px 24px;box-shadow:var(--shadow-lg)}
@@ -31,8 +31,21 @@
 
   .field{margin-top:14px}
   .field label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+
+  /* Password wrapper with eye toggle */
+  .pw-wrap{position:relative}
+  .pw-wrap input{padding-right:46px !important}
+  .pw-toggle{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;font-size:18px;line-height:1;
+    color:var(--muted);padding:6px;border-radius:6px;transition:.15s
+  }
+  .pw-toggle:hover{background:var(--cream);color:var(--text)}
+
   input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream);font-size:.95rem;font-weight:500;outline:none;font-family:inherit;transition:.15s}
   input:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(0,166,81,.12)}
+  input.pw-mismatch{border-color:var(--danger);background:#FEF2F2}
+
   .btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;transition:.15s}
   .btn-primary{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;box-shadow:0 4px 14px rgba(0,166,81,.35)}
   .btn-primary:hover{transform:translateY(-1px)}
@@ -43,8 +56,9 @@
   .msg.show{display:block}
   .msg.error{background:var(--danger-light);color:#7F1D1D}
   .msg.success{background:var(--success-light);color:#065F46}
+  .pw-hint{font-size:.72rem;color:var(--muted);margin-top:4px}
 
-  /* APP */
+  /* ========== APP ========== */
   .app{display:none;min-height:100vh;padding-bottom:80px}
   header{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;padding:20px 20px 40px;position:relative;overflow:hidden}
   .header-inner{max-width:960px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;position:relative;z-index:1}
@@ -67,12 +81,86 @@
   .sub-bar.active{background:var(--success-light);color:#065F46}
   .sub-bar.inactive{background:var(--warning-light);color:#92400E}
 
+  /* ========== SCANNING + ROCKETS ========== */
+  .scan-stage{
+    position:relative;overflow:hidden;border-radius:14px;
+    background:linear-gradient(180deg,#0B1020 0%,#1A2340 100%);
+    min-height:180px;padding:20px;margin-bottom:16px;
+    display:none;
+  }
+  .scan-stage.show{display:block}
+  .scan-stage.stopped{display:none}
+
+  /* Stars background */
+  .stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .star{
+    position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+    opacity:.6;animation:twinkle 2s infinite ease-in-out;
+  }
+  @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.9}}
+
+  /* Rocket rows */
+  .rocket-row{position:relative;height:60px;margin-bottom:8px}
+  .rocket{
+    position:absolute;font-size:28px;
+    top:50%;transform:translateY(-50%);
+    animation:flyRight 3.5s linear infinite;
+    filter:drop-shadow(0 0 8px rgba(0,255,150,.6));
+  }
+  .rocket.r2{animation-duration:4.5s;animation-delay:-1.2s;font-size:24px}
+  .rocket.r3{animation-duration:5.2s;animation-delay:-2.4s;font-size:32px}
+
+  @keyframes flyRight{
+    0%   { left:-60px; transform:translateY(-50%) rotate(0deg) }
+    50%  { transform:translateY(-60%) rotate(-8deg) }
+    100% { left:100%; transform:translateY(-50%) rotate(0deg) }
+  }
+
+  /* Exhaust trail */
+  .rocket::after{
+    content:"";position:absolute;top:50%;right:100%;transform:translateY(-50%);
+    width:40px;height:8px;border-radius:50%;
+    background:linear-gradient(90deg,transparent 0%,rgba(0,255,150,.5) 40%,rgba(255,200,80,.8) 100%);
+    animation:trailFlicker .6s infinite alternate;
+  }
+  @keyframes trailFlicker{0%{opacity:.6}100%{opacity:1}}
+
+  .scan-label{
+    position:absolute;top:14px;left:20px;z-index:2;
+    color:#7DFFB8;font-size:.78rem;font-weight:700;
+    letter-spacing:1.5px;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+  }
+  .scan-label .dot-live{
+    width:8px;height:8px;border-radius:50%;background:#4ADE80;
+    box-shadow:0 0 0 0 rgba(74,222,128,.7);
+    animation:pulse 1.5s infinite;
+  }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.7)}70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+
+  .scan-progress{
+    position:absolute;bottom:12px;left:20px;right:20px;z-index:2;
+    height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;
+  }
+  .scan-progress-bar{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,#00FF88,#7DFFB8,#00FF88);
+    border-radius:99px;
+    box-shadow:0 0 12px rgba(0,255,150,.7);
+    animation:progressLoop 2.5s ease-in-out infinite;
+  }
+  @keyframes progressLoop{
+    0%{width:0%;margin-left:0}
+    50%{width:80%;margin-left:0}
+    100%{width:0%;margin-left:100%}
+  }
+
   .scan-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
   .scan-status{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px}
   .dot{width:8px;height:8px;border-radius:50%;background:#9CA3AF}
   .dot.live{background:var(--success);box-shadow:0 0 0 0 rgba(5,150,105,.7);animation:pulse 2s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,.7)}70%{box-shadow:0 0 0 8px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
 
+  /* ========== OPPORTUNITY ========== */
   .opp{background:var(--cream);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
   .opp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .opp-symbol{font-size:1rem;font-weight:800}
@@ -82,6 +170,7 @@
   .opp-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:8px}
   .opp-ai{margin-top:10px;padding:8px 10px;background:var(--info-light);border-radius:8px;font-size:.75rem;color:#1E3A8A}
 
+  /* ========== PLANS ========== */
   .plans{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
   @media(min-width:600px){.plans{grid-template-columns:repeat(3,1fr)}}
   .plan{border:2px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:.15s}
@@ -90,13 +179,16 @@
   .plan .price{font-size:1.6rem;font-weight:800;color:var(--green-dark)}
   .plan .dur{font-size:.78rem;color:var(--muted);margin-top:4px}
 
+  /* ========== PAY STATUS ========== */
   .pay-status{padding:14px;border-radius:10px;margin-top:14px;font-size:.85rem;display:none}
   .pay-status.show{display:block}
   .pay-status.pending{background:var(--warning-light);color:#92400E}
   .pay-status.success{background:var(--success-light);color:#065F46}
   .pay-status.failed{background:var(--danger-light);color:#991B1B}
   .pay-status .title{font-weight:700;margin-bottom:4px}
+  .pay-status .timer{font-size:.75rem;opacity:.8;margin-top:6px}
 
+  /* ========== MESSAGES ========== */
   .msg-item{padding:12px;border-radius:10px;margin-bottom:8px;font-size:.85rem}
   .msg-item.admin{background:var(--info-light);border-left:3px solid var(--info)}
   .msg-item.user{background:var(--cream);border-left:3px solid var(--green)}
@@ -104,6 +196,7 @@
   .msg-input-row{display:flex;gap:8px;margin-top:12px}
   .msg-input-row input{flex:1}
 
+  /* ========== TX LIST ========== */
   .tx{padding:12px;border-radius:10px;margin-bottom:8px;background:var(--cream);font-size:.82rem}
   .tx-top{display:flex;justify-content:space-between;margin-bottom:4px}
   .tx-ref{font-family:monospace;font-size:.72rem;color:var(--muted)}
@@ -113,6 +206,7 @@
   .badge.pending{background:var(--warning-light);color:#92400E}
   .reason{color:var(--danger);font-weight:600;font-size:.75rem;margin-top:4px}
 
+  /* ========== TOAST ========== */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:1000;transition:.3s;max-width:90vw}
   .toast.show{transform:translateX(-50%) translateY(0)}
   .toast.success{background:var(--green-dark)}
@@ -131,6 +225,7 @@
       <button id="tabRegister" onclick="switchAuth('register')">Register</button>
     </div>
 
+    <!-- LOGIN -->
     <div id="loginForm">
       <div class="field">
         <label>Username / Email / M-Pesa</label>
@@ -138,16 +233,37 @@
       </div>
       <div class="field">
         <label>Password</label>
-        <input id="loginPw" type="password" placeholder="••••••••" />
+        <div class="pw-wrap">
+          <input id="loginPw" type="password" placeholder="••••••••" />
+          <button type="button" class="pw-toggle" onclick="togglePw('loginPw', this)">👁️</button>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="doLogin()">Login</button>
     </div>
 
+    <!-- REGISTER -->
     <div id="registerForm" style="display:none">
       <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="you@example.com" /></div>
       <div class="field"><label>Username (optional)</label><input id="regUser" type="text" placeholder="auto-generated if empty" /></div>
       <div class="field"><label>M-Pesa (optional)</label><input id="regMpesa" type="tel" placeholder="07XXXXXXXX" /></div>
-      <div class="field"><label>Password</label><input id="regPw" type="password" placeholder="min 6 characters" /></div>
+
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="regPw" type="password" placeholder="min 6 characters" oninput="checkPwMatch()" />
+          <button type="button" class="pw-toggle" onclick="togglePw('regPw', this)">👁️</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input id="regPw2" type="password" placeholder="re-enter password" oninput="checkPwMatch()" />
+          <button type="button" class="pw-toggle" onclick="togglePw('regPw2', this)">👁️</button>
+        </div>
+        <div id="pwHint" class="pw-hint"></div>
+      </div>
+
       <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
     </div>
 
@@ -189,6 +305,27 @@
           <button id="stopScanBtn" class="btn btn-secondary btn-sm" onclick="stopScan()" style="display:none">⏹️ Stop</button>
           <div class="scan-status"><span class="dot" id="scanDot"></span><span id="scanStatus">Idle — click Start</span></div>
         </div>
+
+        <!-- ROCKET ANIMATION STAGE -->
+        <div id="scanStage" class="scan-stage stopped">
+          <div class="stars" id="stars"></div>
+          <div class="scan-label"><span class="dot-live"></span> SCANNING MARKETS LIVE</div>
+
+          <div style="height:80px"></div>
+          <div class="rocket-row">
+            <div class="rocket">🚀</div>
+          </div>
+          <div class="rocket-row">
+            <div class="rocket r2">🚀</div>
+          </div>
+          <div class="rocket-row">
+            <div class="rocket r3">🚀</div>
+          </div>
+          <div style="height:20px"></div>
+
+          <div class="scan-progress"><div class="scan-progress-bar"></div></div>
+        </div>
+
         <div id="oppsList"></div>
       </div>
     </div>
@@ -231,14 +368,32 @@
     <div id="tab-settings" class="tab-panel" style="display:none">
       <div class="card">
         <h2>Change Password</h2>
-        <div class="field"><label>Current Password</label><input id="cpCurrent" type="password" /></div>
-        <div class="field"><label>New Password</label><input id="cpNew" type="password" /></div>
+        <div class="field">
+          <label>Current Password</label>
+          <div class="pw-wrap">
+            <input id="cpCurrent" type="password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('cpCurrent', this)">👁️</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>New Password</label>
+          <div class="pw-wrap">
+            <input id="cpNew" type="password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('cpNew', this)">👁️</button>
+          </div>
+        </div>
         <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
       </div>
       <div class="card">
         <h2>Change M-Pesa Number</h2>
         <div class="field"><label>New M-Pesa</label><input id="cmMpesa" type="tel" /></div>
-        <div class="field"><label>Password</label><input id="cmPw" type="password" /></div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input id="cmPw" type="password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('cmPw', this)">👁️</button>
+          </div>
+        </div>
         <button class="btn btn-primary" onclick="changeMpesa()">Update M-Pesa</button>
       </div>
     </div>
@@ -254,6 +409,7 @@ let ME = null;
 let SELECTED_PLAN = null;
 let PLANS = null;
 let POLL_INTERVAL = null;
+let POLL_TIMER = null;
 
 // ============ Helpers ============
 const $ = id => document.getElementById(id);
@@ -274,6 +430,34 @@ async function api(path, method='GET', body=null, auth=true) {
   return data;
 }
 
+// ============ Password Toggle ============
+function togglePw(id, btn) {
+  const el = $(id);
+  if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
+  else { el.type = 'password'; btn.textContent = '👁️'; }
+}
+
+// ============ Password Match Check ============
+function checkPwMatch() {
+  const p1 = $('regPw').value;
+  const p2 = $('regPw2').value;
+  const hint = $('pwHint');
+  const el = $('regPw2');
+
+  if (!p2) { hint.textContent = ''; el.classList.remove('pw-mismatch'); return true; }
+  if (p1 === p2) {
+    hint.textContent = '✅ Passwords match';
+    hint.style.color = 'var(--success)';
+    el.classList.remove('pw-mismatch');
+    return true;
+  } else {
+    hint.textContent = '❌ Passwords do not match';
+    hint.style.color = 'var(--danger)';
+    el.classList.add('pw-mismatch');
+    return false;
+  }
+}
+
 // ============ Auth ============
 function switchAuth(which) {
   $('tabLogin').classList.toggle('active', which === 'login');
@@ -287,28 +471,25 @@ function showAuthMsg(text, type) {
   m.textContent = text; m.className = 'msg show ' + type;
 }
 
-// ===== AUTO-LOGIN AFTER REGISTER =====
 async function doRegister() {
   try {
     const email = $('regEmail').value.trim();
     const password = $('regPw').value;
+    const password2 = $('regPw2').value;
     const username = $('regUser').value.trim();
     const mpesa = $('regMpesa').value.trim().replace(/\D/g, '');
 
     if (!email || !password) return showAuthMsg('Email and password required', 'error');
     if (password.length < 6) return showAuthMsg('Password must be at least 6 characters', 'error');
+    if (password !== password2) return showAuthMsg('Passwords do not match', 'error');
 
-    // Build body — only include optional fields if provided
     const body = { email, password };
     if (username) body.username = username;
     if (mpesa) body.mpesa = mpesa;
 
     const d = await api('/api/register', 'POST', body, false);
-
-    // Save token & go straight to dashboard — NO second login call needed
     TOKEN = d.token;
     localStorage.setItem('arbimine_token', TOKEN);
-
     showAuthMsg('✅ Account created! Redirecting…', 'success');
     setTimeout(bootApp, 500);
   } catch (err) {
@@ -321,7 +502,6 @@ async function doLogin() {
     const identifier = $('loginId').value.trim();
     const password = $('loginPw').value;
     if (!identifier || !password) return showAuthMsg('Both fields required', 'error');
-
     const d = await api('/api/login', 'POST', { identifier, password }, false);
     TOKEN = d.token;
     localStorage.setItem('arbimine_token', TOKEN);
@@ -339,19 +519,15 @@ async function doLogout() {
 // ============ App boot ============
 async function bootApp() {
   if (!TOKEN) return;
-  try {
-    ME = await api('/api/me');
-  } catch {
-    localStorage.removeItem('arbimine_token');
-    TOKEN = '';
-    return;
-  }
+  try { ME = await api('/api/me'); }
+  catch { localStorage.removeItem('arbimine_token'); TOKEN = ''; return; }
 
   $('authScreen').style.display = 'none';
   $('app').style.display = 'block';
   $('welcomeUser').textContent = 'Hi, ' + ME.username;
   $('payMpesa').value = ME.mpesa || '';
 
+  buildStars();
   await Promise.all([loadSubscription(), loadTransactions(), loadMessages(), loadScanStatus()]);
 }
 
@@ -360,6 +536,21 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   $('tab-' + name).style.display = 'block';
   document.querySelector('.tab[data-tab="'+name+'"]').classList.add('active');
+}
+
+// ============ Stars ============
+function buildStars() {
+  const stars = $('stars');
+  stars.innerHTML = '';
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 2) + 's';
+    s.style.width = s.style.height = (Math.random() * 2 + 1) + 'px';
+    stars.appendChild(s);
+  }
 }
 
 // ============ Subscription ============
@@ -402,7 +593,10 @@ function renderPlans() {
   }
 }
 
-// ============ Payment ============
+// ============ Payment (1-MINUTE TIMEOUT) ============
+const PAY_TIMEOUT_SECONDS = 60; // ⏱️ 1 minute
+const POLL_EVERY_MS = 3000;
+
 async function startPayment() {
   if (!SELECTED_PLAN) return toast('Select a plan first', 'error');
   const phone = $('payMpesa').value.trim();
@@ -426,38 +620,69 @@ async function startPayment() {
 
 function pollPayment(reference) {
   if (POLL_INTERVAL) clearInterval(POLL_INTERVAL);
-  let attempts = 0;
+  if (POLL_TIMER) clearInterval(POLL_TIMER);
+
+  let secondsLeft = PAY_TIMEOUT_SECONDS;
+  const ps = $('payStatus');
+  const startTime = Date.now();
+
+  // Countdown tick every 1 second
+  POLL_TIMER = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    secondsLeft = PAY_TIMEOUT_SECONDS - elapsed;
+    if (secondsLeft > 0 && ps.classList.contains('pending')) {
+      const timerEl = ps.querySelector('.timer');
+      if (timerEl) timerEl.textContent = `⏱️ Expires in ${secondsLeft}s — please check your phone`;
+    }
+  }, 1000);
+
   POLL_INTERVAL = setInterval(async () => {
-    attempts++;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+    // ⏱️ 1-minute timeout
+    if (elapsed >= PAY_TIMEOUT_SECONDS) {
+      clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
+      clearInterval(POLL_TIMER); POLL_TIMER = null;
+      ps.className = 'pay-status show failed';
+      ps.innerHTML = `<div class="title">❌ Payment Timed Out</div>
+        No response from M-Pesa within 1 minute. <br>
+        Possible reasons: <strong>prompt ignored, network issue, or insufficient funds</strong>. <br>
+        Please try again.`;
+      toast('Payment timed out', 'error');
+      loadTransactions();
+      $('payBtn').disabled = false;
+      return;
+    }
+
     try {
       const s = await api('/api/payment/status/' + reference);
-      const ps = $('payStatus');
+
       if (s.status === 'success') {
         clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
+        clearInterval(POLL_TIMER); POLL_TIMER = null;
         ps.className = 'pay-status show success';
         ps.innerHTML = `<div class="title">✅ Payment Successful</div>Your ${s.plan} subscription is now active.`;
         toast('Payment successful', 'success');
         loadSubscription(); loadTransactions();
         $('payBtn').disabled = false;
+
       } else if (s.status === 'failed') {
         clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
+        clearInterval(POLL_TIMER); POLL_TIMER = null;
         ps.className = 'pay-status show failed';
         ps.innerHTML = `<div class="title">❌ Payment Failed</div>Reason: <strong>${s.reason || 'Unknown'}</strong>`;
         toast('Payment failed: ' + (s.reason || ''), 'error');
         loadTransactions();
         $('payBtn').disabled = false;
+
       } else {
         ps.className = 'pay-status show pending';
-        ps.innerHTML = `<div class="title">⏳ Waiting for payment…</div>Check your phone and enter M-Pesa PIN. (${attempts})`;
-      }
-      if (attempts > 60) {
-        clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
-        ps.className = 'pay-status show failed';
-        ps.innerHTML = '<div class="title">❌ Timed out</div>No response from M-Pesa. Try again.';
-        $('payBtn').disabled = false;
+        ps.innerHTML = `<div class="title">⏳ Waiting for payment…</div>
+          Check your phone and enter your M-Pesa PIN.
+          <div class="timer">⏱️ Expires in ${secondsLeft}s</div>`;
       }
     } catch (err) { console.error(err); }
-  }, 3000);
+  }, POLL_EVERY_MS);
 }
 
 async function loadTransactions() {
@@ -497,25 +722,35 @@ async function loadScanStatus() {
     }
   } catch {}
 }
+
 function setScanUI(scanning) {
   $('startScanBtn').style.display = scanning ? 'none' : 'inline-flex';
   $('stopScanBtn').style.display = scanning ? 'inline-flex' : 'none';
   $('scanDot').className = 'dot' + (scanning ? ' live' : '');
   $('scanStatus').textContent = scanning ? 'Scanning live…' : 'Idle — click Start';
+
+  // 🚀 Toggle the rocket stage
+  const stage = $('scanStage');
+  if (scanning) stage.classList.add('show');
+  else stage.classList.remove('show');
 }
+
 async function startScan() {
   try {
     await api('/api/scan/start', 'POST');
-    setScanUI(true); toast('Scanning started', 'success');
+    setScanUI(true);
+    toast('🚀 Rockets launched — scanning started', 'success');
     loadOpportunities();
     if (window._oppTimer) clearInterval(window._oppTimer);
     window._oppTimer = setInterval(loadOpportunities, 30000);
   } catch (err) { toast(err.message, 'error'); }
 }
+
 async function stopScan() {
   try {
     await api('/api/scan/stop', 'POST');
-    setScanUI(false); toast('Scanning stopped');
+    setScanUI(false);
+    toast('Scanning stopped');
     if (window._oppTimer) clearInterval(window._oppTimer);
   } catch (err) { toast(err.message, 'error'); }
 }
@@ -608,4 +843,4 @@ function escapeHtml(s) {
 bootApp();
 </script>
 </body>
-        </html>
+</html>
