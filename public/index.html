@@ -31,15 +31,11 @@
 
   .field{margin-top:14px}
   .field label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
-
-  /* Password wrapper with eye toggle */
   .pw-wrap{position:relative}
   .pw-wrap input{padding-right:46px !important}
-  .pw-toggle{
-    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);
     background:none;border:none;cursor:pointer;font-size:18px;line-height:1;
-    color:var(--muted);padding:6px;border-radius:6px;transition:.15s
-  }
+    color:var(--muted);padding:6px;border-radius:6px;transition:.15s}
   .pw-toggle:hover{background:var(--cream);color:var(--text)}
 
   input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream);font-size:.95rem;font-weight:500;outline:none;font-family:inherit;transition:.15s}
@@ -81,84 +77,111 @@
   .sub-bar.active{background:var(--success-light);color:#065F46}
   .sub-bar.inactive{background:var(--warning-light);color:#92400E}
 
-  /* ========== SCANNING + ROCKETS ========== */
+  /* ========== SCANNER STAGE + ROCKETS ========== */
   .scan-stage{
     position:relative;overflow:hidden;border-radius:14px;
-    background:linear-gradient(180deg,#0B1020 0%,#1A2340 100%);
-    min-height:180px;padding:20px;margin-bottom:16px;
+    background:linear-gradient(180deg,#050818 0%,#0F1738 60%,#1E1B4B 100%);
+    min-height:200px;padding:0;margin-bottom:16px;
     display:none;
   }
   .scan-stage.show{display:block}
-  .scan-stage.stopped{display:none}
 
-  /* Stars background */
+  /* Twinkling stars */
   .stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-  .star{
-    position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
-    opacity:.6;animation:twinkle 2s infinite ease-in-out;
-  }
-  @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.9}}
+  .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+    opacity:.6;animation:twinkle 2s infinite ease-in-out}
+  @keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.95}}
 
-  /* Rocket rows */
-  .rocket-row{position:relative;height:60px;margin-bottom:8px}
-  .rocket{
-    position:absolute;font-size:28px;
-    top:50%;transform:translateY(-50%);
-    animation:flyRight 3.5s linear infinite;
-    filter:drop-shadow(0 0 8px rgba(0,255,150,.6));
-  }
-  .rocket.r2{animation-duration:4.5s;animation-delay:-1.2s;font-size:24px}
-  .rocket.r3{animation-duration:5.2s;animation-delay:-2.4s;font-size:32px}
+  /* Shooting star streaks */
+  .shooting{position:absolute;width:80px;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);
+    opacity:0;animation:shoot 3s infinite}
+  @keyframes shoot{0%{transform:translateX(-100px) translateY(0) rotate(20deg);opacity:0}
+    20%{opacity:1}100%{transform:translateX(500px) translateY(200px) rotate(20deg);opacity:0}}
 
-  @keyframes flyRight{
-    0%   { left:-60px; transform:translateY(-50%) rotate(0deg) }
-    50%  { transform:translateY(-60%) rotate(-8deg) }
-    100% { left:100%; transform:translateY(-50%) rotate(0deg) }
+  .scan-title{
+    position:absolute;top:12px;left:0;right:0;text-align:center;z-index:5;
+    color:#7DFFB8;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    display:flex;justify-content:center;align-items:center;gap:8px;
+    text-shadow:0 0 12px rgba(125,255,184,.6);
   }
-
-  /* Exhaust trail */
-  .rocket::after{
-    content:"";position:absolute;top:50%;right:100%;transform:translateY(-50%);
-    width:40px;height:8px;border-radius:50%;
-    background:linear-gradient(90deg,transparent 0%,rgba(0,255,150,.5) 40%,rgba(255,200,80,.8) 100%);
-    animation:trailFlicker .6s infinite alternate;
-  }
-  @keyframes trailFlicker{0%{opacity:.6}100%{opacity:1}}
-
-  .scan-label{
-    position:absolute;top:14px;left:20px;z-index:2;
-    color:#7DFFB8;font-size:.78rem;font-weight:700;
-    letter-spacing:1.5px;text-transform:uppercase;
-    display:flex;align-items:center;gap:8px;
-  }
-  .scan-label .dot-live{
+  .scan-title .pulse-dot{
     width:8px;height:8px;border-radius:50%;background:#4ADE80;
-    box-shadow:0 0 0 0 rgba(74,222,128,.7);
-    animation:pulse 1.5s infinite;
+    box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:pulse 1.5s infinite;
   }
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.7)}70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
 
+  /* Rocket track — full width flying lanes */
+  .track{position:absolute;left:0;right:0;height:50px}
+  .track.t1{top:60px}
+  .track.t2{top:110px}
+  .track.t3{top:160px}
+
+  .rocket{
+    position:absolute;top:0;left:0;
+    font-size:34px;
+    animation:flyAcross 3.5s linear infinite;
+    filter:drop-shadow(0 0 6px rgba(255,180,80,.9));
+  }
+  .t2 .rocket{font-size:28px;animation-duration:4.4s;animation-delay:-1.5s}
+  .t3 .rocket{font-size:30px;animation-duration:5s;animation-delay:-2.8s}
+
+  /* Key fix: use translateX in percentage of viewport width to really fly */
+  @keyframes flyAcross{
+    0%   { left:-15%; transform:translateY(0) rotate(0deg) }
+    25%  { transform:translateY(-6px) rotate(-5deg) }
+    50%  { transform:translateY(0) rotate(0deg) }
+    75%  { transform:translateY(6px) rotate(5deg) }
+    100% { left:105%; transform:translateY(0) rotate(0deg) }
+  }
+
+  /* Exhaust flame trail behind each rocket */
+  .rocket::before{
+    content:"";position:absolute;top:50%;right:100%;
+    transform:translateY(-50%);
+    width:60px;height:6px;border-radius:99px;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,120,0,.4) 30%,rgba(255,200,80,.9) 70%,rgba(255,255,200,1) 100%);
+    filter:blur(1px);
+    animation:flameFlicker .25s infinite alternate;
+  }
+  @keyframes flameFlicker{0%{opacity:.7;transform:translateY(-50%) scaleX(.9)}100%{opacity:1;transform:translateY(-50%) scaleX(1.15)}}
+
+  /* Progress bar */
   .scan-progress{
-    position:absolute;bottom:12px;left:20px;right:20px;z-index:2;
+    position:absolute;bottom:14px;left:20px;right:20px;z-index:5;
     height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;
   }
   .scan-progress-bar{
-    height:100%;width:0%;
+    height:100%;width:30%;
     background:linear-gradient(90deg,#00FF88,#7DFFB8,#00FF88);
     border-radius:99px;
-    box-shadow:0 0 12px rgba(0,255,150,.7);
-    animation:progressLoop 2.5s ease-in-out infinite;
+    box-shadow:0 0 12px rgba(0,255,150,.8);
+    animation:progressSlide 2.2s ease-in-out infinite;
   }
-  @keyframes progressLoop{
-    0%{width:0%;margin-left:0}
-    50%{width:80%;margin-left:0}
-    100%{width:0%;margin-left:100%}
+  @keyframes progressSlide{
+    0%{transform:translateX(-100%)}
+    100%{transform:translateX(400%)}
   }
 
   .scan-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
   .scan-status{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px}
   .dot{width:8px;height:8px;border-radius:50%;background:#9CA3AF}
   .dot.live{background:var(--success);box-shadow:0 0 0 0 rgba(5,150,105,.7);animation:pulse 2s infinite}
+
+  /* ========== FREE TIER BANNER ========== */
+  .upgrade-banner{
+    padding:14px 16px;border-radius:12px;margin-bottom:14px;
+    background:linear-gradient(135deg,#FEF3C7,#FDE68A);
+    border:2px solid #F59E0B;
+    color:#78350F;font-size:.82rem;font-weight:600;
+    display:flex;align-items:center;gap:12px;
+  }
+  .upgrade-banner .icon{font-size:22px;flex-shrink:0}
+  .upgrade-banner .btn-upgrade{
+    background:linear-gradient(135deg,#F59E0B,#D97706);
+    color:#fff;border:none;padding:8px 14px;border-radius:8px;
+    font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;
+    white-space:nowrap;margin-left:auto;
+  }
 
   /* ========== OPPORTUNITY ========== */
   .opp{background:var(--cream);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
@@ -186,7 +209,8 @@
   .pay-status.success{background:var(--success-light);color:#065F46}
   .pay-status.failed{background:var(--danger-light);color:#991B1B}
   .pay-status .title{font-weight:700;margin-bottom:4px}
-  .pay-status .timer{font-size:.75rem;opacity:.8;margin-top:6px}
+  .pay-status .timer{font-size:.75rem;opacity:.85;margin-top:6px;font-weight:600}
+  .pay-status .reason-line{margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.6);border-radius:8px;font-weight:700;color:#7F1D1D}
 
   /* ========== MESSAGES ========== */
   .msg-item{padding:12px;border-radius:10px;margin-bottom:8px;font-size:.85rem}
@@ -204,7 +228,7 @@
   .badge.success{background:var(--success-light);color:#065F46}
   .badge.failed{background:var(--danger-light);color:#991B1B}
   .badge.pending{background:var(--warning-light);color:#92400E}
-  .reason{color:var(--danger);font-weight:600;font-size:.75rem;margin-top:4px}
+  .reason{color:var(--danger);font-weight:700;font-size:.78rem;margin-top:6px;padding:6px 8px;background:var(--danger-light);border-radius:6px}
 
   /* ========== TOAST ========== */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:1000;transition:.3s;max-width:90vw}
@@ -225,7 +249,6 @@
       <button id="tabRegister" onclick="switchAuth('register')">Register</button>
     </div>
 
-    <!-- LOGIN -->
     <div id="loginForm">
       <div class="field">
         <label>Username / Email / M-Pesa</label>
@@ -241,12 +264,10 @@
       <button class="btn btn-primary" onclick="doLogin()">Login</button>
     </div>
 
-    <!-- REGISTER -->
     <div id="registerForm" style="display:none">
       <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="you@example.com" /></div>
       <div class="field"><label>Username (optional)</label><input id="regUser" type="text" placeholder="auto-generated if empty" /></div>
       <div class="field"><label>M-Pesa (optional)</label><input id="regMpesa" type="tel" placeholder="07XXXXXXXX" /></div>
-
       <div class="field">
         <label>Password</label>
         <div class="pw-wrap">
@@ -254,7 +275,6 @@
           <button type="button" class="pw-toggle" onclick="togglePw('regPw', this)">👁️</button>
         </div>
       </div>
-
       <div class="field">
         <label>Confirm Password</label>
         <div class="pw-wrap">
@@ -263,7 +283,6 @@
         </div>
         <div id="pwHint" class="pw-hint"></div>
       </div>
-
       <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
     </div>
 
@@ -300,28 +319,37 @@
     <div id="tab-opportunities" class="tab-panel">
       <div class="card">
         <h2>Arbitrage Scanner</h2>
+
+        <!-- FREE TIER UPGRADE BANNER -->
+        <div id="upgradeBanner" class="upgrade-banner" style="display:none">
+          <span class="icon">🔒</span>
+          <div>
+            Free plan shows <strong>≤ 0.5%</strong> spreads only.
+            <br>Upgrade to see <strong>all opportunities</strong> (0.5% – 100%).
+          </div>
+          <button class="btn-upgrade" onclick="switchTab('payments')">Upgrade</button>
+        </div>
+
         <div class="scan-row">
           <button id="startScanBtn" class="btn btn-primary btn-sm" onclick="startScan()">▶️ Start Scanning</button>
           <button id="stopScanBtn" class="btn btn-secondary btn-sm" onclick="stopScan()" style="display:none">⏹️ Stop</button>
+          <button id="refreshOppsBtn" class="btn btn-secondary btn-sm" onclick="refreshOpportunities()" title="Refresh list">🔄 Refresh</button>
           <div class="scan-status"><span class="dot" id="scanDot"></span><span id="scanStatus">Idle — click Start</span></div>
         </div>
 
-        <!-- ROCKET ANIMATION STAGE -->
-        <div id="scanStage" class="scan-stage stopped">
+        <!-- ===== ROCKET ANIMATION ===== -->
+        <div id="scanStage" class="scan-stage">
           <div class="stars" id="stars"></div>
-          <div class="scan-label"><span class="dot-live"></span> SCANNING MARKETS LIVE</div>
 
-          <div style="height:80px"></div>
-          <div class="rocket-row">
-            <div class="rocket">🚀</div>
+          <div class="scan-title">
+            <span class="pulse-dot"></span>
+            🚀 SCANNING LIVE MARKETS 🚀
           </div>
-          <div class="rocket-row">
-            <div class="rocket r2">🚀</div>
-          </div>
-          <div class="rocket-row">
-            <div class="rocket r3">🚀</div>
-          </div>
-          <div style="height:20px"></div>
+
+          <!-- 3 separate rocket lanes at different heights -->
+          <div class="track t1"><div class="rocket">🚀</div></div>
+          <div class="track t2"><div class="rocket">🚀</div></div>
+          <div class="track t3"><div class="rocket">🚀</div></div>
 
           <div class="scan-progress"><div class="scan-progress-bar"></div></div>
         </div>
@@ -335,12 +363,10 @@
       <div class="card">
         <h2>Subscribe</h2>
         <p style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Pay with M-Pesa (via PayHero STK Push).</p>
-
         <div class="field">
           <label>M-Pesa Number</label>
           <input id="payMpesa" type="tel" placeholder="07XXXXXXXX" />
         </div>
-
         <div class="plans" id="plansGrid"></div>
         <button class="btn btn-primary" id="payBtn" onclick="startPayment()" disabled>Pay with M-Pesa</button>
         <div class="pay-status" id="payStatus"></div>
@@ -411,7 +437,6 @@ let PLANS = null;
 let POLL_INTERVAL = null;
 let POLL_TIMER = null;
 
-// ============ Helpers ============
 const $ = id => document.getElementById(id);
 function toast(msg, type='') {
   const t = $('toast');
@@ -430,32 +455,26 @@ async function api(path, method='GET', body=null, auth=true) {
   return data;
 }
 
-// ============ Password Toggle ============
+// ============ Password helpers ============
 function togglePw(id, btn) {
   const el = $(id);
   if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
   else { el.type = 'password'; btn.textContent = '👁️'; }
 }
-
-// ============ Password Match Check ============
 function checkPwMatch() {
-  const p1 = $('regPw').value;
-  const p2 = $('regPw2').value;
-  const hint = $('pwHint');
-  const el = $('regPw2');
-
+  const p1 = $('regPw').value, p2 = $('regPw2').value;
+  const hint = $('pwHint'), el = $('regPw2');
   if (!p2) { hint.textContent = ''; el.classList.remove('pw-mismatch'); return true; }
   if (p1 === p2) {
     hint.textContent = '✅ Passwords match';
     hint.style.color = 'var(--success)';
     el.classList.remove('pw-mismatch');
     return true;
-  } else {
-    hint.textContent = '❌ Passwords do not match';
-    hint.style.color = 'var(--danger)';
-    el.classList.add('pw-mismatch');
-    return false;
   }
+  hint.textContent = '❌ Passwords do not match';
+  hint.style.color = 'var(--danger)';
+  el.classList.add('pw-mismatch');
+  return false;
 }
 
 // ============ Auth ============
@@ -467,10 +486,8 @@ function switchAuth(which) {
   $('authMsg').className = 'msg';
 }
 function showAuthMsg(text, type) {
-  const m = $('authMsg');
-  m.textContent = text; m.className = 'msg show ' + type;
+  const m = $('authMsg'); m.textContent = text; m.className = 'msg show ' + type;
 }
-
 async function doRegister() {
   try {
     const email = $('regEmail').value.trim();
@@ -478,25 +495,19 @@ async function doRegister() {
     const password2 = $('regPw2').value;
     const username = $('regUser').value.trim();
     const mpesa = $('regMpesa').value.trim().replace(/\D/g, '');
-
     if (!email || !password) return showAuthMsg('Email and password required', 'error');
     if (password.length < 6) return showAuthMsg('Password must be at least 6 characters', 'error');
     if (password !== password2) return showAuthMsg('Passwords do not match', 'error');
-
     const body = { email, password };
     if (username) body.username = username;
     if (mpesa) body.mpesa = mpesa;
-
     const d = await api('/api/register', 'POST', body, false);
     TOKEN = d.token;
     localStorage.setItem('arbimine_token', TOKEN);
     showAuthMsg('✅ Account created! Redirecting…', 'success');
     setTimeout(bootApp, 500);
-  } catch (err) {
-    showAuthMsg(err.message, 'error');
-  }
+  } catch (err) { showAuthMsg(err.message, 'error'); }
 }
-
 async function doLogin() {
   try {
     const identifier = $('loginId').value.trim();
@@ -509,7 +520,6 @@ async function doLogin() {
     setTimeout(bootApp, 400);
   } catch (err) { showAuthMsg(err.message, 'error'); }
 }
-
 async function doLogout() {
   try { await api('/api/logout', 'POST'); } catch {}
   TOKEN = ''; localStorage.removeItem('arbimine_token');
@@ -521,16 +531,13 @@ async function bootApp() {
   if (!TOKEN) return;
   try { ME = await api('/api/me'); }
   catch { localStorage.removeItem('arbimine_token'); TOKEN = ''; return; }
-
   $('authScreen').style.display = 'none';
   $('app').style.display = 'block';
   $('welcomeUser').textContent = 'Hi, ' + ME.username;
   $('payMpesa').value = ME.mpesa || '';
-
   buildStars();
   await Promise.all([loadSubscription(), loadTransactions(), loadMessages(), loadScanStatus()]);
 }
-
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -538,11 +545,12 @@ function switchTab(name) {
   document.querySelector('.tab[data-tab="'+name+'"]').classList.add('active');
 }
 
-// ============ Stars ============
+// ============ Stars for scan stage ============
 function buildStars() {
   const stars = $('stars');
+  if (!stars) return;
   stars.innerHTML = '';
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 50; i++) {
     const s = document.createElement('div');
     s.className = 'star';
     s.style.left = Math.random() * 100 + '%';
@@ -565,12 +573,11 @@ async function loadSubscription() {
       bar.textContent = `✅ Active (${s.plan}) — expires ${exp}`;
     } else {
       bar.className = 'sub-bar inactive';
-      bar.textContent = '⚠️ No active subscription — subscribe below';
+      bar.textContent = '⚠️ No active subscription — subscribe to unlock all opportunities';
     }
     renderPlans();
   } catch (err) { console.error(err); }
 }
-
 function renderPlans() {
   const grid = $('plansGrid');
   if (!PLANS) return;
@@ -593,20 +600,18 @@ function renderPlans() {
   }
 }
 
-// ============ Payment (1-MINUTE TIMEOUT) ============
-const PAY_TIMEOUT_SECONDS = 60; // ⏱️ 1 minute
+// ============ Payment — 1-min timeout ============
+const PAY_TIMEOUT_SECONDS = 60;
 const POLL_EVERY_MS = 3000;
 
 async function startPayment() {
   if (!SELECTED_PLAN) return toast('Select a plan first', 'error');
   const phone = $('payMpesa').value.trim();
   if (!phone) return toast('Enter your M-Pesa number', 'error');
-
   const ps = $('payStatus');
   ps.className = 'pay-status show pending';
   ps.innerHTML = '<div class="title">📱 Sending STK push…</div>Check your phone and enter your M-Pesa PIN.';
   $('payBtn').disabled = true;
-
   try {
     const d = await api('/api/payhero/initialize', 'POST', { plan: SELECTED_PLAN, phone });
     toast('STK push sent — check your phone', 'success');
@@ -621,42 +626,33 @@ async function startPayment() {
 function pollPayment(reference) {
   if (POLL_INTERVAL) clearInterval(POLL_INTERVAL);
   if (POLL_TIMER) clearInterval(POLL_TIMER);
-
-  let secondsLeft = PAY_TIMEOUT_SECONDS;
   const ps = $('payStatus');
   const startTime = Date.now();
+  let secondsLeft = PAY_TIMEOUT_SECONDS;
 
-  // Countdown tick every 1 second
   POLL_TIMER = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     secondsLeft = PAY_TIMEOUT_SECONDS - elapsed;
-    if (secondsLeft > 0 && ps.classList.contains('pending')) {
-      const timerEl = ps.querySelector('.timer');
-      if (timerEl) timerEl.textContent = `⏱️ Expires in ${secondsLeft}s — please check your phone`;
-    }
+    const timerEl = ps.querySelector('.timer');
+    if (timerEl && secondsLeft > 0) timerEl.textContent = `⏱️ Expires in ${secondsLeft}s — please check your phone`;
   }, 1000);
 
   POLL_INTERVAL = setInterval(async () => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-
-    // ⏱️ 1-minute timeout
     if (elapsed >= PAY_TIMEOUT_SECONDS) {
       clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
       clearInterval(POLL_TIMER); POLL_TIMER = null;
       ps.className = 'pay-status show failed';
       ps.innerHTML = `<div class="title">❌ Payment Timed Out</div>
-        No response from M-Pesa within 1 minute. <br>
-        Possible reasons: <strong>prompt ignored, network issue, or insufficient funds</strong>. <br>
-        Please try again.`;
+        No confirmation received within 1 minute.
+        <div class="reason-line">Likely reasons: prompt ignored, network issue, or insufficient funds</div>`;
       toast('Payment timed out', 'error');
       loadTransactions();
       $('payBtn').disabled = false;
       return;
     }
-
     try {
       const s = await api('/api/payment/status/' + reference);
-
       if (s.status === 'success') {
         clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
         clearInterval(POLL_TIMER); POLL_TIMER = null;
@@ -665,16 +661,15 @@ function pollPayment(reference) {
         toast('Payment successful', 'success');
         loadSubscription(); loadTransactions();
         $('payBtn').disabled = false;
-
       } else if (s.status === 'failed') {
         clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
         clearInterval(POLL_TIMER); POLL_TIMER = null;
         ps.className = 'pay-status show failed';
-        ps.innerHTML = `<div class="title">❌ Payment Failed</div>Reason: <strong>${s.reason || 'Unknown'}</strong>`;
+        ps.innerHTML = `<div class="title">❌ Payment Failed</div>
+          <div class="reason-line">Reason: ${escapeHtml(s.reason || 'Unknown')}</div>`;
         toast('Payment failed: ' + (s.reason || ''), 'error');
         loadTransactions();
         $('payBtn').disabled = false;
-
       } else {
         ps.className = 'pay-status show pending';
         ps.innerHTML = `<div class="title">⏳ Waiting for payment…</div>
@@ -722,19 +717,19 @@ async function loadScanStatus() {
     }
   } catch {}
 }
-
 function setScanUI(scanning) {
   $('startScanBtn').style.display = scanning ? 'none' : 'inline-flex';
   $('stopScanBtn').style.display = scanning ? 'inline-flex' : 'none';
   $('scanDot').className = 'dot' + (scanning ? ' live' : '');
   $('scanStatus').textContent = scanning ? 'Scanning live…' : 'Idle — click Start';
-
-  // 🚀 Toggle the rocket stage
   const stage = $('scanStage');
-  if (scanning) stage.classList.add('show');
-  else stage.classList.remove('show');
+  if (scanning) {
+    stage.classList.add('show');
+    buildStars();
+  } else {
+    stage.classList.remove('show');
+  }
 }
-
 async function startScan() {
   try {
     await api('/api/scan/start', 'POST');
@@ -745,7 +740,6 @@ async function startScan() {
     window._oppTimer = setInterval(loadOpportunities, 30000);
   } catch (err) { toast(err.message, 'error'); }
 }
-
 async function stopScan() {
   try {
     await api('/api/scan/stop', 'POST');
@@ -754,16 +748,46 @@ async function stopScan() {
     if (window._oppTimer) clearInterval(window._oppTimer);
   } catch (err) { toast(err.message, 'error'); }
 }
+async function refreshOpportunities() {
+  const btn = $('refreshOppsBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Refreshing…';
+  await loadOpportunities();
+  btn.disabled = false;
+  btn.textContent = '🔄 Refresh';
+  toast('Opportunities refreshed');
+}
 
 async function loadOpportunities() {
   try {
     const d = await api('/api/opportunities');
     const list = $('oppsList');
+    const banner = $('upgradeBanner');
+
+    // Show upgrade banner if user is on free tier
+    if (!d.isPro) banner.style.display = 'flex';
+    else banner.style.display = 'none';
+
     if (!d.opportunities?.length) {
       list.innerHTML = '<p style="font-size:.85rem;color:var(--muted);text-align:center;padding:20px">No opportunities yet. First scan may take 30-60s while markets load.</p>';
       return;
     }
-    list.innerHTML = d.opportunities.slice(0, 20).map(o => `
+
+    // Header showing what's being displayed
+    let header = '';
+    if (!d.isPro) {
+      const hidden = d.totalAvailable - d.shownCount;
+      header = `<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;padding:8px 10px;background:var(--warning-light);border-radius:8px">
+        Showing <strong>${d.shownCount}</strong> opportunities with ≤ 0.5% spread.
+        ${hidden > 0 ? `<strong>${hidden}</strong> higher-spread opportunities hidden — <a href="#" onclick="switchTab('payments');return false" style="color:var(--warning);text-decoration:underline">upgrade to see them</a>` : ''}
+      </div>`;
+    } else {
+      header = `<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;padding:8px 10px;background:var(--success-light);border-radius:8px">
+        ✨ Pro — showing <strong>${d.shownCount}</strong> of <strong>${d.totalAvailable}</strong> opportunities
+      </div>`;
+    }
+
+    list.innerHTML = header + d.opportunities.slice(0, 20).map(o => `
       <div class="opp">
         <div class="opp-top">
           <span class="opp-symbol">${escapeHtml(o.symbol)}</span>
@@ -843,4 +867,4 @@ function escapeHtml(s) {
 bootApp();
 </script>
 </body>
-</html>
+                                                       </html>
