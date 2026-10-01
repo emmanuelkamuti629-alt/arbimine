@@ -26,10 +26,9 @@
   .auth-card h1{font-size:1.5rem;margin-bottom:4px}
   .auth-card .sub{color:var(--muted);font-size:.85rem;margin-bottom:24px}
   .auth-tabs{display:flex;gap:8px;margin-bottom:20px;background:var(--cream);padding:4px;border-radius:10px}
-  .auth-tabs button{flex:1;padding:10px;border:none;background:transparent;font-weight:600;color:var(--muted);border-radius:8px;cursor:pointer;font-size:.85rem}
+  .auth-tabs button{flex:1;padding:10px;border:none;background:transparent;font-weight:600;color:var(--muted);border-radius:8px;cursor:pointer;font-size:.85rem;font-family:inherit}
   .auth-tabs button.active{background:#fff;color:var(--green-dark);box-shadow:var(--shadow)}
 
-  /* FORM */
   .field{margin-top:14px}
   .field label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
   input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream);font-size:.95rem;font-weight:500;outline:none;font-family:inherit;transition:.15s}
@@ -38,7 +37,6 @@
   .btn-primary{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;box-shadow:0 4px 14px rgba(0,166,81,.35)}
   .btn-primary:hover{transform:translateY(-1px)}
   .btn-secondary{background:var(--cream);color:var(--text);border:1.5px solid var(--border)}
-  .btn-danger{background:var(--danger);color:#fff}
   .btn:disabled{opacity:.6;cursor:not-allowed}
   .btn-sm{width:auto;padding:8px 14px;font-size:.8rem;margin-top:0}
   .msg{font-size:.82rem;margin-top:12px;padding:10px;border-radius:8px;display:none}
@@ -58,7 +56,6 @@
 
   .container{max-width:960px;margin:-20px auto 0;padding:0 16px;position:relative;z-index:2}
 
-  /* TABS */
   .tabs{display:flex;gap:4px;background:#fff;border-radius:12px;padding:6px;box-shadow:var(--shadow);margin-bottom:20px;overflow-x:auto}
   .tab{flex:1;padding:10px 12px;border:none;background:transparent;font-weight:600;color:var(--muted);border-radius:8px;cursor:pointer;font-size:.82rem;font-family:inherit;white-space:nowrap}
   .tab.active{background:var(--green-light);color:var(--green-dark)}
@@ -66,19 +63,16 @@
   .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow-lg);padding:20px;margin-bottom:16px}
   .card h2{font-size:1rem;margin-bottom:12px;font-weight:700}
 
-  /* SUB STATUS */
   .sub-bar{padding:14px 16px;border-radius:12px;font-size:.85rem;margin-bottom:16px;font-weight:600}
   .sub-bar.active{background:var(--success-light);color:#065F46}
   .sub-bar.inactive{background:var(--warning-light);color:#92400E}
 
-  /* SCAN */
   .scan-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
   .scan-status{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px}
   .dot{width:8px;height:8px;border-radius:50%;background:#9CA3AF}
   .dot.live{background:var(--success);box-shadow:0 0 0 0 rgba(5,150,105,.7);animation:pulse 2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,.7)}70%{box-shadow:0 0 0 8px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
 
-  /* OPPORTUNITY */
   .opp{background:var(--cream);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
   .opp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .opp-symbol{font-size:1rem;font-weight:800}
@@ -88,7 +82,6 @@
   .opp-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:8px}
   .opp-ai{margin-top:10px;padding:8px 10px;background:var(--info-light);border-radius:8px;font-size:.75rem;color:#1E3A8A}
 
-  /* PLANS */
   .plans{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
   @media(min-width:600px){.plans{grid-template-columns:repeat(3,1fr)}}
   .plan{border:2px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:.15s}
@@ -97,7 +90,6 @@
   .plan .price{font-size:1.6rem;font-weight:800;color:var(--green-dark)}
   .plan .dur{font-size:.78rem;color:var(--muted);margin-top:4px}
 
-  /* PAYMENT STATUS */
   .pay-status{padding:14px;border-radius:10px;margin-top:14px;font-size:.85rem;display:none}
   .pay-status.show{display:block}
   .pay-status.pending{background:var(--warning-light);color:#92400E}
@@ -105,7 +97,6 @@
   .pay-status.failed{background:var(--danger-light);color:#991B1B}
   .pay-status .title{font-weight:700;margin-bottom:4px}
 
-  /* MESSAGES */
   .msg-item{padding:12px;border-radius:10px;margin-bottom:8px;font-size:.85rem}
   .msg-item.admin{background:var(--info-light);border-left:3px solid var(--info)}
   .msg-item.user{background:var(--cream);border-left:3px solid var(--green)}
@@ -113,7 +104,6 @@
   .msg-input-row{display:flex;gap:8px;margin-top:12px}
   .msg-input-row input{flex:1}
 
-  /* TX LIST */
   .tx{padding:12px;border-radius:10px;margin-bottom:8px;background:var(--cream);font-size:.82rem}
   .tx-top{display:flex;justify-content:space-between;margin-bottom:4px}
   .tx-ref{font-family:monospace;font-size:.72rem;color:var(--muted)}
@@ -123,14 +113,6 @@
   .badge.pending{background:var(--warning-light);color:#92400E}
   .reason{color:var(--danger);font-weight:600;font-size:.75rem;margin-top:4px}
 
-  /* MODAL */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center;padding:20px;z-index:999}
-  .modal.show{display:grid}
-  .modal-card{background:#fff;border-radius:16px;padding:24px;max-width:420px;width:100%}
-  .modal-card h3{margin-bottom:12px}
-  .modal-actions{display:flex;gap:8px;margin-top:16px}
-
-  /* TOAST */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:1000;transition:.3s;max-width:90vw}
   .toast.show{transform:translateX(-50%) translateY(0)}
   .toast.success{background:var(--green-dark)}
@@ -162,10 +144,10 @@
     </div>
 
     <div id="registerForm" style="display:none">
-      <div class="field"><label>Username</label><input id="regUser" type="text" /></div>
-      <div class="field"><label>Email</label><input id="regEmail" type="email" /></div>
-      <div class="field"><label>M-Pesa (07XXXXXXXX or 2547XXXXXXXX)</label><input id="regMpesa" type="tel" /></div>
-      <div class="field"><label>Password</label><input id="regPw" type="password" /></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="you@example.com" /></div>
+      <div class="field"><label>Username (optional)</label><input id="regUser" type="text" placeholder="auto-generated if empty" /></div>
+      <div class="field"><label>M-Pesa (optional)</label><input id="regMpesa" type="tel" placeholder="07XXXXXXXX" /></div>
+      <div class="field"><label>Password</label><input id="regPw" type="password" placeholder="min 6 characters" /></div>
       <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
     </div>
 
@@ -198,7 +180,7 @@
       <button class="tab" data-tab="settings" onclick="switchTab('settings')">Settings</button>
     </div>
 
-    <!-- OPPORTUNITIES TAB -->
+    <!-- OPPORTUNITIES -->
     <div id="tab-opportunities" class="tab-panel">
       <div class="card">
         <h2>Arbitrage Scanner</h2>
@@ -211,11 +193,17 @@
       </div>
     </div>
 
-    <!-- PAYMENTS TAB -->
+    <!-- PAYMENTS -->
     <div id="tab-payments" class="tab-panel" style="display:none">
       <div class="card">
         <h2>Subscribe</h2>
-        <p style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Select a plan and pay with M-Pesa (via PayHero STK Push).</p>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Pay with M-Pesa (via PayHero STK Push).</p>
+
+        <div class="field">
+          <label>M-Pesa Number</label>
+          <input id="payMpesa" type="tel" placeholder="07XXXXXXXX" />
+        </div>
+
         <div class="plans" id="plansGrid"></div>
         <button class="btn btn-primary" id="payBtn" onclick="startPayment()" disabled>Pay with M-Pesa</button>
         <div class="pay-status" id="payStatus"></div>
@@ -227,7 +215,7 @@
       </div>
     </div>
 
-    <!-- MESSAGES TAB -->
+    <!-- MESSAGES -->
     <div id="tab-messages" class="tab-panel" style="display:none">
       <div class="card">
         <h2>Support Chat</h2>
@@ -239,7 +227,7 @@
       </div>
     </div>
 
-    <!-- SETTINGS TAB -->
+    <!-- SETTINGS -->
     <div id="tab-settings" class="tab-panel" style="display:none">
       <div class="card">
         <h2>Change Password</h2>
@@ -298,25 +286,42 @@ function showAuthMsg(text, type) {
   const m = $('authMsg');
   m.textContent = text; m.className = 'msg show ' + type;
 }
+
+// ===== AUTO-LOGIN AFTER REGISTER =====
 async function doRegister() {
   try {
-    const username = $('regUser').value.trim();
     const email = $('regEmail').value.trim();
-    const mpesa = $('regMpesa').value.trim().replace(/\D/g, '');
     const password = $('regPw').value;
-    if (!username || !email || !mpesa || !password) return showAuthMsg('All fields required', 'error');
-    const d = await api('/api/register', 'POST', { username, email, mpesa, password }, false);
+    const username = $('regUser').value.trim();
+    const mpesa = $('regMpesa').value.trim().replace(/\D/g, '');
+
+    if (!email || !password) return showAuthMsg('Email and password required', 'error');
+    if (password.length < 6) return showAuthMsg('Password must be at least 6 characters', 'error');
+
+    // Build body — only include optional fields if provided
+    const body = { email, password };
+    if (username) body.username = username;
+    if (mpesa) body.mpesa = mpesa;
+
+    const d = await api('/api/register', 'POST', body, false);
+
+    // Save token & go straight to dashboard — NO second login call needed
     TOKEN = d.token;
     localStorage.setItem('arbimine_token', TOKEN);
-    showAuthMsg('Account created!', 'success');
+
+    showAuthMsg('✅ Account created! Redirecting…', 'success');
     setTimeout(bootApp, 500);
-  } catch (err) { showAuthMsg(err.message, 'error'); }
+  } catch (err) {
+    showAuthMsg(err.message, 'error');
+  }
 }
+
 async function doLogin() {
   try {
     const identifier = $('loginId').value.trim();
     const password = $('loginPw').value;
     if (!identifier || !password) return showAuthMsg('Both fields required', 'error');
+
     const d = await api('/api/login', 'POST', { identifier, password }, false);
     TOKEN = d.token;
     localStorage.setItem('arbimine_token', TOKEN);
@@ -324,6 +329,7 @@ async function doLogin() {
     setTimeout(bootApp, 400);
   } catch (err) { showAuthMsg(err.message, 'error'); }
 }
+
 async function doLogout() {
   try { await api('/api/logout', 'POST'); } catch {}
   TOKEN = ''; localStorage.removeItem('arbimine_token');
@@ -335,11 +341,16 @@ async function bootApp() {
   if (!TOKEN) return;
   try {
     ME = await api('/api/me');
-  } catch { localStorage.removeItem('arbimine_token'); TOKEN=''; return; }
+  } catch {
+    localStorage.removeItem('arbimine_token');
+    TOKEN = '';
+    return;
+  }
 
   $('authScreen').style.display = 'none';
   $('app').style.display = 'block';
   $('welcomeUser').textContent = 'Hi, ' + ME.username;
+  $('payMpesa').value = ME.mpesa || '';
 
   await Promise.all([loadSubscription(), loadTransactions(), loadMessages(), loadScanStatus()]);
 }
@@ -368,6 +379,7 @@ async function loadSubscription() {
     renderPlans();
   } catch (err) { console.error(err); }
 }
+
 function renderPlans() {
   const grid = $('plansGrid');
   if (!PLANS) return;
@@ -390,19 +402,21 @@ function renderPlans() {
   }
 }
 
-// ============ Payment flow ============
+// ============ Payment ============
 async function startPayment() {
   if (!SELECTED_PLAN) return toast('Select a plan first', 'error');
+  const phone = $('payMpesa').value.trim();
+  if (!phone) return toast('Enter your M-Pesa number', 'error');
+
   const ps = $('payStatus');
   ps.className = 'pay-status show pending';
   ps.innerHTML = '<div class="title">📱 Sending STK push…</div>Check your phone and enter your M-Pesa PIN.';
   $('payBtn').disabled = true;
 
   try {
-    const d = await api('/api/payhero/initialize', 'POST', { plan: SELECTED_PLAN });
-    const reference = d.reference;
+    const d = await api('/api/payhero/initialize', 'POST', { plan: SELECTED_PLAN, phone });
     toast('STK push sent — check your phone', 'success');
-    pollPayment(reference);
+    pollPayment(d.reference);
   } catch (err) {
     ps.className = 'pay-status show failed';
     ps.innerHTML = `<div class="title">❌ Failed to send</div>${err.message}`;
@@ -433,19 +447,16 @@ function pollPayment(reference) {
         loadTransactions();
         $('payBtn').disabled = false;
       } else {
-        // still pending
         ps.className = 'pay-status show pending';
-        ps.innerHTML = `<div class="title">⏳ Waiting for you to complete payment…</div>Check your phone and enter M-Pesa PIN. (${attempts})`;
+        ps.innerHTML = `<div class="title">⏳ Waiting for payment…</div>Check your phone and enter M-Pesa PIN. (${attempts})`;
       }
-      if (attempts > 60) { // ~3 minutes
+      if (attempts > 60) {
         clearInterval(POLL_INTERVAL); POLL_INTERVAL = null;
         ps.className = 'pay-status show failed';
-        ps.innerHTML = '<div class="title">❌ Timed out</div>No response from M-Pesa. Please try again.';
+        ps.innerHTML = '<div class="title">❌ Timed out</div>No response from M-Pesa. Try again.';
         $('payBtn').disabled = false;
       }
-    } catch (err) {
-      console.error('Poll error:', err);
-    }
+    } catch (err) { console.error(err); }
   }, 3000);
 }
 
@@ -480,7 +491,10 @@ async function loadScanStatus() {
   try {
     const s = await api('/api/scan/status');
     setScanUI(s.scanning);
-    if (s.scanning) loadOpportunities();
+    if (s.scanning) {
+      loadOpportunities();
+      if (!window._oppTimer) window._oppTimer = setInterval(loadOpportunities, 30000);
+    }
   } catch {}
 }
 function setScanUI(scanning) {
@@ -494,7 +508,7 @@ async function startScan() {
     await api('/api/scan/start', 'POST');
     setScanUI(true); toast('Scanning started', 'success');
     loadOpportunities();
-    // refresh every 30s
+    if (window._oppTimer) clearInterval(window._oppTimer);
     window._oppTimer = setInterval(loadOpportunities, 30000);
   } catch (err) { toast(err.message, 'error'); }
 }
@@ -511,7 +525,7 @@ async function loadOpportunities() {
     const d = await api('/api/opportunities');
     const list = $('oppsList');
     if (!d.opportunities?.length) {
-      list.innerHTML = '<p style="font-size:.85rem;color:var(--muted);text-align:center;padding:20px">No opportunities found yet. Scanner may still be loading markets (this can take 30-60s on first start).</p>';
+      list.innerHTML = '<p style="font-size:.85rem;color:var(--muted);text-align:center;padding:20px">No opportunities yet. First scan may take 30-60s while markets load.</p>';
       return;
     }
     list.innerHTML = d.opportunities.slice(0, 20).map(o => `
@@ -525,9 +539,8 @@ async function loadOpportunities() {
           → Sell on <span class="ex">${escapeHtml(o.sellExchange)}</span> @ $${escapeHtml(o.sellPrice)}
         </div>
         <div class="opp-meta">
-          <span>💧 Liquidity: $${Number(o.liquidity).toLocaleString()}</span>
+          <span>💧 Liq: $${Number(o.liquidity).toLocaleString()}</span>
           <span>🎯 Risk: ${escapeHtml(o.risk || 'medium')}</span>
-          ${o.tradable ? '<span style="color:var(--success)">✅ Tradable</span>' : ''}
         </div>
         ${o.aiSummary ? `<div class="opp-ai"><strong>AI ${o.aiScore}/100 (${o.aiRisk}):</strong> ${escapeHtml(o.aiRecommendation)} — ${escapeHtml(o.aiSummary)}</div>` : ''}
       </div>
@@ -581,6 +594,8 @@ async function changeMpesa() {
     await api('/api/user/change-mpesa', 'POST', { newMpesa, password });
     toast('M-Pesa updated', 'success');
     $('cmMpesa').value = ''; $('cmPw').value = '';
+    ME.mpesa = newMpesa;
+    $('payMpesa').value = newMpesa;
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -593,4 +608,4 @@ function escapeHtml(s) {
 bootApp();
 </script>
 </body>
-  </html>
+        </html>
