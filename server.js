@@ -169,6 +169,51 @@ app.post('/admin/verify-otp', async (req, res) => {
   res.json({ success: true, token: generateAdminToken(session.username) });
 });
 
+// ==================== Admin 2FA ====================
+app.get('/admin/settings/totp/status', adminAuth, async (req, res) => {
+  const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+  res.json({ enabled: admin?.isTotpEnabled || false });
+});
+
+app.post('/admin/settings/totp/generate', adminAuth, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+    const secret = authenticator.generateSecret();
+    pendingTotpSecrets.set(admin._id.toString(), { secret, expires: Date.now() + 10 * 60 * 1000 });
+    const otpauth = authenticator.keyuri(admin.username, 'ArbiMine', secret);
+    const qrImage = await QRCode.toDataURL(otpauth);
+    res.json({ secret, qrImage, otpauth });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/admin/settings/totp/verify', adminAuth, async (req, res) => {
+  const { otp } = req.body;
+  if (!otp) return res.status(400).json({ error: 'OTP required' });
+  const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+  const pending = pendingTotpSecrets.get(admin._id.toString());
+  if (!pending || pending.expires < Date.now()) return res.status(400).json({ error: 'No pending 2FA setup' });
+  if (!authenticator.verify({ token: otp, secret: pending.secret })) return res.status(400).json({ error: 'Invalid OTP' });
+  admin.totpSecret = pending.secret;
+  admin.isTotpEnabled = true;
+  await admin.save();
+  pendingTotpSecrets.delete(admin._id.toString());
+  res.json({ success: true, message: '2FA enabled' });
+});
+
+app.post('/admin/settings/totp/disable', adminAuth, async (req, res) => {
+  const { otp } = req.body;
+  if (!otp) return res.status(400).json({ error: 'OTP required' });
+  const admin = await Admin.findOne({ username: ADMIN_USERNAME });
+  if (!admin || !admin.isTotpEnabled) return res.status(400).json({ error: '2FA is not enabled' });
+  if (!authenticator.verify({ token: otp, secret: admin.totpSecret })) return res.status(400).json({ error: 'Invalid OTP' });
+  admin.totpSecret = null;
+  admin.isTotpEnabled = false;
+  await admin.save();
+  res.json({ success: true, message: '2FA disabled' });
+});
+
+// ==================== Admin Plan Settings ====================
 app.get('/admin/settings/plans', adminAuth, async (req, res) => res.json(await PlanSettings.findOne()));
 app.put('/admin/settings/plans', adminAuth, async (req, res) => {
   let s = await PlanSettings.findOne() || new PlanSettings();
@@ -176,14 +221,200 @@ app.put('/admin/settings/plans', adminAuth, async (req, res) => {
   await s.save();
   res.json({ success: true, settings: s });
 });
-app.get('/admin/users', adminAuth, async (req, res) => res.json(await User.find({}, '-passwordHash').limit(200).lean()));
-app.get('/admin/transactions', adminAuth, async (req, res) => res.json(await Transaction.find().sort({ createdAt: -1 }).limit(200).lean()));
+
+// ==================== Admin Referral Settings ====================
+app.get('/admin/settings', adminAuth, async (req, res) => res.json(await Settings.findOne()));
+app.put('/admin/settings', adminAuth, async (req, res) => {
+  const { referralBaseUrl } = req.body;
+  if (!referralBaseUrl) return res.status(400).json({ error: "Referral URL required" });
+  let settings = await Settings.findOne() || new Settings();
+  settings.referralBaseUrl = referralBaseUrl;
+  settings.updatedAt = new Date();
+  await settings.save();
+  res.json({ success: true, settings });
+});
+
+// ==================== Admin Broadcast ====================
+app.post('/admin/broadcast', adminAuth, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message?.trim()) return res.status(400).json({ error: "Message is required" });
+    const users = await User.find({}, "email mpesa");
+    if (!users.length) return res.status(404).json({ error: "No users found" });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const fromPhone = process.env.TWILIO_PHONE_NUMBER;
+    const results = { emails: 0, sms: 0, errors: [] };
+
+    for (const user of users) {
+      if (user.email) {
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: "ArbiMine Pro – Admin Announcement",
+            text: message,
+            html: `<p>${message.replace(/\n/g, "<br>")}</p>`
+          });
+          results.emails++;
+        } catch (err) { results.errors.push({ email: user.email, error: err.message }); }
+      }
+      if (user.mpesa) {
+        try {
+          await client.messages.create({ body: message, from: fromPhone, to: user.mpesa });
+          results.sms++;
+        } catch (err) { results.errors.push({ phone: user.mpesa, error: err.message }); }
+      }
+    }
+    res.json({ success: true, sent: { emails: results.emails, sms: results.sms }, errors: results.errors });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==================== Admin User Management ====================
+app.post('/admin/user/:id/toggle-subscription', adminAuth, async (req, res) => {
+  const { active, plan } = req.body;
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  const settings = await PlanSettings.findOne();
+  let expiresAt = null;
+  if (active && plan) {
+    let days;
+    if (plan === "weekly") days = settings.weeklyDuration;
+    else if (plan === "monthly") days = settings.monthlyDuration;
+    else if (plan === "threeDay") days = settings.threeDayDuration;
+    else days = 7;
+    expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  }
+  user.subscription.active = active;
+  user.subscription.plan = active ? plan : null;
+  user.subscription.expiresAt = expiresAt;
+  await user.save();
+  res.json({ success: true, user: { username: user.username, subscription: user.subscription } });
+});
+
+app.delete('/admin/transaction/:id', adminAuth, async (req, res) => {
+  await Transaction.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+// ==================== Admin: Users (paginated) ====================
+app.get('/admin/users', adminAuth, async (req, res) => {
+  try {
+    const skip = Math.max(0, parseInt(req.query.skip) || 0);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 100));
+    const users = await User.find({}, '-passwordHash').sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+    res.json(users);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==================== Admin: Transactions (paginated) ====================
+app.get('/admin/transactions', adminAuth, async (req, res) => {
+  try {
+    const skip = Math.max(0, parseInt(req.query.skip) || 0);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 100));
+    const transactions = await Transaction.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+    res.json(transactions);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==================== Admin: Messages (PAGINATED — 4 at a time) ====================
+app.get('/admin/messages', adminAuth, async (req, res) => {
+  try {
+    const skip = Math.max(0, parseInt(req.query.skip) || 0);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 4));
+    const total = await Message.countDocuments();
+    const messages = await Message.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    res.json({
+      messages,
+      total,
+      skip,
+      limit,
+      hasMore: skip + messages.length < total
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== Admin: Stats ====================
 app.get('/admin/stats', adminAuth, async (req, res) => {
   const totalUsers = await User.estimatedDocumentCount();
   const activeSubs = await User.countDocuments({ "subscription.active": true });
-  const totalRevenue = await Transaction.aggregate([{ $match: { status: "success" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]);
+  const totalRevenue = await Transaction.aggregate([
+    { $match: { status: "success" } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
+  ]);
   const failedPayments = await Transaction.countDocuments({ status: "failed" });
   res.json({ totalUsers, activeSubs, totalRevenue: totalRevenue[0]?.total || 0, failedPayments });
+});
+
+app.post('/admin/messages', adminAuth, async (req, res) => {
+  const { userId, content } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: 'User and content required' });
+  const msg = new Message({ user: userId, isAdmin: true, content: content.trim(), status: 'sent' });
+  await msg.save();
+  setTimeout(async () => { msg.status = 'delivered'; await msg.save(); }, 500);
+  res.json({ success: true, message: msg });
+});
+
+app.delete('/admin/message/:id', adminAuth, async (req, res) => {
+  await Message.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+app.put('/admin/message/:id', adminAuth, async (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Content required' });
+  const msg = await Message.findByIdAndUpdate(req.params.id, { content: content.trim(), edited: true }, { new: true });
+  res.json({ success: true, message: msg });
+});
+
+app.post('/admin/block/:username', adminAuth, async (req, res) => {
+  const user = await User.findOne({ username: req.params.username });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.isBlocked = true;
+  await user.save();
+  res.json({ success: true, message: `User ${req.params.username} blocked` });
+});
+
+app.post('/admin/unblock/:username', adminAuth, async (req, res) => {
+  const user = await User.findOne({ username: req.params.username });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.isBlocked = false;
+  await user.save();
+  res.json({ success: true, message: `User ${req.params.username} unblocked` });
+});
+
+app.post('/admin/user/:id/update-subscription', adminAuth, async (req, res) => {
+  const { active, plan, expiresAt } = req.body;
+  const updates = { 'subscription.active': active };
+  if (plan) updates['subscription.plan'] = plan;
+  if (active && !expiresAt) {
+    const settings = await PlanSettings.findOne();
+    let days;
+    if (plan === 'weekly') days = settings.weeklyDuration;
+    else if (plan === 'monthly') days = settings.monthlyDuration;
+    else if (plan === 'threeDay') days = settings.threeDayDuration;
+    else days = 7;
+    updates['subscription.expiresAt'] = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  } else if (expiresAt) {
+    updates['subscription.expiresAt'] = new Date(expiresAt);
+  }
+  await User.findByIdAndUpdate(req.params.id, updates);
+  res.json({ success: true });
+});
+
+app.delete('/admin/user/:id', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
 });
 
 // ==================== User Auth ====================
@@ -213,12 +444,8 @@ app.post('/api/register', async (req, res) => {
     let username = (req.body.username || '').trim();
     let mpesa = (req.body.mpesa || '').trim().replace(/\D/g, '');
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
     if (!username) username = email.split('@')[0] + '_' + Math.floor(Math.random() * 9999);
     if (!mpesa) mpesa = '254' + Math.floor(100000000 + Math.random() * 900000000);
@@ -238,35 +465,22 @@ app.post('/api/register', async (req, res) => {
     const token = generateToken();
     await new Session({ token, username: user.username }).save();
 
-    res.json({
-      success: true,
-      token,
-      username: user.username,
-      email: user.email,
-      mpesa: user.mpesa
-    });
+    res.json({ success: true, token, username: user.username, email: user.email, mpesa: user.mpesa });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ===== LOGIN (flexible field names) =====
+// ===== LOGIN =====
 app.post('/api/login', async (req, res) => {
   try {
     const identifier =
-      req.body.identifier ||
-      req.body.username ||
-      req.body.email ||
-      req.body.mpesa ||
-      req.body.phone ||
-      req.body.login;
-
+      req.body.identifier || req.body.username || req.body.email ||
+      req.body.mpesa || req.body.phone || req.body.login;
     const password = req.body.password;
 
-    if (!identifier || !password) {
-      return res.status(400).json({ error: 'Missing credentials' });
-    }
+    if (!identifier || !password) return res.status(400).json({ error: 'Missing credentials' });
 
     const user = await User.findOne({
       $or: [
@@ -286,9 +500,7 @@ app.post('/api/login', async (req, res) => {
     await new Session({ token, username: user.username }).save();
 
     res.json({ success: true, token, username: user.username });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/logout', authMiddleware, async (req, res) => {
@@ -342,7 +554,7 @@ app.post('/api/user/change-mpesa', authMiddleware, async (req, res) => {
   res.json({ success: true });
 });
 
-// ==================== Messaging ====================
+// ==================== Messaging (User) ====================
 app.post('/api/messages', authMiddleware, async (req, res) => {
   const user = await User.findOne({ username: req.user });
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -616,10 +828,8 @@ app.post('/api/payhero/callback', async (req, res) => {
     let status = 'failed';
     let reason = resultDesc || 'Transaction failed';
 
-    // ===== Detailed M-Pesa result code mapping =====
     if (resultCode === 0 || resultCode === '0' || String(statusRaw).toLowerCase() === 'success') {
-      status = 'success';
-      reason = 'Payment successful';
+      status = 'success'; reason = 'Payment successful';
     } else if (resultCode === 1 || resultCode === '1') {
       reason = 'Insufficient funds in your M-Pesa account';
     } else if (resultCode === 1001 || resultCode === '1001') {
