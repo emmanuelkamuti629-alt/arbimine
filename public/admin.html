@@ -12,7 +12,9 @@
     .glass { background: rgba(255,255,255,.05); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 24px; }
     .btn { background: linear-gradient(135deg, #22c55e, #16a34a); padding: 10px 20px; border-radius: 12px; font-weight: 600; border: none; color: white; cursor: pointer; transition: .3s; }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(34,197,94,.4); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
     .btn-secondary { background: #334155; }
+    .btn-secondary:hover { background: #475569; box-shadow: none; }
     .btn-sm { padding: 6px 14px; font-size: 13px; width: auto; }
     .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
     .tabs button { background: #1e293b; border: none; padding: 8px 18px; border-radius: 30px; color: #94a3b8; font-weight: 500; cursor: pointer; transition: .2s; }
@@ -21,7 +23,7 @@
     .tab-content.active { display: block; }
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; color: #94a3b8; font-size: 14px; margin-bottom: 4px; }
-    .form-group input, .form-group textarea { width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 10px 14px; color: white; font-size: 15px; outline: none; }
+    .form-group input, .form-group textarea { width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 10px 14px; color: white; font-size: 15px; outline: none; font-family: inherit; }
     .form-group input:focus, .form-group textarea:focus { border-color: #22c55e; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 16px; margin-bottom: 24px; }
     .stat-card { background: #0f172a; border-radius: 16px; padding: 16px; border: 1px solid #1e293b; text-align: center; }
@@ -33,11 +35,23 @@
     td { color: #eef2ff; }
     .load-more-btn { margin-top: 16px; text-align: center; }
     .loader { text-align: center; color: #94a3b8; padding: 20px; }
+
+    /* MESSAGES */
     .msg-row { background:#0f172a;border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #22c55e; }
-    .msg-row .meta { font-size:12px;color:#94a3b8;margin-top:4px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap; }
+    .msg-row.admin-msg { border-left-color: #3b82f6; background: #101a35; }
+    .msg-row .meta { font-size:12px;color:#94a3b8;margin-top:6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center; }
     .msg-row .badge { background:#22c55e;color:#070b1a;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase; }
     .msg-row .badge.read { background:#334155;color:#94a3b8; }
+    .msg-row .badge.admin { background:#3b82f6;color:#fff; }
     .msg-row .user-tag { color:#22c55e;font-weight:700;font-size:13px; }
+    .msg-row.admin-msg .user-tag { color:#60a5fa; }
+
+    .reply-box { margin-top:10px; padding-top:10px; border-top:1px dashed #1e293b; display:none; }
+    .reply-box.open { display:block; }
+    .reply-box textarea { width:100%; background:#070b1a; border:1px solid #1e293b; border-radius:10px; padding:10px 12px; color:#fff; font-family:inherit; font-size:14px; resize:vertical; min-height:60px; outline:none; }
+    .reply-box textarea:focus { border-color:#22c55e; }
+    .reply-actions { display:flex; gap:8px; margin-top:8px; }
+    .reply-status { font-size:12px; margin-top:6px; }
   </style>
 </head>
 <body>
@@ -54,7 +68,7 @@
   </div>
 
   <!-- Stats -->
-  <div class="stats-grid" id="statsGrid">
+  <div class="stats-grid">
     <div class="stat-card"><div class="number" id="totalUsers">—</div><div class="label">Total Users</div></div>
     <div class="stat-card"><div class="number" id="activeSubs">—</div><div class="label">Active Subs</div></div>
     <div class="stat-card"><div class="number" id="totalRevenue">—</div><div class="label">Total Revenue</div></div>
@@ -112,7 +126,7 @@
   <div id="plans" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">📊 Subscription Plans</h2>
-      <p class="text-slate-400 text-sm mb-4">Update the prices and durations for subscription plans. Changes apply immediately.</p>
+      <p class="text-slate-400 text-sm mb-4">Update the prices and durations for subscription plans.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="form-group"><label>Weekly Price (KES)</label><input type="number" id="weeklyAmount" /></div>
         <div class="form-group"><label>Weekly Duration (days)</label><input type="number" id="weeklyDuration" /></div>
@@ -129,10 +143,10 @@
   <div id="broadcast" class="tab-content">
     <div class="glass">
       <h2 class="text-xl font-bold mb-4">📢 Broadcast Message</h2>
-      <p class="text-slate-400 text-sm mb-4">Send a message to <strong>all registered users</strong> via email and SMS (if Twilio is configured).</p>
+      <p class="text-slate-400 text-sm mb-4">Send a message to <strong>all registered users</strong> via email and SMS.</p>
       <div class="form-group">
         <label>Message</label>
-        <textarea id="broadcastMessage" rows="6" placeholder="Type your announcement here..." class="w-full bg-slate-900 rounded-xl p-3 border border-slate-700 text-white"></textarea>
+        <textarea id="broadcastMessage" rows="6" placeholder="Type your announcement here..."></textarea>
       </div>
       <button class="btn" onclick="sendBroadcast()">📤 Send to All Users</button>
       <div id="broadcastStatus" class="mt-4 text-sm"></div>
@@ -204,7 +218,7 @@
     throw new Error('Not authenticated');
   }
 
-  // ============ API helper ============
+  // ============ API ============
   function api(method, url, body) {
     return fetch(url, {
       method,
@@ -227,21 +241,17 @@
   // ============ Pagination state ============
   const PAGE_SIZE = 4;
 
-  // Users
   let allUsers = [];
   let usersVisible = 0;
 
-  // Transactions
   let allTransactions = [];
   let transactionsVisible = 0;
 
-  // Messages — SERVER-SIDE PAGINATION
-  let loadedMessages = [];   // messages already fetched from server
-  let messagesTotal = 0;     // total messages on server
-  let messagesHasMore = false;
+  let loadedMessages = [];
+  let messagesTotal = 0;
   let messagesLoading = false;
 
-  // ============ USERS render ============
+  // ============ USERS ============
   function renderUsers() {
     const container = document.getElementById('usersTable');
     const slice = allUsers.slice(0, usersVisible);
@@ -274,7 +284,7 @@
     renderUsers();
   }
 
-  // ============ TRANSACTIONS render ============
+  // ============ TRANSACTIONS ============
   function renderTransactions() {
     const container = document.getElementById('transactionsTable');
     const slice = allTransactions.slice(0, transactionsVisible);
@@ -303,21 +313,39 @@
     renderTransactions();
   }
 
-  // ============ MESSAGES — server-side paginated ============
+  // ============ MESSAGES (with Reply) ============
   function renderMessages() {
     const container = document.getElementById('messagesTable');
     if (!loadedMessages.length) {
       container.innerHTML = '<div class="text-slate-400 text-center py-4">No messages found.</div>';
       return;
     }
+
     container.innerHTML = loadedMessages.map(m => {
-      const badge = m.isAdmin ? '<span class="badge">Admin</span>' : '<span class="badge read">User</span>';
-      return `<div class="msg-row">
-        <div><span class="user-tag">${escapeHtml(m.user)}</span> &nbsp; ${escapeHtml(m.content)}</div>
+      const isAdminMsg = m.isAdmin === true;
+      const user = escapeHtml(m.user);
+      const content = escapeHtml(m.content);
+      const status = escapeHtml(m.status || 'sent');
+      const date = new Date(m.createdAt).toLocaleString();
+
+      return `<div class="msg-row ${isAdminMsg ? 'admin-msg' : ''}" data-msg-id="${m._id}">
+        <div>
+          <span class="user-tag">${isAdminMsg ? '🛡️ Admin → ' + user : user}</span>
+          &nbsp; ${content}
+        </div>
         <div class="meta">
-          <span>${badge}</span>
-          <span>Status: ${escapeHtml(m.status)}</span>
-          <span>${new Date(m.createdAt).toLocaleString()}</span>
+          <span class="badge ${isAdminMsg ? 'admin' : 'read'}">${isAdminMsg ? 'ADMIN' : 'USER'}</span>
+          <span>Status: ${status}</span>
+          <span>${date}</span>
+          <button class="btn btn-sm" onclick="toggleReplyBox('${m._id}', '${user.replace(/'/g, "\\'")}')">💬 Reply</button>
+        </div>
+        <div class="reply-box" id="reply-${m._id}">
+          <textarea id="reply-input-${m._id}" placeholder="Type your reply to ${user}..."></textarea>
+          <div class="reply-actions">
+            <button class="btn btn-sm" id="reply-send-${m._id}" onclick="sendReply('${m._id}', '${user.replace(/'/g, "\\'")}')">📤 Send Reply</button>
+            <button class="btn btn-sm btn-secondary" onclick="closeReply('${m._id}')">Cancel</button>
+          </div>
+          <div class="reply-status" id="reply-status-${m._id}"></div>
         </div>
       </div>`;
     }).join('');
@@ -327,10 +355,71 @@
     document.getElementById('messagesAllLoaded').style.display = showMore ? 'none' : 'block';
   }
 
+  function toggleReplyBox(msgId, username) {
+    const box = document.getElementById('reply-' + msgId);
+    if (!box) return;
+    const isOpen = box.classList.contains('open');
+    // Close all others first
+    document.querySelectorAll('.reply-box.open').forEach(b => b.classList.remove('open'));
+    if (!isOpen) {
+      box.classList.add('open');
+      const input = document.getElementById('reply-input-' + msgId);
+      if (input) input.focus();
+    }
+  }
+
+  function closeReply(msgId) {
+    const box = document.getElementById('reply-' + msgId);
+    if (box) box.classList.remove('open');
+  }
+
+  async function sendReply(msgId, username) {
+    const input = document.getElementById('reply-input-' + msgId);
+    const status = document.getElementById('reply-status-' + msgId);
+    const btn = document.getElementById('reply-send-' + msgId);
+    const content = (input.value || '').trim();
+
+    if (!content) {
+      status.textContent = '⚠ Please type a reply';
+      status.style.color = '#f59e0b';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    status.textContent = '';
+
+    try {
+      const res = await fetch('/admin/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
+        body: JSON.stringify({ userId: username, content })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        status.textContent = '✅ Reply sent to ' + username;
+        status.style.color = '#22c55e';
+        input.value = '';
+        // Refresh messages after 800ms so admin sees their reply
+        setTimeout(() => { loadMessages(); }, 800);
+      } else {
+        status.textContent = '❌ ' + (data.error || 'Failed to send');
+        status.style.color = '#ef4444';
+        btn.disabled = false;
+        btn.textContent = '📤 Send Reply';
+      }
+    } catch (e) {
+      status.textContent = '❌ ' + e.message;
+      status.style.color = '#ef4444';
+      btn.disabled = false;
+      btn.textContent = '📤 Send Reply';
+    }
+  }
+
   async function loadMessages() {
     loadedMessages = [];
     messagesTotal = 0;
-    messagesHasMore = false;
     document.getElementById('messagesTable').innerHTML = '<div class="loader">Loading messages...</div>';
     await fetchMoreMessages();
   }
@@ -348,15 +437,10 @@
         headers: { Authorization: adminToken }
       });
       const data = await res.json();
-
-      // Support both old array response and new object response
       const newMsgs = Array.isArray(data) ? data : (data.messages || []);
       const totalFromServer = Array.isArray(data) ? data.length : (data.total ?? loadedMessages.length + newMsgs.length);
-
       loadedMessages = loadedMessages.concat(newMsgs);
       messagesTotal = totalFromServer;
-      messagesHasMore = Array.isArray(data) ? loadedMessages.length < totalFromServer : !!data.hasMore;
-
       renderMessages();
     } catch (e) {
       console.error(e);
@@ -366,12 +450,12 @@
     }
   }
 
-  // ============ Helpers ============
+  // ============ HELPERS ============
   function escapeHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  // ============ Load users / transactions ============
+  // ============ LOAD USERS / TX ============
   async function loadUsers() {
     try {
       const data = await api('GET', '/admin/users');
@@ -390,7 +474,7 @@
     } catch(e) { console.error(e); }
   }
 
-  // ============ Delete ============
+  // ============ DELETE ============
   async function deleteUser(userId, username) {
     if (!confirm(`Delete user "${username}" and all their data?`)) return;
     try {
@@ -411,7 +495,7 @@
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ============ Toggle subscription ============
+  // ============ TOGGLE SUB ============
   async function toggleUserSubscription(userId, active, plan) {
     if (!confirm(`Set subscription to ${active ? 'active' : 'inactive'}?`)) return;
     try {
@@ -426,7 +510,7 @@
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ============ Plan settings ============
+  // ============ PLANS ============
   async function loadPlanSettings() {
     const data = await api('GET', '/admin/settings/plans');
     document.getElementById('weeklyAmount').value = data.weeklyAmount;
@@ -453,7 +537,7 @@
     } catch(e) { alert('Error: ' + e.message); }
   }
 
-  // ============ Broadcast ============
+  // ============ BROADCAST ============
   async function sendBroadcast() {
     const message = document.getElementById('broadcastMessage').value.trim();
     if (!message) return alert('Please enter a message.');
@@ -467,7 +551,7 @@
     } catch(e) { status.textContent = '❌ ' + e.message; }
   }
 
-  // ============ General ============
+  // ============ GENERAL ============
   async function loadGeneralSettings() {
     try {
       const res = await fetch('/admin/settings', { headers: { Authorization: adminToken } });
@@ -487,8 +571,8 @@
       });
       const data = await res.json();
       const status = document.getElementById('generalStatus');
-      if (data.success) { status.textContent = '✅ Saved!'; status.className = 'text-green-400'; }
-      else { status.textContent = '❌ ' + data.error; status.className = 'text-red-400'; }
+      if (data.success) { status.textContent = '✅ Saved!'; status.style.color = '#22c55e'; }
+      else { status.textContent = '❌ ' + data.error; status.style.color = '#ef4444'; }
     } catch(e) { document.getElementById('generalStatus').textContent = '❌ ' + e.message; }
   }
 
@@ -502,7 +586,7 @@
   }
   async function toggle2FA() { alert('2FA toggle: implement using the existing endpoints (see docs)'); }
 
-  // ============ Tab switching ============
+  // ============ TABS ============
   document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -523,13 +607,13 @@
     });
   });
 
-  // ============ Logout ============
+  // ============ LOGOUT ============
   function logout() {
     sessionStorage.removeItem('adminToken');
     window.location.href = '/admin';
   }
 
-  // ============ Init ============
+  // ============ INIT ============
   window._usersLoaded = false;
   window._transactionsLoaded = false;
   window._messagesLoaded = false;
@@ -542,7 +626,7 @@
   document.getElementById('usersTable').innerHTML = '<div class="loader">Loading users...</div>';
   loadUsers().then(() => { window._usersLoaded = true; });
 
-  // Expose
+  // Expose globals
   window.loadMoreUsers = loadMoreUsers;
   window.loadMoreTransactions = loadMoreTransactions;
   window.loadMoreMessages = loadMoreMessages;
@@ -554,6 +638,9 @@
   window.saveGeneralSettings = saveGeneralSettings;
   window.toggle2FA = toggle2FA;
   window.logout = logout;
+  window.toggleReplyBox = toggleReplyBox;
+  window.closeReply = closeReply;
+  window.sendReply = sendReply;
 </script>
 </body>
-</html>
+  </html>
